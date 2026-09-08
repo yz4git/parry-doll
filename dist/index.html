@@ -78,6 +78,11 @@
           readability.onload=()=>{
             const flow=document.createElement('script');
             flow.src='./combat-flow.js?v='+version;
+            flow.onload=()=>{
+              const product=document.createElement('script');
+              product.src='./combat-product-pass.js?v='+version;
+              document.body.appendChild(product);
+            };
             document.body.appendChild(flow);
           };
           document.body.appendChild(readability);
