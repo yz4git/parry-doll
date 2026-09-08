@@ -5,8 +5,8 @@ readabilityStyle.textContent=`
 #toast.readability-parry{top:12%;left:auto;right:max(28px,env(safe-area-inset-right));width:auto;text-align:right;font-size:clamp(13px,2vw,18px);letter-spacing:2px;color:#ffe0a4}
 #toast.readability-finisher{top:auto;bottom:29%;left:58%;right:auto;width:auto;padding:5px 9px;border:1px solid #f0c47a88;background:#15181bb8;font-size:clamp(13px,2vw,18px);letter-spacing:3px;color:#ffe2a3;border-radius:3px}
 #toast.readability-normal{top:16%;left:0;right:0;width:100%;text-align:center}
-#cue{top:25%;font-size:clamp(13px,2.2vw,17px);letter-spacing:2.5px}
-@media(max-height:500px){#toast.readability-parry{top:10%}#toast.readability-finisher{bottom:27%}#cue{top:24%}}
+#cue{top:16%;font-size:clamp(13px,2.2vw,17px);letter-spacing:2.5px}
+@media(max-height:500px){#toast.readability-parry{top:10%}#toast.readability-finisher{bottom:27%}#cue{top:15%}}
 `;
 document.head.appendChild(readabilityStyle);
 
@@ -47,10 +47,11 @@ setCamera=function(){
  if(!player||!boss||mode!=='play'||!basis)return;
  const distance=Math.hypot(boss.pos.x-player.pos.x,boss.pos.z-player.pos.z);
  const active=player.attack>0||boss.strike>0||boss.broken>0||player.counter>0;
- let contact=clamp((3.25-distance)/1.55,0,1)*(active?1:.45);
+ let contact=clamp((3.40-distance)/1.70,0,1)*(active?1:.45);
  if(boss.spec.scale>1.8)contact*=.72;
  if(contact<=.01)return;
- const side=(level%2?-.82:1),shift=(W<H?.34:1.15)*contact*side;
+ const heavyBeat=player.attack>0&&player.motion===2?1.38:1;
+ const side=(level%2?-.82:1),shift=(W<H?.34:1.15)*contact*side*heavyBeat;
  camera=add(camera,mul(basis.right,shift));
  const mid=add(mul(player.pos,.44),mul(boss.pos,.56)),focus=V(mid.x,1.28+Math.max(0,boss.spec.scale-1.3)*.48,mid.z);
  target=add(mul(target,1-contact*.34),mul(focus,contact*.34));
