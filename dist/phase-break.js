@@ -90,7 +90,7 @@
   const p=boss.nodes.find(n=>n.name==='chest')?.p||boss.nodes[1]?.p||boss.pos;
   ring(V(boss.pos.x,.05,boss.pos.z),PHASE_COLORS[next-1]);ring(V(boss.pos.x,.05,boss.pos.z),'#fff0bd');burst(p,PHASE_COLORS[next-1],next===3?38:26,next===3?8:6);
   impact(p,'break',next===3?2.1:1.65);shake=Math.max(shake,next===3?.36:.26);hitstop=Math.max(hitstop,next===3?.09:.06);feel.flash=Math.max(feel.flash,next===3?.15:.09);feel.slow=Math.max(feel.slow,next===3?.24:.14);
-  showBanner(phaseName(next),next===3?'FINAL PHASE':'PHASE BREAK',next===3?1.35:1.05);combatSound('break');updatePhaseUI();
+  $('pbDanger')?.classList.remove('show');if($('attackHud'))$('attackHud').textContent='';showBanner(phaseName(next),next===3?'FINAL PHASE':'PHASE BREAK',next===3?1.35:1.05);combatSound('break');updatePhaseUI();
  }
 
  function classify(move){
@@ -160,8 +160,8 @@
   if(pb.secretSpawned)return;pb.secretSpawned=true;try{localStorage.setItem('parry-doll-secret-unlocked','1')}catch(_){};
   $('overlay').classList.add('hidden');mode='play';level=4;transition=0;const health=Math.min(100,player.hp+45);boss=new Doll(bosses[4]);
   const shift=sub(V(0,0,3),player.pos);player.pos=V(0,0,3);player.vel=V();for(const n of player.nodes){n.p=add(n.p,shift);n.prev={...n.p}}
-  player.swing=null;player.attack=0;player.cool=0;player.counter=0;player.hp=health;player.invuln=1.2;cameraRig.initialized=false;initBoss(true);
-  showBanner('傀 儡 零 式','SECRET DUEL',1.75);announce('THE PARRY DOLL',1.2);sound(95,.6,'sawtooth',.08);feel.slow=.35;
+  player.swing=null;player.attack=0;player.cool=0;player.counter=0;player.hp=health;player.invuln=1.2;cameraRig.initialized=false;initBoss(true);updateHUD();updatePhaseUI();
+  $('pbDanger')?.classList.remove('show');if($('attackHud'))$('attackHud').textContent='';showBanner('傀 儡 零 式','SECRET DUEL',1.75);announce('THE PARRY DOLL',1.2);sound(95,.6,'sawtooth',.08);feel.slow=.35;
  }
 
  const pbReset=reset;
@@ -177,7 +177,7 @@
   pb.chainT=Math.max(0,pb.chainT-dt);if(pb.chainT<=0){pb.chain=0;$('pbChain')?.classList.remove('show')}
   pb.transitionT=Math.max(0,pb.transitionT-dt);if(pb.transitionT<=0)$('pbBanner')?.classList.remove('show');
   const danger=$('pbDanger');
-  if(danger){if(mode==='play'&&boss?.wind>0){const d=pb.danger||classify(enemyMove());danger.innerHTML=`<strong>${d?.label||'攻 撃'}</strong>${d?.hint||''}`;danger.classList.add('show')}else danger.classList.remove('show')}
+  if(danger){if(mode==='play'&&boss?.wind>0&&pb.transitionT<=0){const d=pb.danger||classify(enemyMove());danger.innerHTML=`<strong>${d?.label||'攻 撃'}</strong>${d?.hint||''}`;danger.classList.add('show')}else danger.classList.remove('show')}
   updatePhaseUI();
  };
 
