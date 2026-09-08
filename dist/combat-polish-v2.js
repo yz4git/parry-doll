@@ -2,6 +2,12 @@
 // Final combat polish v2: true executions, camera dead-zone, split lower-body facing and tighter hit glows.
 let p6Execution=false,p6CameraYaw=Number.NaN;
 const P6_CAM_DEADZONE=.17; // ~10 degrees: let fighters travel on screen before camera follows.
+const p6Style=document.createElement('style');
+p6Style.textContent=`
+#attackHud{position:fixed!important;top:max(61px,env(safe-area-inset-top))!important;left:max(22px,env(safe-area-inset-left))!important;right:auto!important;width:min(230px,42vw)!important;height:22px!important;justify-content:flex-start!important;padding:0 8px!important;background:linear-gradient(90deg,#0b1118c8 0%,#0b111884 72%,transparent)!important;text-align:left!important}
+@media(max-height:500px){#attackHud{top:max(57px,env(safe-area-inset-top))!important}}
+`;
+document.head.appendChild(p6Style);
 
 // A posture-break finisher is a true execution. It may never flow into an enraged survivor.
 const p6HurtBase=hurt;
@@ -11,11 +17,21 @@ hurt=function(d,amount,force,point){
 };
 const p6ResolveSwingBase=resolveSwing;
 resolveSwing=function(){
- const move=player.swing;
+ const move=player.swing,before=boss.hp;
  p6Execution=!!(move&&move.finisher&&boss.broken>0);
- try{return p6ResolveSwingBase();}
- finally{p6Execution=false}
+ try{
+  const out=p6ResolveSwingBase();
+  if(p6Execution&&before>0&&boss.hp<=0){
+   p5BreakPrompt=0;p5FinishBeat=Math.max(p5FinishBeat,.72);$('toast').textContent='';
+   if(typeof p5SyncAttackHud==='function')p5SyncAttackHud();
+  }
+  return out;
+ }finally{p6Execution=false}
 };
+
+// Clear transient framing/HUD state whenever a run is reset.
+const p6ResetBase=reset;
+reset=function(l=0){p5BreakPrompt=0;p5FinishBeat=0;p6CameraYaw=Number.NaN;return p6ResetBase(l)};
 
 // Keep the upper body locked to the opponent while the legs retain movement inertia.
 const p6PoseTargetBase=poseTarget;
@@ -40,7 +56,7 @@ Doll.prototype.physics=function(dt){
  return p6PhysicsBase.call(this,dt);
 };
 
-// Replace the stacked camera wrappers with a final composition that preserves all prior cinematic beats,
+// Replace the stacked camera wrappers with a final composition that preserves prior cinematic beats,
 // but adds yaw dead-zone and body-type framing without immediately recentering every orbit step.
 setCamera=function(){
  if(boss.broken>0&&!reviewWasBroken){reviewCine=.95;hitstop=Math.max(hitstop,.11);shake=Math.max(shake,.30)}
@@ -59,7 +75,7 @@ setCamera=function(){
  const giant=Math.max(0,boss.spec.scale-1.3),lookAhead=Math.min(2.4,distance*.43);
  const normalTarget=add(player.pos,add(mul(forward,lookAhead),V(0,1.28+giant*.5,0)));
  const bossFocus=add(boss.pos,V(0,1.20+giant*.62,0));
- let desiredTarget=add(mul(normalTarget,1-cine*.72),mul(bossFocus,cine*.72));
+ const desiredTarget=add(mul(normalTarget,1-cine*.72),mul(bossFocus,cine*.72));
  const smoothing=1-Math.exp(-feel.dt*(cine>0?9:5));
  if(!Number.isFinite(target.x))target={...desiredTarget};
  target.x+=(desiredTarget.x-target.x)*smoothing;target.z+=(desiredTarget.z-target.z)*smoothing;target.y+=(desiredTarget.y-target.y)*smoothing;
@@ -94,28 +110,28 @@ setCamera=function(){
 };
 
 // Suppress the larger earlier hit glow and redraw a smaller node-local spark so the reaction silhouette stays visible.
+// Death/finisher frames also keep the body color instead of bleaching the defeated pose white.
 const p6DrawDollBase=drawDoll;
 drawDoll=function(d){
  const hitT=d.hitRegionT||0,localized=hitT>0&&d.hp>0,savedInv=d.invuln;
  if(localized){d.hitRegionT=0;d.invuln=0}
+ else if(d.hp<=0)d.invuln=0;
  p6DrawDollBase(d);
- if(localized){
-  d.hitRegionT=hitT;d.invuln=savedInv;
-  if(typeof hitNodeForRegion==='function'){
-   const n=hitNodeForRegion(d,d.hitRegion,d.hitRegionSide);
-   if(n){
-    const pulse=Math.sin(clamp(hitT/(d.hitRegionMax||.3),0,1)*Math.PI),base=d.player?'#bffcf0':'#ffd39a';
-    orb(n.p,Math.max(n.r*1.12,.125*d.spec.scale),base);
-    if(pulse>.35)orb(add(n.p,V(0,.035*d.spec.scale,0)),Math.max(n.r*.42,.052*d.spec.scale),'#fff5d6');
-   }
+ d.hitRegionT=hitT;d.invuln=savedInv;
+ if(localized&&typeof hitNodeForRegion==='function'){
+  const n=hitNodeForRegion(d,d.hitRegion,d.hitRegionSide);
+  if(n){
+   const pulse=Math.sin(clamp(hitT/(d.hitRegionMax||.3),0,1)*Math.PI),base=d.player?'#bffcf0':'#ffd39a';
+   orb(n.p,Math.max(n.r*1.12,.125*d.spec.scale),base);
+   if(pulse>.35)orb(add(n.p,V(0,.035*d.spec.scale,0)),Math.max(n.r*.42,.052*d.spec.scale),'#fff5d6');
   }
- }else d.invuln=savedInv;
+ }
 };
 
 if(window.parryDoll&&window.parryDoll.snapshot){
  const p6SnapshotBase=window.parryDoll.snapshot;
  window.parryDoll.snapshot=()=>{
-  const upper=Math.atan2(boss.pos.x-player.pos.x,boss.pos.z-player.pos.z),lower=Number.isFinite(player.p6LowerYaw)?player.p6LowerYaw:player.face;
-  return {...p6SnapshotBase(),cameraDeadzone:P6_CAM_DEADZONE,lowerBodyOffset:+angleDelta(lower,upper).toFixed(3),cameraYawOffset:+angleDelta(p6CameraYaw,upper).toFixed(3)};
+  const targetYaw=Math.atan2(boss.pos.x-player.pos.x,boss.pos.z-player.pos.z),lower=Number.isFinite(player.p6LowerYaw)?player.p6LowerYaw:player.face;
+  return {...p6SnapshotBase(),cameraDeadzone:P6_CAM_DEADZONE,lowerBodyOffset:+clamp(angleDelta(lower,player.face),-.68,.68).toFixed(3),upperLockOffset:+angleDelta(player.face,targetYaw).toFixed(3),cameraYawOffset:+angleDelta(p6CameraYaw,targetYaw).toFixed(3)};
  };
 }
