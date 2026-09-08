@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 import {makeEnvironment} from './environment.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 
@@ -22,7 +23,7 @@ class Assembly {
   const c=color(col),cs=new Float32Array(g.attributes.position.count*3);for(let i=0;i<cs.length;i+=3){cs[i]=c.r;cs[i+1]=c.g;cs[i+2]=c.b}g.setAttribute('color',new THREE.BufferAttribute(cs,3));
   if(g.attributes.uv)g.deleteAttribute('uv');const bucket=this.buckets.get(material)||[];bucket.push(g);this.buckets.set(material,bucket);return this;
  }
- build(){const group=new THREE.Group();for(const [name,list] of this.buckets){const merged=mergeGeometries(list,false);const mesh=new THREE.Mesh(merged,this.materials[name]);mesh.castShadow=true;mesh.receiveShadow=true;group.add(mesh);list.forEach(g=>g.dispose())}return group}
+ build(){const group=new THREE.Group();for(const [name,list] of this.buckets){const merged=mergeGeometries(list,false);const mesh=new THREE.Mesh(merged,this.materials[name]);mesh.castShadow=name!=='glow';mesh.receiveShadow=true;group.add(mesh);list.forEach(g=>g.dispose())}return group}
 }
 function frame(up,face){const y=up.clone().normalize(),f=new THREE.Vector3(Math.sin(face),0,Math.cos(face)),x=new THREE.Vector3().crossVectors(y,f);if(x.lengthSq()<.001)x.set(1,0,0);x.normalize();const z=new THREE.Vector3().crossVectors(x,y).normalize();return new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(x,y,z))}
 function copyP(dst,p){dst.set(p.x,p.y,p.z)}
@@ -86,8 +87,9 @@ class Actor {
  update(d,pose){const torso=new THREE.Vector3().subVectors(new THREE.Vector3(d.nodes[1].p.x,d.nodes[1].p.y,d.nodes[1].p.z),new THREE.Vector3(d.nodes[0].p.x,d.nodes[0].p.y,d.nodes[0].p.z)),rotation=frame(torso,d.face);
   for(const {part,link} of this.parts){const a=d.nodes[link.a].p,b=d.nodes[link.b].p;part.position.set((a.x+b.x)*.5,(a.y+b.y)*.5,(a.z+b.z)*.5);v.set(b.x-a.x,b.y-a.y,b.z-a.z);part.quaternion.copy(frame(v,d.face));part.scale.set(link.r,v.length(),link.r);}
   this.nodes.forEach((part,i)=>{copyP(part.position,d.nodes[i].p);part.quaternion.copy(rotation);part.scale.setScalar(d.nodes[i].r)});
-  if(this.weapon){const hand=d.nodes.find(n=>n.name==='hand');copyP(this.weapon.position,hand.p);v.set(pose.x,pose.y,pose.z);v.applyAxisAngle(Y,d.face);this.weapon.quaternion.setFromUnitVectors(Y,v.normalize());this.weapon.scale.setScalar(d.spec.scale);}
+  if(this.weapon){const hand=d.nodes.find(n=>n.name==='hand');copyP(this.weapon.position,hand.p);v.set(pose.x,pose.y,pose.z);const bladeLength=v.length();v.applyAxisAngle(Y,d.face);this.weapon.quaternion.setFromUnitVectors(Y,v.normalize());this.weapon.scale.set(d.spec.scale,d.spec.scale*bladeLength/1.51,d.spec.scale);}
   this.hitLight.intensity=0;
+  if(d.player&&d.parry>0){const hand=d.nodes.find(n=>n.name==='hand');copyP(this.hitLight.position,hand.p);this.hitLight.intensity=.7}
   if(d.hitRegionT>0&&d.hp>0){const n=d.nodes.find(n=>n.name===({head:'head',arm:'elbow',leg:'knee',body:'chest'}[d.hitRegion]||'chest'))||d.nodes[1];copyP(this.hitLight.position,n.p);this.hitLight.intensity=Math.min(2,d.hitRegionT*5)}
  }
  dispose(){this.root.traverse(o=>{if(o.isMesh)o.geometry.dispose()});this.root.removeFromParent()}
@@ -95,7 +97,7 @@ class Actor {
 export class VisualScene {
  constructor(canvas){
   this.renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:'high-performance'});this.renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.65));this.renderer.shadowMap.enabled=true;this.renderer.shadowMap.type=THREE.PCFSoftShadowMap;this.renderer.outputColorSpace=THREE.SRGBColorSpace;this.renderer.toneMapping=THREE.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.18;
-  this.scene=new THREE.Scene();this.scene.background=new THREE.Color('#0c1724');this.scene.fog=new THREE.FogExp2('#182732',.018);this.camera=new THREE.PerspectiveCamera(45,1,.12,140);
+  this.scene=new THREE.Scene();this.scene.background=new THREE.Color('#0c1724');this.scene.fog=new THREE.FogExp2('#182732',.018);const environmentRoom=new RoomEnvironment(),pmrem=new THREE.PMREMGenerator(this.renderer);this.envTarget=pmrem.fromScene(environmentRoom,.06);this.scene.environment=this.envTarget.texture;this.scene.environmentIntensity=.6;environmentRoom.dispose();pmrem.dispose();this.camera=new THREE.PerspectiveCamera(45,1,.12,140);
   this.materials={metal:new THREE.MeshStandardMaterial({vertexColors:true,metalness:.7,roughness:.43}),cloth:new THREE.MeshStandardMaterial({vertexColors:true,metalness:.02,roughness:.95}),glow:new THREE.MeshBasicMaterial({vertexColors:true})};
   this.scene.add(new THREE.HemisphereLight('#a8d4e3','#313c34',2.15));const sun=new THREE.DirectionalLight('#ffd9a1',3.5);sun.position.set(-7,13,4);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-13,right:13,top:13,bottom:-13,near:1,far:40});sun.shadow.bias=-.0005;sun.shadow.normalBias=.025;this.scene.add(sun);this.key=sun;
   const rim=new THREE.DirectionalLight('#88bde5',2.4);rim.position.set(5,5,-9);this.scene.add(rim);

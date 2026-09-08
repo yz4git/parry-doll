@@ -21,3 +21,11 @@ Build: `cd visual-src && npm ci && npm run build`. Runtime assets are vendored; 
 - Detailed circular courtyard, bronze inlays, gate, stone lanterns, outer galleries, cliffs, moonlit sky and cloth banners.
 - All tall scenery stays beyond the original navigable radius; no collisions or gameplay geometry are added.
 - Repeated architecture uses instancing. Only one shadow-casting light and two lantern lights are used.
+
+## Pass 3 — Finish
+
+- Soft environment reflections reveal armor bevels and blade edges.
+- The original weapon-tip length is preserved for each pose; the model is fitted to it.
+- Metal, cloth, stone and luminous elements use distinct material responses.
+- HUD surfaces, health bars and touch controls receive matching restrained colors and highlights, without layout/input changes.
+- Gameplay scripts remain unchanged from the baseline. Integration precedes final checks as requested.
