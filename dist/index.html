@@ -66,6 +66,11 @@
   script.onload=()=>{
     const upgrades=document.createElement('script');
     upgrades.src='./review-upgrades.js?v='+version;
+    upgrades.onload=()=>{
+      const reactions=document.createElement('script');
+      reactions.src='./damage-reactions.js?v='+version;
+      document.body.appendChild(reactions);
+    };
     document.body.appendChild(upgrades);
   };
   document.body.appendChild(script);
