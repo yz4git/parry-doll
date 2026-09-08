@@ -14,3 +14,10 @@ The latest combat scripts, physics, hit reactions, camera, input and timings are
 Detailed validation is deferred until all visual passes are saved.
 
 Build: `cd visual-src && npm ci && npm run build`. Runtime assets are vendored; the game does not load code from a CDN.
+
+## Pass 2 — Courtyard and materials
+
+- Pillow/NumPy generates deterministic stone color, normal and roughness maps. Source: tools/make-materials.py.
+- Detailed circular courtyard, bronze inlays, gate, stone lanterns, outer galleries, cliffs, moonlit sky and cloth banners.
+- All tall scenery stays beyond the original navigable radius; no collisions or gameplay geometry are added.
+- Repeated architecture uses instancing. Only one shadow-casting light and two lantern lights are used.

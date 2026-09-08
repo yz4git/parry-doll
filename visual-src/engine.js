@@ -1,6 +1,8 @@
 import * as THREE from 'three';
+import {makeEnvironment} from './environment.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 
+const ASSET_BASE=new URL('.',document.currentScript?.src||location.href);
 const Y=new THREE.Vector3(0,1,0),v=new THREE.Vector3(),q=new THREE.Quaternion(),m=new THREE.Matrix4();
 const geometries={
  box:new THREE.BoxGeometry(1,1,1),sphere:new THREE.SphereGeometry(1,16,12),
@@ -97,7 +99,7 @@ export class VisualScene {
   this.materials={metal:new THREE.MeshStandardMaterial({vertexColors:true,metalness:.7,roughness:.43}),cloth:new THREE.MeshStandardMaterial({vertexColors:true,metalness:.02,roughness:.95}),glow:new THREE.MeshBasicMaterial({vertexColors:true})};
   this.scene.add(new THREE.HemisphereLight('#a8d4e3','#313c34',2.15));const sun=new THREE.DirectionalLight('#ffd9a1',3.5);sun.position.set(-7,13,4);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-13,right:13,top:13,bottom:-13,near:1,far:40});sun.shadow.bias=-.0005;sun.shadow.normalBias=.025;this.scene.add(sun);this.key=sun;
   const rim=new THREE.DirectionalLight('#88bde5',2.4);rim.position.set(5,5,-9);this.scene.add(rim);
-  const floor=new THREE.Mesh(new THREE.CylinderGeometry(12.2,12.5,.28,96),new THREE.MeshStandardMaterial({color:'#3c4849',roughness:.85,metalness:.08}));floor.position.y=-.19;floor.receiveShadow=true;this.scene.add(floor);this.floor=floor;
+  const floor=new THREE.Mesh(new THREE.CylinderGeometry(12.2,12.5,.28,96),new THREE.MeshStandardMaterial({color:'#3c4849',roughness:.85,metalness:.08}));floor.position.y=-.19;floor.receiveShadow=true;this.scene.add(floor);this.floor=floor;this.environment=makeEnvironment(this.scene,ASSET_BASE);
   this.actors=[];this.dolls=[];this.frameCount=0;
   this.sparks=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(.042,0),new THREE.MeshBasicMaterial({color:0xffffff}),260);this.sparks.instanceMatrix.setUsage(THREE.DynamicDrawUsage);this.sparks.frustumCulled=false;this.scene.add(this.sparks);
  }
@@ -111,7 +113,7 @@ export class VisualScene {
   this.camera.projectionMatrix.elements[9]=-.02+2*(Math.cos(clock*139)*recoil*8)/height;
   [player,boss].forEach((d,i)=>{if(this.dolls[i]!==d){this.actors[i]?.dispose();this.actors[i]=new Actor(d,this.scene,this.materials);this.dolls[i]=d}this.actors[i].update(d,poses[i]);});
   this.sparks.count=Math.min(260,particles.length);particles.slice(0,260).forEach((p,i)=>{m.makeTranslation(p.p.x,p.p.y,p.p.z);this.sparks.setMatrixAt(i,m);this.sparks.setColorAt(i,color(p.color))});this.sparks.instanceMatrix.needsUpdate=true;if(this.sparks.instanceColor)this.sparks.instanceColor.needsUpdate=true;
-  this.renderer.render(this.scene,this.camera);this.frameCount++;
+  this.environment.update(clock);this.renderer.render(this.scene,this.camera);this.frameCount++;
  }
  get diagnostics(){return{frames:this.frameCount,calls:this.renderer.info.render.calls,triangles:this.renderer.info.render.triangles,geometries:this.renderer.info.memory.geometries,textures:this.renderer.info.memory.textures}}
 }
