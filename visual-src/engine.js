@@ -28,7 +28,7 @@ class Assembly {
 }
 function frame(up,face){const y=up.clone().normalize(),f=new THREE.Vector3(Math.sin(face),0,Math.cos(face)),x=new THREE.Vector3().crossVectors(y,f);if(x.lengthSq()<.001)x.set(1,0,0);x.normalize();const z=new THREE.Vector3().crossVectors(x,y).normalize();return new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(x,y,z))}
 function copyP(dst,p){dst.set(p.x,p.y,p.z)}
-function palette(d){return d.player?{plate:'#345e60',dark:'#142a32',trim:'#d0a263',cloth:'#226e71',bone:'#bfc8c0',glow:'#90ffe8'}:d.spec.type==='beast'?{plate:'#5f737d',dark:'#1f303a',trim:'#a9b6b2',cloth:'#282c31',bone:'#d8ccb0',glow:'#eebc68'}:d.spec.type==='spider'?{plate:'#514264',dark:'#211d2a',trim:'#a78d68',cloth:'#272030',bone:'#958490',glow:'#e7a2dd'}:d.spec.scale>1.8?{plate:'#79634a',dark:'#322e27',trim:'#cfad71',cloth:'#5d3930',bone:'#c1ac82',glow:'#ffd074'}:{plate:'#753e37',dark:'#2f2428',trim:'#bb8c57',cloth:'#983f33',bone:'#c9b394',glow:'#ffbe77'}}
+function palette(d){return d.player?{plate:'#345e60',dark:'#142a32',trim:'#d0a263',cloth:'#226e71',bone:'#bfc8c0',glow:'#90ffe8'}:d.spec.type==='beast'?{plate:'#5f737d',dark:'#1f303a',trim:'#a9b6b2',cloth:'#282c31',bone:'#d8ccb0',glow:'#eebc68'}:d.spec.type==='spider'?{plate:'#535e72',dark:'#252d3d',trim:'#abb5be',cloth:'#292f39',bone:'#9eafbc',glow:'#c397ff'}:d.spec.scale>1.8?{plate:'#56606b',dark:'#222a34',trim:'#bbaa88',cloth:'#33323b',bone:'#b1b6b8',glow:'#ff9867'}:{plate:'#424b56',dark:'#1d242e',trim:'#a6a1a0',cloth:'#332d31',bone:'#919ea8',glow:'#ff7755'}}
 export class Actor {
  constructor(d,scene,mats){if(d.player)return new Heroine(d,scene,mats,{Assembly,frame});this.d=d;this.root=new THREE.Group();scene.add(this.root);this.parts=[];this.palette=palette(d);const c=this.palette;
   for(const link of d.links){const a=d.nodes[link.a],b=d.nodes[link.b],assembly=new Assembly(mats),torso=link.a===0&&link.b===1;
@@ -41,6 +41,8 @@ export class Actor {
    }else{
     assembly.add('cylinder',c.plate,[0,.06,0],[1.05,.72,.94]);
     assembly.add('box',c.trim,[0,.05,.92],[.13,.66,.09]);
+    for(const side of [-1,1]){assembly.add('cylinder',c.trim,[side*.9,.02,-.1],[.12,.65,.12]);assembly.add('cylinder',c.dark,[side*.9,-.2,-.1],[.17,.3,.17]);}
+    for(let j=0;j<3;j++)assembly.add('box',c.dark,[0,.18-j*.12,.96],[1.2,.038,.055]);
     for(const y of [-.36,.37])assembly.add('cylinder',c.trim,[0,y,0],[1.12,.055,1.04]);
     if(d.spec.type==='spider'){assembly.add('cone',c.trim,[0,.08,-1.1],[.4,.35,.9],[Math.PI/2,0,0]);}
    }
@@ -77,7 +79,7 @@ export class Actor {
     if(!d.player)a.add('cone',c.trim,[Math.sign(n.rest.x)*.7,.65,-.05],[.24,1.05,.3],[0,0,-Math.sign(n.rest.x)*.35]);
    }else if(n.name==='foot'){
     a.add('box',c.dark,[0,-.1,.22],[1.45,.85,2.05],[0,0,0],'cloth');a.add('plate',c.plate,[0,.27,.7],[.88,.38,.3],[Math.PI/2,0,0]);
-   }else{a.add('sphere',c.dark,[0,0,0],[1.03,1.03,1.03]);a.add('sphere',c.trim,[0,0,.7],[.72,.6,.45]);}
+   }else{a.add('sphere',c.dark,[0,0,0],[1.03,1.03,1.03]);a.add('cylinder',c.trim,[0,0,.35],[.85,.85,.34],[Math.PI/2,0,0]);a.add('ring',c.dark,[0,0,.8],[.69,.69,.69]);a.add('gem',c.glow,[0,0,.83],[.17,.17,.06],[0,0,0],'glow');}
    const part=a.build();this.root.add(part);this.nodes.push(part);
   });
   if(d.spec.type==='human'){
