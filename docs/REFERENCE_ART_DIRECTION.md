@@ -11,4 +11,11 @@ Base: 5b4861f516f62903075bf0293124b187bae13695.
 
 Build: run the existing visual-src npm build after running tools/make-architecture.py and tools/make-materials.py.
 
-Final checks are performed after main integration, as requested.
+## Checks after main integration
+
+- `node tests/reference-models.mjs`: 1,200 frames over four enemy rigs, finite geometry/transforms, zero writes to supplied simulation data, local asset references pass.
+- Gameplay scripts, rendering bridge, controls and camera code are byte-identical to base 5b4861f.
+- Offline mesh inspection checked the assembled heroine and cathedral geometry; adjusted render-only hip height and shoulder width.
+- Existing `tests/check.cjs` fails at its legacy `Finisher damage` expectation. It loads only unchanged game.js; the same failure occurs on the baseline and is not fixed by changing gameplay in this graphics task.
+- Browser/WebGL output and actual iPhone performance have not been tested. Offline mesh rendering is not a browser screenshot.
+

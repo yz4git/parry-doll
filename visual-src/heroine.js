@@ -16,7 +16,7 @@ export class Heroine {
     a.add('ring',silver,[0,.05,-.59],[.21,.15,.21]);
    }else if(neck){a.add('cylinder',skin,[0,.02,0],[.45,.85,.45],[0,0,0],'skin');a.add('cylinder',black,[0,-.29,0],[.59,.3,.55],[0,0,0],'cloth');}
    else{
-    const width=leg?.69:.58;
+    const width=leg?.57:.49;
     a.add(profile([[width*.75,-.5],[width,-.35],[width*1.08,.2],[width*.9,.5]]),black,[0,0,0],[1,1,.88],[0,0,0],'cloth');
     if(names.includes('elbow')&&!names.includes('shoulder')){a.add('plate',silver,[0,-.01,.48],[.48,.55,.2]);a.add('plate',black,[0,.13,.57],[.39,.38,.1]);}
     if(names.includes('foot')){a.add('plate',white,[0,.10,.55],[.43,.65,.13],[0,0,0],'porcelain');a.add('box',silver,[0,.11,.65],[.07,.52,.06]);}
@@ -49,8 +49,11 @@ export class Heroine {
   const blade=new Assembly(mats);blade.add('blade','#dbe4ec',[0,.06,0],[1,1,1]);blade.add('blade','#87cddd',[.013,.09,.023],[.23,.9,.2]);blade.add('box',silver,[0,.015,0],[.33,.055,.14]);blade.add('cylinder',black,[0,-.13,0],[.036,.24,.036],[0,0,0],'cloth');for(let i=0;i<6;i++)blade.add('cylinder',silver,[0,-.22+i*.034,0],[.038,.008,.038]);this.weapon=add(blade);
  }
  update(d,pose,clock=0){const vec=p=>new THREE.Vector3(p.x,p.y,p.z),torso=vec(d.nodes[1].p).sub(vec(d.nodes[0].p)),rot=this.frame(torso,d.face);
-  for(const {l,p} of this.links){const a=vec(d.nodes[l.a].p),b=vec(d.nodes[l.b].p),delta=b.clone().sub(a);p.position.copy(a).lerp(b,.5);p.quaternion.copy(this.frame(delta,d.face));p.scale.set(l.r,delta.length(),l.r);}
-  this.nodes.forEach((p,i)=>{p.position.copy(vec(d.nodes[i].p));p.quaternion.copy(rot);p.scale.setScalar(d.nodes[i].r*(i===2?.88:1))});
+  // Lengthen the leg silhouette and narrow the shoulders without moving hands or hitboxes.
+  const up=torso.clone().normalize(),right=new THREE.Vector3(Math.cos(d.face),0,-Math.sin(d.face));
+  const display=d.nodes.map(n=>{const p=vec(n.p);if(n.name==='hip')p.addScaledVector(up,.25*d.spec.scale);if(n.name==='knee')p.addScaledVector(up,.08*d.spec.scale);if(n.name==='shoulder')p.addScaledVector(right,-Math.sign(n.rest.x)*.12*d.spec.scale);return p});
+  for(const {l,p} of this.links){const a=display[l.a],b=display[l.b],delta=b.clone().sub(a);p.position.copy(a).lerp(b,.5);p.quaternion.copy(this.frame(delta,d.face));p.scale.set(l.r,delta.length(),l.r);}
+  this.nodes.forEach((p,i)=>{p.position.copy(display[i]);p.quaternion.copy(rot);p.scale.setScalar(d.nodes[i].r*(i===2?.88:1))});
   const motion=Math.min(.35,Math.hypot(d.vel?.x||0,d.vel?.z||0)*.035);this.hair.forEach((p,i)=>{p.rotation.x=-motion+Math.sin(clock*2.5+i*.5)*.065;p.rotation.z=Math.sin(clock*2+i*.7)*.05});this.tails.forEach((p,i)=>{p.rotation.x=-motion*.7+Math.sin(clock*2+i)*.04});
   const hand=d.nodes.find(n=>n.name==='hand'),v=vec(pose),length=v.length();v.applyAxisAngle(Y,d.face);this.weapon.position.copy(vec(hand.p));this.weapon.quaternion.setFromUnitVectors(Y,v.normalize());this.weapon.scale.set(d.spec.scale,d.spec.scale*length/1.51,d.spec.scale);
  }
