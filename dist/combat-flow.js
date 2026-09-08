@@ -1,10 +1,10 @@
 'use strict';
 // Combat flow pass: break the permanent face-to-face line with circling, angled entries and recovery exits.
 let flowClock=0,flowOrbitSide=1,flowLastSequence=-1;
-const FLOW_DESIRED=[3.15,3.85,4.15,3.65];
-const FLOW_ORBIT=[1.20,1.95,1.70,.78];
+const FLOW_DESIRED=[3.15,3.85,4.15,3.65,3.30];
+const FLOW_ORBIT=[1.20,1.95,1.70,.78,1.48];
 const FLOW_BIAS={combo:.075,thrust:.025,slam:.045,sidestep:.12,leap:.075,rush:.035,sweep:.10,stomp:.025};
-const FLOW_BODY_OPEN=[.50,.68,.62,.45];
+const FLOW_BODY_OPEN=[.50,.68,.62,.45,.56];
 
 const flowStartEnemyAttack=startEnemyAttack;
 startEnemyAttack=function(move){
