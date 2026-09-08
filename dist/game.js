@@ -6,6 +6,8 @@ const bosses=[{name:'灰の剣士',sub:'ASHEN DUELIST',type:'human',scale:1.15,h
 let W=1,H=1,DPR=1,time=0,mode='title',level=0,player,boss,particles=[],rings=[],shapes=[],shake=0,hitstop=0,toastT=0,combo=0,parries=0,perfects=0,elapsed=0,muted=false,audio=null,camera=V(0,12,18),target=V(0,1,0),last=0,acc=0,attackQueued=false,parryQueued=false;
 let attackBuffer=0,parryBuffer=0;
 const MOVES=[{duration:.38,wind:.09,recover:.27,damage:13,force:13,lunge:4.8},{duration:.4,wind:.10,recover:.29,damage:15,force:17,lunge:5.4},{duration:.52,wind:.15,recover:.43,damage:25,force:32,lunge:6.2}];
+const cameraRig={yaw:Math.PI,initialized:false};
+const angleDelta=(a,b)=>Math.atan2(Math.sin(a-b),Math.cos(a-b));
 const keys=new Set(),input={x:0,z:0,id:null};
 function resize(){W=innerWidth;H=innerHeight;DPR=Math.min(devicePixelRatio||1,2);canvas.width=Math.round(W*DPR);canvas.height=Math.round(H*DPR);ctx.setTransform(DPR,0,0,DPR,0,0)}
 addEventListener('resize',resize);resize();
@@ -96,7 +98,7 @@ class Doll{
  }
  }
 }
-function reset(l=0){level=l;player=new Doll({type:'human',scale:.85,hp:100,color:'#78c1bb'},true);boss=new Doll(bosses[l]);particles=[];rings=[];combo=-1;parries=0;perfects=0;elapsed=0;time=0;hitstop=0;feel.impacts=[];feel.slashes=[];feel.zoom=feel.slow=feel.flash=feel.pulse=feel.damage=0;clearInput();updateHUD()}
+function reset(l=0){level=l;player=new Doll({type:'human',scale:.85,hp:100,color:'#78c1bb'},true);boss=new Doll(bosses[l]);particles=[];rings=[];combo=-1;parries=0;perfects=0;elapsed=0;time=0;hitstop=0;feel.impacts=[];feel.slashes=[];feel.zoom=feel.slow=feel.flash=feel.pulse=feel.damage=0;cameraRig.initialized=false;clearInput();updateHUD()}
 function begin(){if(!audio){try{audio=new (window.AudioContext||window.webkitAudioContext)()}catch{}}audio?.resume();if(mode==='paused'){clearInput();mode='play'}else{reset(mode==='lost'?level:0);mode='play'}$('overlay').classList.add('hidden');sound(330,.3);}
 $('start').onclick=begin;
 function showOverlay(title,desc,button){$('title').textContent=title;$('description').textContent=desc;$('help').classList.add('hidden');$('start').innerHTML=button+' <span>→</span>';$('overlay').classList.remove('hidden')}
@@ -158,7 +160,7 @@ function step(dt){time+=dt;for(const d of [player,boss]){for(const k of ['invuln
  attackBuffer=Math.max(0,attackBuffer-dt);parryBuffer=Math.max(0,parryBuffer-dt);
  if(parryBuffer>0&&playerParry()){parryBuffer=0;attackBuffer=0;}else if(attackBuffer>0&&playerAttack())attackBuffer=0;
  if(player.swing){player.swingClock-=dt;if(player.swingClock<=0)resolveSwing();}
- let x=input.x+(keys.has('KeyD')||keys.has('ArrowRight')?1:0)-(keys.has('KeyA')||keys.has('ArrowLeft')?1:0),z=input.z+(keys.has('KeyS')||keys.has('ArrowDown')?1:0)-(keys.has('KeyW')||keys.has('ArrowUp')?1:0);let magnitude=Math.max(1,Math.hypot(x,z));if(player.down===0&&player.stun===0&&player.dash===0){player.vel.x+=(x/magnitude*4.4-player.vel.x)*.2;player.vel.z+=(z/magnitude*4.4-player.vel.z)*.2;player.face=Math.atan2(boss.pos.x-player.pos.x,boss.pos.z-player.pos.z)}
+ let x=input.x+(keys.has('KeyD')||keys.has('ArrowRight')?1:0)-(keys.has('KeyA')||keys.has('ArrowLeft')?1:0),z=input.z+(keys.has('KeyS')||keys.has('ArrowDown')?1:0)-(keys.has('KeyW')||keys.has('ArrowUp')?1:0);let magnitude=Math.max(1,Math.hypot(x,z));if(player.down===0&&player.stun===0&&player.dash===0){const forward=V(Math.sin(cameraRig.yaw),0,Math.cos(cameraRig.yaw)),right=V(-forward.z,0,forward.x),movement=add(mul(right,x/magnitude),mul(forward,-z/magnitude));player.vel.x+=(movement.x*4.4-player.vel.x)*.2;player.vel.z+=(movement.z*4.4-player.vel.z)*.2;player.face=Math.atan2(boss.pos.x-player.pos.x,boss.pos.z-player.pos.z)}
  let v=sub(player.pos,boss.pos),dist=len(v);if(boss.stun===0&&boss.down===0){boss.face=Math.atan2(v.x,v.z);if(boss.wind>0){boss.wind-=dt;boss.vel.x*=.88;boss.vel.z*=.88;if(boss.wind<=0){boss.strike=.28;boss.attack=.42;boss.didHit=false;boss.sequence++;boss.ai=boss.spec.type==='human'&&boss.spec.scale<2&&boss.sequence%2===1?.3:boss.hp<boss.spec.hp*.5?.55:.95;}}
  else if(boss.strike>0){boss.strike-=dt;const u=norm(v);boss.vel.x=u.x*(boss.spec.type==='beast'?8:3);boss.vel.z=u.z*(boss.spec.type==='beast'?8:3);if(boss.strike<.16&&!boss.didHit){boss.didHit=true;slash(boss,{combo:boss.sequence%3});if(boss.spec.scale>2)groundImpact(add(boss.pos,boss.local(V(0,0,1.7))),1.5);enemyImpact()}}
  else if(dist>2.1+boss.spec.scale*.55){const u=norm(v);boss.vel.x=u.x*boss.spec.speed;boss.vel.z=u.z*boss.spec.speed;boss.ai=Math.max(.3,boss.ai-dt)}else{boss.vel.x*=.8;boss.vel.z*=.8;boss.ai-=dt;if(boss.ai<=0){boss.wind=boss.spec.wind*(boss.hp<boss.spec.hp*.5?.82:1);sound(220,.1,'sine',.015)}}}else if(boss.down>0||boss.broken>0){boss.wind=0;boss.strike=0}
@@ -173,19 +175,46 @@ function step(dt){time+=dt;for(const d of [player,boss]){for(const k of ['invuln
 // Perspective painter: all geometry shares one camera transform and depth ordering.
 let basis;
 function setCamera(){
- const midpoint=mul(add(player.pos,boss.pos),.5),smoothing=1-Math.exp(-feel.dt*8);
- target.x+=(midpoint.x-target.x)*smoothing;target.z+=(midpoint.z-target.z)*smoothing;target.y=1.1;
- const distance=len(sub(player.pos,boss.pos)),portrait=W<H,giant=boss.spec.scale>2;
- const pullback=Math.max(0,distance-3)*(portrait?.68:.48),kick=feel.reduced?0:feel.zoom;
- camera=add(target,V(0,(portrait?8.7:6.9)+(giant?1.1:0)+pullback*.65-kick*.45,(portrait?12:10.1)+(giant?1.1:0)+pullback-kick));
- const f=norm(sub(target,camera)),right=norm(V(-f.z,0,f.x)),up=V(right.y*f.z-right.z*f.y,right.z*f.x-right.x*f.z,right.x*f.y-right.y*f.x);basis={f,right,up};
+ const v=sub(boss.pos,player.pos),distance=Math.hypot(v.x,v.z),desired=Math.atan2(v.x,v.z);
+ const smoothing=1-Math.exp(-feel.dt*5);
+ if(!cameraRig.initialized){cameraRig.yaw=desired;cameraRig.initialized=true}
+ else if(distance>.6)cameraRig.yaw+=clamp(angleDelta(desired,cameraRig.yaw),-2.1*feel.dt,2.1*feel.dt);
+ const forward=V(Math.sin(cameraRig.yaw),0,Math.cos(cameraRig.yaw)),right=V(-forward.z,0,forward.x),portrait=W<H;
+ const giant=Math.max(0,boss.spec.scale-1.3),lookAhead=Math.min(2.4,distance*.43);
+ const desiredTarget=add(player.pos,add(mul(forward,lookAhead),V(0,1.28+giant*.5,0)));
+ if(!Number.isFinite(target.x))target={...desiredTarget};
+ target.x+=(desiredTarget.x-target.x)*smoothing;target.z+=(desiredTarget.z-target.z)*smoothing;target.y=desiredTarget.y;
+ let back=(portrait?5.5:4.35)+Math.max(0,distance-4)*.18,shoulder=portrait?.45:.75;
+ const kick=feel.reduced?0:Math.min(.35,feel.zoom*.35);
+ function positionCamera(){
+  camera=add(player.pos,add(mul(forward,-back+kick),add(mul(right,shoulder),V(0,2.75+giant*.55+(back-4.35)*.16,0))));
+  const f=norm(sub(target,camera)),r=norm(V(-f.z,0,f.x)),up=V(r.y*f.z-r.z*f.y,r.z*f.x-r.x*f.z,r.x*f.y-r.y*f.x);basis={f,right:r,up};
+ }
+ positionCamera();
+ // Fit nominal heads and feet, not transient limbs, to prevent ragdoll camera pumping.
+ for(let attempt=0;attempt<10;attempt++){
+  const fits=[player,boss].every(d=>[V(d.pos.x,.1,d.pos.z),V(d.pos.x,d.nodes[2].rest.y+.28,d.pos.z)].every(p=>{const q=project(p);return q.z>.3&&q.x>W*.07&&q.x<W*.93&&q.y>H*.15&&q.y<H*.86}));
+  if(fits)break;back+=.65;positionCamera();
+ }
 }
 const dot=(a,b)=>a.x*b.x+a.y*b.y+a.z*b.z;
 function project(p){let v=sub(p,camera),z=dot(v,basis.f),f=Math.min(W,H)*1.18;return{x:W/2+dot(v,basis.right)*f/z,y:H*.49-dot(v,basis.up)*f/z,z,s:f/z}}
-function polygon(points,color,stroke){const p=points.map(project);if(p.some(q=>q.z<.1))return;shapes.push({depth:p.reduce((s,q)=>s+q.z,0)/p.length,draw(){ctx.beginPath();p.forEach((q,i)=>i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y));ctx.closePath();ctx.fillStyle=color;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=.6;ctx.stroke()}}})}
+function clipNear(points){
+ const result=[],near=.18;
+ for(let i=0;i<points.length;i++){
+  const a=points[i],b=points[(i+1)%points.length],za=dot(sub(a,camera),basis.f),zb=dot(sub(b,camera),basis.f);
+  if(za>=near)result.push(a);
+  if((za>=near)!==(zb>=near))result.push(add(a,mul(sub(b,a),(near-za)/(zb-za))));
+ }
+ return result;
+}
+function polygon(points,color,stroke){const clipped=clipNear(points);if(clipped.length<3)return;const p=clipped.map(project);shapes.push({depth:p.reduce((s,q)=>s+q.z,0)/p.length,draw(){ctx.beginPath();p.forEach((q,i)=>i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y));ctx.closePath();ctx.fillStyle=color;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=.6;ctx.stroke()}}})}
 function segment(a,b,r,color){const p=project(a),q=project(b);if(p.z<.1||q.z<.1)return;shapes.push({depth:(p.z+q.z)/2,draw(){ctx.lineCap='round';ctx.lineWidth=Math.max(1,(p.s+q.s)*r);ctx.strokeStyle='#0b151b';ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);ctx.stroke();ctx.lineWidth=Math.max(1,(p.s+q.s)*r*.78);ctx.strokeStyle=color;ctx.stroke();ctx.lineCap='butt'}})}
 function orb(p,r,color){const q=project(p);if(q.z<.1)return;shapes.push({depth:q.z,draw(){ctx.fillStyle=color;ctx.beginPath();ctx.arc(q.x,q.y,Math.max(1,r*q.s),0,Math.PI*2);ctx.fill();ctx.fillStyle='#ffffff25';ctx.beginPath();ctx.arc(q.x-r*q.s*.22,q.y-r*q.s*.25,r*q.s*.45,0,Math.PI*2);ctx.fill()}})}
-function floorRing(p,r,color,width=1){const ps=Array.from({length:49},(_,i)=>project(add(p,V(Math.cos(i/48*Math.PI*2)*r,0,Math.sin(i/48*Math.PI*2)*r))));ctx.beginPath();ps.forEach((q,i)=>i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y));ctx.strokeStyle=color;ctx.lineWidth=width;ctx.stroke()}
+function floorRing(p,r,color,width=1){
+ const ps=Array.from({length:49},(_,i)=>project(add(p,V(Math.cos(i/48*Math.PI*2)*r,0,Math.sin(i/48*Math.PI*2)*r))));
+ ctx.beginPath();let active=false;for(const q of ps){if(q.z<.18){active=false;continue}if(active)ctx.lineTo(q.x,q.y);else ctx.moveTo(q.x,q.y);active=true}ctx.strokeStyle=color;ctx.lineWidth=width;ctx.stroke();
+}
 function box(x,y,z,w,h,d,color){const a=V(x-w/2,y,z-d/2),b=V(x+w/2,y,z-d/2),c=V(x+w/2,y,z+d/2),e=V(x-w/2,y,z+d/2),lift=p=>add(p,V(0,h,0));polygon([a,b,lift(b),lift(a)],color);polygon([b,c,lift(c),lift(b)],'#253039');polygon([c,e,lift(e),lift(c)],color);polygon([e,a,lift(a),lift(e)],'#17212a');polygon([lift(a),lift(b),lift(c),lift(e)],'#4d5558')}
 function drawDoll(d){let color=d.invuln>0?'#f7ecd6':d.spec.color;for(const l of d.links)segment(d.nodes[l.a].p,d.nodes[l.b].p,l.r,color);for(const n of d.nodes)orb(n.p,n.r,n.name==='head'?'#e4d4b5':color);
  const head=d.nodes[2].p,eyes=add(head,d.local(V(0,.02,d.nodes[2].r*.88)));segment(add(eyes,d.local(V(-.15,0,0))),add(eyes,d.local(V(.15,0,0))),.035,d.player?'#c6ffff':'#ffdf8d');
