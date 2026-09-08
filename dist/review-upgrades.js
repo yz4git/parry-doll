@@ -81,3 +81,16 @@ enemyPoseTarget=function(d,n){
  }
  p.y+=lift;return p;
 };
+
+// Make the third player swing read as a committed two-handed finishing beat.
+MOVES[2].duration=.72;MOVES[2].wind=.29;MOVES[2].recover=.56;MOVES[2].force=38;MOVES[2].lunge=7.4;
+COMBO_POSES[2]={
+ ready:{hand:V(.10,3.18,-.34),elbow:V(.72,2.52,-.40),blade:V(0,1.18,-.78),twist:-.10,lean:-.26},
+ hit:{hand:V(.02,.96,1.26),elbow:V(.62,1.52,.62),blade:V(0,-1.08,1.08),twist:.10,lean:.58},
+ end:{hand:V(.03,.52,.98),elbow:V(.48,1.04,.48),blade:V(0,-.96,.76),twist:.14,lean:.34}
+};
+const reviewCoreResolveSwing=resolveSwing;
+resolveSwing=function(){
+ const move=player.swing,before=boss.hp;reviewCoreResolveSwing();
+ if(move&&move.combo===2&&!move.finisher&&boss.hp<before){groundImpact(boss.pos,.72);hitstop=Math.max(hitstop,.105);shake=Math.max(shake,.32);}
+};
