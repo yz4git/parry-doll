@@ -4,7 +4,9 @@
 
 ## Play
 
-`dist/` を静的HTTPサーバーで配信してください。実行時の外部依存・ダウンロードはありません。
+GitHub Pages: https://yz4git.github.io/parry-doll/
+
+`dist/` を静的HTTPサーバーで配信してもプレイできます。実行時の外部依存・ダウンロードはありません。
 
 - 移動：左スティック / WASD / 矢印
 - 攻撃：斬る / J / Space。連打で3連撃。
@@ -12,6 +14,10 @@
 - 体勢を崩した敵に接近して攻撃すると強打。
 - 敗北時は同じ敵に再挑戦。敵を倒すとHPが35回復。
 - iPhone横画面推奨。縦画面、マルチタッチ、一時停止、消音にも対応。
+
+### Pages cache policy
+
+Pages版は `version.json` のbuild IDを `no-store` で確認し、JS/CSSをbuild ID付きURLで読み込みます。更新を検知した場合はPARRY DOLLのスコープに属するCacheStorage / Service Workerだけを破棄します。ゲーム中の強制リロードは行いません。
 
 ## Bosses
 
