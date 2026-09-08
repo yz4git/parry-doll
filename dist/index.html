@@ -84,6 +84,12 @@
               product.onload=()=>{
                 const polish=document.createElement('script');
                 polish.src='./combat-polish-v2.js?v='+version;
+                polish.onload=()=>{
+                  const graphics=document.createElement('script');
+                  graphics.src='./visual-engine.js?v='+version;
+                  graphics.onload=()=>{const bridge=document.createElement('script');bridge.src='./visual-upgrade.js?v='+version;document.body.appendChild(bridge)};
+                  document.body.appendChild(graphics);
+                };
                 document.body.appendChild(polish);
               };
               document.body.appendChild(product);
