@@ -72,6 +72,11 @@
       reactions.onload=()=>{
         const hitLocations=document.createElement('script');
         hitLocations.src='./hit-location-reactions.js?v='+version;
+        hitLocations.onload=()=>{
+          const readability=document.createElement('script');
+          readability.src='./combat-readability.js?v='+version;
+          document.body.appendChild(readability);
+        };
         document.body.appendChild(hitLocations);
       };
       document.body.appendChild(reactions);
