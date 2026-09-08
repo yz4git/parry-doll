@@ -87,7 +87,7 @@
                 polish.onload=()=>{
                   const graphics=document.createElement('script');
                   graphics.src='./visual-engine.js?v='+version;
-                  graphics.onload=()=>{const bridge=document.createElement('script');bridge.src='./visual-upgrade.js?v='+version;document.body.appendChild(bridge)};
+                  graphics.onload=()=>{const bridge=document.createElement('script');bridge.src='./visual-upgrade.js?v='+version;bridge.onload=()=>{const fx=document.createElement('script');fx.src='./combat-effects-v2.js?v='+version;document.body.appendChild(fx)};document.body.appendChild(bridge)};
                   document.body.appendChild(graphics);
                 };
                 document.body.appendChild(polish);
