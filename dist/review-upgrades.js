@@ -1,5 +1,12 @@
 'use strict';
 // Product-pass presentation overrides are kept separate from the combat core.
+const reviewStyle=document.createElement('style');
+reviewStyle.textContent=`
+#toast{top:18%;font-size:clamp(16px,2.8vw,24px);letter-spacing:2.5px;text-shadow:0 2px 10px #000}
+#cue{top:27%;font-size:clamp(14px,2.5vw,18px);letter-spacing:3px;text-shadow:0 2px 10px #000}
+@media(max-height:500px){#toast{top:17%}#cue{top:26%}}
+`;
+document.head.appendChild(reviewStyle);
 let reviewCine=0,reviewWasBroken=false;
 setCamera=function(){
  const v=sub(boss.pos,player.pos),distance=Math.hypot(v.x,v.z),desired=Math.atan2(v.x,v.z);
