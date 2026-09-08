@@ -10,9 +10,20 @@
  webgl.addEventListener('webglcontextlost',event=>{event.preventDefault();available=false;webgl.style.display='none'});
  webgl.addEventListener('webglcontextrestored',()=>{available=!!scene;webgl.style.display=available?'':'none'});
 
+ // Detailed-render framing adjustment: keep the Giant's crown below the HUD without pulling the camera farther away.
+ const detailedSetCameraBase=setCamera;
+ setCamera=function(){
+  detailedSetCameraBase();
+  if(boss?.spec?.scale>1.8){
+   const visualTarget=add(target,V(0,1.10,0)),f=norm(sub(visualTarget,camera)),r=norm(V(-f.z,0,f.x)),u=V(r.y*f.z-r.z*f.y,r.z*f.x-r.x*f.z,r.x*f.y-r.y*f.x);
+   basis={f,right:r,up:u};
+  }
+ };
+
  // Visual-only skeleton proxies. The live PBD dolls remain untouched for combat and hit detection.
  const proxyByDoll=new WeakMap(),trailByDoll=new WeakMap();
  const v=(x=0,y=0,z=0)=>({x,y,z}),subv=(a,b)=>v(a.x-b.x,a.y-b.y,a.z-b.z),addv=(a,b)=>v(a.x+b.x,a.y+b.y,a.z+b.z),mulv=(a,s)=>v(a.x*s,a.y*s,a.z*s);
+ const vcross=(a,b)=>v(a.y*b.z-a.z*b.y,a.z*b.x-a.x*b.z,a.x*b.y-a.y*b.x);
  const vlen=a=>Math.hypot(a.x,a.y,a.z),vn=a=>{const l=vlen(a)||1;return mulv(a,1/l)},vdot=(a,b)=>a.x*b.x+a.y*b.y+a.z*b.z;
  const mixv=(a,b,t)=>v(a.x+(b.x-a.x)*t,a.y+(b.y-a.y)*t,a.z+(b.z-a.z)*t);
  function clampDirection(dir,reference,maxAngle){
@@ -86,19 +97,58 @@
    const hand=d.nodes.find(n=>n.name==='hand');if(hand){
     const tip=addv(hand.p,worldBlade(d,blade)),color=d.parry>0?'#ffe6a8':d.player?'#baffed':'#ffbd77';
     const last=history[history.length-1];
-    if(!last||vlen(subv(tip,last.p))>.035)history.push({p:tip,life:.15,color});
-    while(history.length>9)history.shift();
+    if(!last||vlen(subv(tip,last.p))>.024)history.push({p:tip,base:{...hand.p},life:.22,color});
+    while(history.length>13)history.shift();
    }
   }
-  // Dense interpolated samples render as a coherent 3D luminous trail instead of a detached 2D arc.
+  // Render a narrow 3D ribbon around the true blade path rather than a single dotted centerline.
   for(let i=0;i<history.length;i++){
-   const a=history[i],b=history[Math.min(i+1,history.length-1)],steps=i===history.length-1?1:3;
-   for(let k=0;k<steps;k++)out.push({p:mixv(a.p,b.p,k/steps),color:a.color});
+   const a=history[i],b=history[Math.min(i+1,history.length-1)],delta=subv(b.p,a.p),dir=vn(vlen(delta)>.001?delta:v(0,1,0));
+   let side=vcross(dir,v(0,1,0));if(vlen(side)<.05)side=v(1,0,0);side=vn(side);
+   const normal=vn(vcross(side,dir)),steps=i===history.length-1?1:5;
+   for(let k=0;k<steps;k++){
+    const q=mixv(a.p,b.p,k/steps),baseQ=mixv(a.base||a.p,b.base||b.p,k/steps),fade=Math.max(.32,a.life/.22),w=.060*d.spec.scale*fade;
+    // Two spines (tip and upper blade) make the swept sword volume read as a luminous ribbon instead of loose dots.
+    for(const spine of [q,mixv(q,baseQ,.28)]){
+     out.push({p:spine,color:a.color},{p:spine,color:a.color});
+     out.push({p:addv(spine,mulv(side,w)),color:a.color},{p:addv(spine,mulv(side,-w)),color:a.color});
+     out.push({p:addv(spine,mulv(normal,w*.45)),color:a.color},{p:addv(spine,mulv(normal,-w*.45)),color:a.color});
+    }
+   }
+  }
+ }
+
+ let seenParries=parries,parryBurst=null;
+ function closestPointOnDoll(d,point){
+  let best=d.nodes[0]?.p||d.pos,dist=Infinity;
+  for(const n of d.nodes){const q=vlen(subv(n.p,point));if(q<dist){dist=q;best=n.p}}
+  return best;
+ }
+ function updateParryBurst(out,dt){
+  // The global parry count increments exactly once on a successful deflection and is more robust than timing a short counter window.
+  if(parries<seenParries)seenParries=parries;
+  if(parries>seenParries){
+   const hand=player.nodes.find(n=>n.name==='hand')?.p||player.nodes[1].p;
+   const weapon=boss.spec.type==='human'?(boss.nodes.find(n=>n.name==='hand')?.p||closestPointOnDoll(boss,hand)):closestPointOnDoll(boss,hand),contact=mixv(hand,weapon,.55);
+   if(boss.spec.type==='human')contact.y+=.24*Math.min(1.4,boss.spec.scale);
+   parryBurst={p:contact,life:.20,max:.20};seenParries=parries;
+  }
+  if(!parryBurst)return;
+  parryBurst.life=Math.max(0,parryBurst.life-dt);if(parryBurst.life<=0){parryBurst=null;return}
+  const t=1-parryBurst.life/parryBurst.max,r=.055+t*.48,clock=feel.clock*22;
+  // Bright core plus short radial 3D spark spokes. Pure gold is reserved for gameplay-significant parries.
+  for(let i=0;i<4;i++)out.push({p:addv(parryBurst.p,v(0,(i-1.5)*.018,0)),color:i===0?'#fff8dc':'#ffd66f'});
+  for(let i=0;i<12;i++){
+   const a=i/12*Math.PI*2+clock*(i%2?.12:-.09),lift=((i%4)-1.5)*.05,dir=v(Math.cos(a),Math.sin(a*1.55)*.28+lift,Math.sin(a));
+   for(let j=1;j<=3;j++){
+    const q=addv(parryBurst.p,mulv(dir,r*j/3));
+    out.push({p:q,color:j===1?'#fff4c5':j===2?'#ffd05c':'#ff9a43'});
+   }
   }
  }
 
  // Automatic iPhone-friendly quality scaling: preserve gameplay while reducing fill-rate/shadow cost under sustained load.
- let quality='high',slowAccum=0,fastAccum=0,lastFrame=performance.now();
+ let quality='high',slowAccum=0,fastAccum=0,lastFrame=performance.now(),visualExtra=0;
  function applyQuality(next){
   if(!scene||quality===next)return;quality=next;
   const dpr=Math.min(devicePixelRatio||1,next==='high'?1.65:next==='medium'?1.42:1.22),shadow=next==='low'?512:next==='medium'?768:1024;
@@ -119,8 +169,9 @@
   const recoil=feel.reduced?0:shake,dt=Math.max(1/120,Math.min(.05,feel.dt||1/60));
   try{
    const poses=[player,boss].map(d=>d.attack>0?motionPose(d).blade:d.wind>0?COMBO_POSES[enemyMove(d).motion].ready.blade:IDLE_POSE.blade);
-   const visualPlayer=proxyFor(player),visualBoss=proxyFor(boss),visualParticles=particles.slice();
-   addBladeTrail(visualParticles,player,poses[0],dt);addBladeTrail(visualParticles,boss,poses[1],dt);
+   const visualPlayer=proxyFor(player),visualBoss=proxyFor(boss),parryFx=player.counter>1.02||!!parryBurst,sourceParticles=parryFx?particles.filter(p=>p.color!=='#ffde8e'):particles;
+   const visualParticles=sourceParticles.slice();
+   addBladeTrail(visualParticles,player,poses[0],dt);addBladeTrail(visualParticles,boss,poses[1],dt);updateParryBurst(visualParticles,dt);visualExtra=visualParticles.length-sourceParticles.length;
    scene.render({width:W,height:H,camera,forward:basis.f,up:basis.up,player:visualPlayer,boss:visualBoss,poses,particles:visualParticles,clock:feel.clock,recoil});
    // Low silhouettes need a little more separation from the moonlit stone without changing gameplay telegraphs.
    if(scene.renderer){scene.renderer.toneMappingExposure=boss.spec.type==='beast'?1.27:boss.spec.type==='spider'?1.23:1.18}
@@ -134,7 +185,7 @@
   for(const r of rings)floorRing(V(r.p.x,.06,r.p.z),(.5-r.life)*7,r.color,Math.max(1,r.life*5));
   if(boss.wind>0&&mode==='play'){const p=project(add(boss.nodes[2].p,V(0,.55,0)));if(p.z>.18){ctx.fillStyle=boss.wind<Math.max(.06,.48-enemyMove().hits[0])?'#ffdc86':'#d48d64';ctx.font='bold 24px system-ui';ctx.textAlign='center';ctx.fillText(boss.wind<Math.max(.06,.48-enemyMove().hits[0])?'◇':'·',p.x,p.y)}}
   // Detailed rendering owns sword trails. Keep impacts/damage overlays from the original feel pass, but suppress old 2D slash ribbons.
-  const savedSlashes=feel.slashes;feel.slashes=[];drawFeel();feel.slashes=savedSlashes;ctx.restore();
+  const savedSlashes=feel.slashes,savedParticles=particles;feel.slashes=[];if(player.counter>1.02||parryBurst)particles=particles.filter(p=>p.color!=='#ffde8e');drawFeel();particles=savedParticles;feel.slashes=savedSlashes;ctx.restore();
  };
- window.parryVisualDiagnostics=()=>({available,failure,quality,...(scene?.diagnostics||{})});
+ window.parryVisualDiagnostics=()=>({available,failure,quality,visualExtra,parryBurstActive:!!parryBurst,...(scene?.diagnostics||{})});
 })();
