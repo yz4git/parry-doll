@@ -1,9 +1,27 @@
 # PARRY DOLL
 
-Active ragdoll parry boss rush. iPhone landscape supported.
+部位ごとの物理リアクションと、爽快感重視のパリィで戦う4連戦ボスラッシュの初版です。
 
-Serve `dist/` with any static HTTP server. No runtime dependencies.
+## Play
 
-Controls: WASD / left stick to move, J / Attack to strike, K / Parry to deflect.
+`dist/` を静的HTTPサーバーで配信してください。実行時の外部依存・ダウンロードはありません。
 
-Four bosses: Ashen Duelist, Hollow Hound, Threadless Spider, Bell Tower Colossus.
+- 移動：左スティック / WASD / 矢印
+- 攻撃：斬る / J / Space。連打で3連撃。
+- パリィ：弾く / K。金色の合図に合わせる。受付0.52秒。
+- 体勢を崩した敵に接近して攻撃すると強打。
+- 敗北時は同じ敵に再挑戦。敵を倒すとHPが35回復。
+- iPhone横画面推奨。縦画面、マルチタッチ、一時停止、消音にも対応。
+
+## Bosses
+
+灰の剣士 / 鎖骨の獣 / 糸なき蜘蛛 / 鐘楼の巨人。
+人型、四足、八脚、巨体それぞれの骨格と攻撃間隔を持ち、残りHP半分で攻撃テンポが上がります。
+
+## Implementation
+
+Canvas 2Dへ透視投影した3D座標を描画。60Hz固定ステップの位置ベース物理で、関節距離拘束、床・外周衝突、目標姿勢へのモーター、被弾点に近い部位へのインパルスを計算します。強打と死亡時はモーターを解除します。剛体エンジンによる厳密な関節角制限や自己衝突は未実装です。
+
+## Validation
+
+2026-09-08: 4ボスの攻撃、パリィ、被弾、物理値の有限性、関節長、強打、ボス移行、勝利・敗北をヘッドレスのロジック実行で確認。ブラウザー画面での実プレイ・iPhone実機確認は未実施。
