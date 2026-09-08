@@ -75,6 +75,11 @@
         hitLocations.onload=()=>{
           const readability=document.createElement('script');
           readability.src='./combat-readability.js?v='+version;
+          readability.onload=()=>{
+            const flow=document.createElement('script');
+            flow.src='./combat-flow.js?v='+version;
+            document.body.appendChild(flow);
+          };
           document.body.appendChild(readability);
         };
         document.body.appendChild(hitLocations);
