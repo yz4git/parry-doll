@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {Heroine} from './heroine.js';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 import {makeEnvironment} from './environment.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
@@ -28,8 +29,8 @@ class Assembly {
 function frame(up,face){const y=up.clone().normalize(),f=new THREE.Vector3(Math.sin(face),0,Math.cos(face)),x=new THREE.Vector3().crossVectors(y,f);if(x.lengthSq()<.001)x.set(1,0,0);x.normalize();const z=new THREE.Vector3().crossVectors(x,y).normalize();return new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(x,y,z))}
 function copyP(dst,p){dst.set(p.x,p.y,p.z)}
 function palette(d){return d.player?{plate:'#345e60',dark:'#142a32',trim:'#d0a263',cloth:'#226e71',bone:'#bfc8c0',glow:'#90ffe8'}:d.spec.type==='beast'?{plate:'#5f737d',dark:'#1f303a',trim:'#a9b6b2',cloth:'#282c31',bone:'#d8ccb0',glow:'#eebc68'}:d.spec.type==='spider'?{plate:'#514264',dark:'#211d2a',trim:'#a78d68',cloth:'#272030',bone:'#958490',glow:'#e7a2dd'}:d.spec.scale>1.8?{plate:'#79634a',dark:'#322e27',trim:'#cfad71',cloth:'#5d3930',bone:'#c1ac82',glow:'#ffd074'}:{plate:'#753e37',dark:'#2f2428',trim:'#bb8c57',cloth:'#983f33',bone:'#c9b394',glow:'#ffbe77'}}
-class Actor {
- constructor(d,scene,mats){this.d=d;this.root=new THREE.Group();scene.add(this.root);this.parts=[];this.palette=palette(d);const c=this.palette;
+export class Actor {
+ constructor(d,scene,mats){if(d.player)return new Heroine(d,scene,mats,{Assembly,frame});this.d=d;this.root=new THREE.Group();scene.add(this.root);this.parts=[];this.palette=palette(d);const c=this.palette;
   for(const link of d.links){const a=d.nodes[link.a],b=d.nodes[link.b],assembly=new Assembly(mats),torso=link.a===0&&link.b===1;
    assembly.add('cylinder',c.dark,[0,0,0],[.82,1,.78],[0,0,0],'cloth');
    if(torso){
@@ -98,7 +99,7 @@ export class VisualScene {
  constructor(canvas){
   this.renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:'high-performance'});this.renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.65));this.renderer.shadowMap.enabled=true;this.renderer.shadowMap.type=THREE.PCFSoftShadowMap;this.renderer.outputColorSpace=THREE.SRGBColorSpace;this.renderer.toneMapping=THREE.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.18;
   this.scene=new THREE.Scene();this.scene.background=new THREE.Color('#0c1724');this.scene.fog=new THREE.FogExp2('#182732',.018);const environmentRoom=new RoomEnvironment(),pmrem=new THREE.PMREMGenerator(this.renderer);this.envTarget=pmrem.fromScene(environmentRoom,.06);this.scene.environment=this.envTarget.texture;this.scene.environmentIntensity=.6;environmentRoom.dispose();pmrem.dispose();this.camera=new THREE.PerspectiveCamera(45,1,.12,140);
-  this.materials={metal:new THREE.MeshStandardMaterial({vertexColors:true,metalness:.7,roughness:.43}),cloth:new THREE.MeshStandardMaterial({vertexColors:true,metalness:.02,roughness:.95}),glow:new THREE.MeshBasicMaterial({vertexColors:true})};
+  this.materials={skin:new THREE.MeshStandardMaterial({vertexColors:true,roughness:.65}),hair:new THREE.MeshStandardMaterial({vertexColors:true,roughness:.36,metalness:.15}),porcelain:new THREE.MeshStandardMaterial({vertexColors:true,roughness:.32,metalness:.25}),metal:new THREE.MeshStandardMaterial({vertexColors:true,metalness:.7,roughness:.43}),cloth:new THREE.MeshStandardMaterial({vertexColors:true,metalness:.02,roughness:.95}),glow:new THREE.MeshBasicMaterial({vertexColors:true})};
   this.scene.add(new THREE.HemisphereLight('#a8d4e3','#313c34',2.15));const sun=new THREE.DirectionalLight('#ffd9a1',3.5);sun.position.set(-7,13,4);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-13,right:13,top:13,bottom:-13,near:1,far:40});sun.shadow.bias=-.0005;sun.shadow.normalBias=.025;this.scene.add(sun);this.key=sun;
   const rim=new THREE.DirectionalLight('#88bde5',2.4);rim.position.set(5,5,-9);this.scene.add(rim);
   const floor=new THREE.Mesh(new THREE.CylinderGeometry(12.2,12.5,.28,96),new THREE.MeshStandardMaterial({color:'#3c4849',roughness:.85,metalness:.08}));floor.position.y=-.19;floor.receiveShadow=true;this.scene.add(floor);this.floor=floor;this.environment=makeEnvironment(this.scene,ASSET_BASE);
@@ -113,7 +114,7 @@ export class VisualScene {
   // Match the original projection centre and shake exactly; camera decisions stay in the game.
   this.camera.projectionMatrix.elements[8]=-2*(Math.sin(clock*113)*recoil*14)/width;
   this.camera.projectionMatrix.elements[9]=-.02+2*(Math.cos(clock*139)*recoil*8)/height;
-  [player,boss].forEach((d,i)=>{if(this.dolls[i]!==d){this.actors[i]?.dispose();this.actors[i]=new Actor(d,this.scene,this.materials);this.dolls[i]=d}this.actors[i].update(d,poses[i]);});
+  [player,boss].forEach((d,i)=>{if(this.dolls[i]!==d){this.actors[i]?.dispose();this.actors[i]=new Actor(d,this.scene,this.materials);this.dolls[i]=d}this.actors[i].update(d,poses[i],clock);});
   this.sparks.count=Math.min(260,particles.length);particles.slice(0,260).forEach((p,i)=>{m.makeTranslation(p.p.x,p.p.y,p.p.z);this.sparks.setMatrixAt(i,m);this.sparks.setColorAt(i,color(p.color))});this.sparks.instanceMatrix.needsUpdate=true;if(this.sparks.instanceColor)this.sparks.instanceColor.needsUpdate=true;
   this.environment.update(clock);this.renderer.render(this.scene,this.camera);this.frameCount++;
  }
