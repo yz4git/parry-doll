@@ -97,7 +97,7 @@ class Doll{
  }
 }
 function reset(l=0){level=l;player=new Doll({type:'human',scale:.85,hp:100,color:'#78c1bb'},true);boss=new Doll(bosses[l]);particles=[];rings=[];combo=-1;parries=0;perfects=0;elapsed=0;time=0;hitstop=0;feel.impacts=[];feel.slashes=[];feel.zoom=feel.slow=feel.flash=feel.pulse=feel.damage=0;clearInput();updateHUD()}
-function begin(){if(!audio){try{audio=new (window.AudioContext||window.webkitAudioContext)()}catch{}}audio?.resume();if(mode==='paused'){mode='play'}else{reset(mode==='lost'?level:0);mode='play'}$('overlay').classList.add('hidden');sound(330,.3);}
+function begin(){if(!audio){try{audio=new (window.AudioContext||window.webkitAudioContext)()}catch{}}audio?.resume();if(mode==='paused'){clearInput();mode='play'}else{reset(mode==='lost'?level:0);mode='play'}$('overlay').classList.add('hidden');sound(330,.3);}
 $('start').onclick=begin;
 function showOverlay(title,desc,button){$('title').textContent=title;$('description').textContent=desc;$('help').classList.add('hidden');$('start').innerHTML=button+' <span>→</span>';$('overlay').classList.remove('hidden')}
 function pause(){if(mode==='play'){mode='paused';clearInput();showOverlay('PAUSED','ひと呼吸。戦いはここから。','戦いに戻る')}else if(mode==='paused')begin()}
@@ -110,7 +110,7 @@ const stick=$('stick');function moveStick(e){if(e.pointerId!==input.id)return;co
 stick.onpointerdown=e=>{e.preventDefault();if(input.id!==null)return;input.id=e.pointerId;stick.setPointerCapture(e.pointerId);moveStick(e)};stick.onpointermove=moveStick;function endStick(e){if(e.pointerId===input.id){input.id=null;input.x=input.z=0;$('knob').style.transform=''}}stick.onpointerup=endStick;stick.onpointercancel=endStick;stick.onlostpointercapture=endStick;
 for(const id of ['attack','parry']){const b=$(id);b.onpointerdown=e=>{e.preventDefault();b.setPointerCapture(e.pointerId);b.classList.add('pressed');if(id==='attack')attackQueued=true;else parryQueued=true};for(const event of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(event,()=>b.classList.remove('pressed'))}
 function burst(p,color,count=24,power=6){for(let i=0;i<count;i++){const v=V((Math.random()-.5)*power,Math.random()*power,(Math.random()-.5)*power);particles.push({p:{...p},v,life:.35+Math.random()*.4,max:.75,color})}if(particles.length>260)particles.splice(0,particles.length-260)}
-function ring(p,color){rings.push({p:{...p},life:.5,color})}
+function ring(p,color){rings.push({p:{...p},life:.5,color});if(rings.length>24)rings.shift()}
 function groundImpact(p,power){
  burst(V(p.x,.12,p.z),'#a39e8b',Math.round(12+power*7),3.5+power);
  ring(V(p.x,.06,p.z),'#d4b98a');shake=Math.max(shake,Math.min(.3,power*.12));
@@ -144,8 +144,8 @@ function resolveSwing(){
  const damage=finisher?65:move.damage+(move.counter?14:0);
  if(hurt(boss,damage,force,point)){
   boss.posture+=finisher?0:move.counter?19:move.combo===2?15:8;
-  if(finisher){boss.broken=0;boss.posture=0;announce('決 着 の 一 撃',1.2);ring(point,'#ffd287');hitstop=.15;shake=.5;sound(65,.5,'sawtooth',.1)}
-  else if(move.counter){announce('弾 き 返 し',.7);ring(point,'#baffee');hitstop=.085;shake=.3;}
+  if(finisher){boss.broken=0;boss.posture=0;if(boss.hp>0)announce('決 着 の 一 撃',1.2);ring(point,'#ffd287');hitstop=.15;shake=.5;sound(65,.5,'sawtooth',.1)}
+  else if(move.counter){if(boss.hp>0)announce('弾 き 返 し',.7);ring(point,'#baffee');hitstop=.085;shake=.3;}
  }
 }
 function playerParry(){if(player.parryCool>0||player.down>0||player.hp<=0)return false;player.parry=.56;player.parryCool=.62;player.swing=null;player.attack=0;player.cool=Math.min(player.cool,.1);ring(player.nodes[1].p,'#8de7e0');sound(680,.1,'sine',.025);return true}
