@@ -22,7 +22,7 @@ function damageReactionFor(d,amount,forceMag){
  const seq=(d.reviewHitSeq=(d.reviewHitSeq||0)+1),edge=Math.hypot(d.pos.x,d.pos.z)>8.75;
  if(edge&&amount>=20)return 'wall';
  if(amount<=14)return seq%3===0?'stagger':'flinch';
- if(amount<=18)return seq%2?'stagger':'flinch';
+ if(amount<=18)return 'stagger';
  if(amount<=29)return seq%3===0?'knockdown':seq%2?'buckle':'heavy';
  if(amount<=44)return seq%2?'spin':'knockdown';
  return forceMag>40?'knockdown':'heavy';
