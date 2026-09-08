@@ -5,9 +5,36 @@ const V=(x=0,y=0,z=0)=>({x,y,z}),add=(a,b)=>V(a.x+b.x,a.y+b.y,a.z+b.z),sub=(a,b)
 const bosses=[{name:'灰の剣士',sub:'ASHEN DUELIST',type:'human',scale:1.15,hp:135,color:'#bd6449',speed:2.2,damage:12,wind:1.0,attackName:'連ね斬り'},{name:'鎖骨の獣',sub:'THE HOLLOW HOUND',type:'beast',scale:1.3,hp:175,color:'#859eac',speed:3.1,damage:14,wind:.88,attackName:'牙の突進'},{name:'糸なき蜘蛛',sub:'THE THREADLESS',type:'spider',scale:1.2,hp:210,color:'#a090be',speed:2.0,damage:15,wind:.82,attackName:'八脚薙ぎ'},{name:'鐘楼の巨人',sub:'BELL TOWER COLOSSUS',type:'human',scale:2.15,hp:290,color:'#ba975a',speed:1.45,damage:22,wind:1.15,attackName:'鐘砕き'}];
 let W=1,H=1,DPR=1,time=0,mode='title',level=0,player,boss,particles=[],rings=[],shapes=[],shake=0,hitstop=0,toastT=0,combo=0,parries=0,perfects=0,elapsed=0,muted=false,audio=null,camera=V(0,12,18),target=V(0,1,0),last=0,acc=0,attackQueued=false,parryQueued=false;
 let attackBuffer=0,parryBuffer=0;
-const MOVES=[{duration:.38,wind:.09,recover:.27,damage:13,force:13,lunge:4.8},{duration:.4,wind:.10,recover:.29,damage:15,force:17,lunge:5.4},{duration:.52,wind:.15,recover:.43,damage:25,force:32,lunge:6.2}];
+const MOVES=[{name:'袈裟斬り',duration:.42,wind:.12,recover:.30,damage:13,force:13,lunge:4.8},{name:'斬り上げ',duration:.44,wind:.13,recover:.32,damage:15,force:17,lunge:5.4},{name:'叩き斬り',duration:.62,wind:.24,recover:.50,damage:25,force:32,lunge:6.2}];
 const cameraRig={yaw:Math.PI,initialized:false};
 const angleDelta=(a,b)=>Math.atan2(Math.sin(a-b),Math.cos(a-b));
+// Each clip drives a full-body target pose; the ragdoll remains the physical result.
+const COMBO_POSES=[
+ {ready:{hand:V(.78,2.2,-.12),elbow:V(.9,1.95,-.22),blade:V(.25,.85,-.35),twist:-.48,lean:-.10},hit:{hand:V(-.32,1.35,.95),elbow:V(.15,1.65,.65),blade:V(-.7,-.55,.8),twist:.48,lean:.22},end:{hand:V(-.68,.95,.5),elbow:V(-.12,1.25,.32),blade:V(-.85,-.35,.12),twist:.65,lean:.12}},
+ {ready:{hand:V(-.63,.9,.24),elbow:V(-.1,1.2,.32),blade:V(-.72,-.6,.18),twist:.55,lean:.12},hit:{hand:V(.3,1.9,.96),elbow:V(.65,1.72,.58),blade:V(.65,.7,.65),twist:-.5,lean:.04},end:{hand:V(.9,2.22,.05),elbow:V(.83,1.9,-.08),blade:V(.48,.88,-.05),twist:-.68,lean:-.06}},
+ {ready:{hand:V(.18,2.7,-.12),elbow:V(.64,2.2,-.2),blade:V(0,.92,-.45),twist:-.08,lean:-.18},hit:{hand:V(.08,1.35,1.0),elbow:V(.6,1.65,.55),blade:V(0,-.78,.78),twist:.08,lean:.38},end:{hand:V(.08,.7,.77),elbow:V(.5,1.18,.42),blade:V(0,-.75,.62),twist:.12,lean:.25}}
+];
+const IDLE_POSE={hand:V(.7,1,.2),elbow:V(.72,1.4,.08),blade:V(.03,.85,.55),twist:0,lean:0};
+const blendPose=(a,b,t)=>({hand:add(a.hand,mul(sub(b.hand,a.hand),t)),elbow:add(a.elbow,mul(sub(b.elbow,a.elbow),t)),blade:add(a.blade,mul(sub(b.blade,a.blade),t)),twist:a.twist+(b.twist-a.twist)*t,lean:a.lean+(b.lean-a.lean)*t});
+function motionPose(d){
+ if(d.attack<=0||d.motion<0)return IDLE_POSE;
+ const clip=COMBO_POSES[d.motion],duration=d.motionDuration,elapsed=duration-d.attack,contact=d.motionContact;
+ const frames=[[0,IDLE_POSE],[contact*.58,clip.ready],[contact,clip.hit],[contact+(duration-contact)*.42,clip.end],[duration,IDLE_POSE]];
+ for(let i=1;i<frames.length;i++)if(elapsed<=frames[i][0]){const a=frames[i-1],b=frames[i],t=clamp((elapsed-a[0])/(b[0]-a[0]),0,1);return blendPose(a[1],b[1],t*t*(3-2*t))}
+ return IDLE_POSE;
+}
+function poseTarget(d,n){
+ const p={...n.rest};if(d.attack<=0||d.motion<0)return p;
+ const pose=motionPose(d),scale=d.spec.scale,active=clamp(Math.sin((1-d.attack/d.motionDuration)*Math.PI)*1.5,0,1);
+ if(n.name==='hand')return mul(pose.hand,scale);
+ if(n.name==='elbow'&&n.rest.x>0)return mul(pose.elbow,scale);
+ if(d.motion===2&&(n.name==='offhand'||(n.name==='elbow'&&n.rest.x<0))){const q=n.name==='offhand'?add(pose.hand,V(-.16,-.04,-.08)):V(-pose.elbow.x,pose.elbow.y,pose.elbow.z);return add(p,mul(sub(mul(q,scale),p),active))}
+ if(n.name==='chest'||n.name==='head'){p.z+=pose.lean*scale;p.y-=Math.max(0,pose.lean)*.23*scale}
+ if(n.name==='shoulder'||n.name==='offhand'||n.name==='elbow'){const c=Math.cos(pose.twist),sn=Math.sin(pose.twist),x=p.x;p.x=x*c+p.z*sn;p.z=-x*sn+p.z*c+pose.lean*scale}
+ if(n.name==='hip')p.y-=d.motion===2?active*.13*scale:active*.04*scale;
+ if(n.name==='foot'||n.name==='knee'){p.z+=(n.rest.x>0?1:-1)*active*(d.motion===2?.32:.18)*scale;p.x+=Math.sign(n.rest.x)*active*.06*scale}
+ return p;
+}
 const keys=new Set(),input={x:0,z:0,id:null};
 function resize(){W=innerWidth;H=innerHeight;DPR=Math.min(devicePixelRatio||1,2);canvas.width=Math.round(W*DPR);canvas.height=Math.round(H*DPR);ctx.setTransform(DPR,0,0,DPR,0,0)}
 addEventListener('resize',resize);resize();
@@ -35,7 +62,7 @@ function impact(p,kind='hit',power=1){
  combatSound(kind);
 }
 function slash(d,move){
- feel.slashes.push({p:add(d.pos,V(0,1.35*d.spec.scale,0)),face:d.face,combo:move.combo||0,radius:2.1*d.spec.scale,life:.2,max:.2,color:move.counter?'#adffed':d.player?'#c6fff1':'#ffb66e'});
+ feel.slashes.push({p:add(d.pos,V(0,1.35*d.spec.scale,0)),face:d.face,combo:move.finisher?2:(move.combo||0),radius:2.1*d.spec.scale,life:.2,max:.2,color:move.counter?'#adffed':d.player?'#c6fff1':'#ffb66e'});
  if(feel.slashes.length>8)feel.slashes.shift();
 }
 function updateFeel(dt){
@@ -48,7 +75,7 @@ function drawFeel(){
  ctx.save();ctx.globalCompositeOperation='lighter';
  for(const f of feel.slashes){
   ctx.globalAlpha=clamp(f.life/f.max,0,1)*.7;const t=1-f.life/f.max;
-  for(let band=0;band<3;band++){const points=[];for(let k=0;k<=18;k++){const a=f.face+(k/18-.5)*2.5+(f.combo===1?-t:t)*.6,r=f.radius-band*.13;points.push(project(add(f.p,V(Math.sin(a)*r,Math.sin(k/18*Math.PI)*.35,Math.cos(a)*r))))}
+  for(let band=0;band<3;band++){const points=[];for(let k=0;k<=18;k++){const a=f.face+(k/18-.5)*2.5+(f.combo===1?-t:t)*.6,r=f.radius-band*.13;const sweep=(k/18-.5)*2.3,local=f.combo===2?V(Math.sin(sweep)*.12,Math.cos(sweep)*r-r*.48,Math.sin(sweep)*r*.65+r*.45):V(Math.sin(sweep)*r,(f.combo===1?1:-1)*Math.sin(sweep)*r*.58,Math.cos(sweep)*r*.7);const c=Math.cos(f.face),sn=Math.sin(f.face);points.push(project(add(f.p,V(local.x*c+local.z*sn,local.y,-local.x*sn+local.z*c))))}
    ctx.beginPath();points.forEach((q,i)=>i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y));ctx.strokeStyle=f.color;ctx.lineWidth=band===0?3:1;ctx.stroke();}
  }
  for(const f of feel.impacts){const q=project(f.p);if(q.z<=0)continue;const t=1-f.life/f.max,r=q.s*(.2+t*1.6)*f.power;
@@ -61,7 +88,7 @@ function drawFeel(){
  if(feel.damage>0){ctx.strokeStyle=`rgba(193,62,43,${Math.min(.6,feel.damage)})`;ctx.lineWidth=14;ctx.strokeRect(0,0,W,H)}
 }
 class Doll{
- constructor(spec,isPlayer=false){this.spec=spec;this.player=isPlayer;this.pos=V(0,0,isPlayer?3:-3);this.vel=V();this.face=isPlayer?Math.PI:0;this.hp=spec.hp;this.posture=0;this.stun=0;this.down=0;this.invuln=0;this.attack=0;this.parry=0;this.cool=0;this.parryCool=0;this.ai=1.6;this.wind=0;this.strike=0;this.didHit=false;this.sequence=0;this.comboWindow=0;this.counter=0;this.broken=0;this.swing=null;this.swingClock=0;this.dash=0;this.recovery=1;this.airborne=false;this.impactCool=0;this.enraged=false;this.nodes=[];this.links=[];this.build();}
+ constructor(spec,isPlayer=false){this.spec=spec;this.player=isPlayer;this.pos=V(0,0,isPlayer?3:-3);this.vel=V();this.face=isPlayer?Math.PI:0;this.hp=spec.hp;this.posture=0;this.stun=0;this.down=0;this.invuln=0;this.attack=0;this.parry=0;this.cool=0;this.parryCool=0;this.ai=1.6;this.wind=0;this.strike=0;this.didHit=false;this.sequence=0;this.comboWindow=0;this.counter=0;this.broken=0;this.swing=null;this.swingClock=0;this.motion=-1;this.motionDuration=.42;this.motionContact=.12;this.dash=0;this.recovery=1;this.airborne=false;this.impactCool=0;this.enraged=false;this.nodes=[];this.links=[];this.build();}
  node(name,p,r){this.nodes.push({name,rest:p,p:add(this.pos,p),prev:add(this.pos,p),r:r*this.spec.scale});return this.nodes.length-1}
  link(a,b,r){this.links.push({a,b,length:len(sub(this.nodes[a].rest,this.nodes[b].rest)),r:r*this.spec.scale})}
  build(){let s=this.spec.scale;const n=(name,x,y,z,r=.17)=>this.node(name,V(x*s,y*s,z*s),r),l=(a,b,r=.14)=>this.link(a,b,r);
@@ -80,9 +107,13 @@ class Doll{
   }
   this.vel=add(this.vel,mul(force,heavy?.27:.15));
  }
- physics(dt){let speed=Math.hypot(this.vel.x,this.vel.z);const fallen=this.hp<=0||this.down>0;this.recovery=fallen?0:Math.min(1,this.recovery+dt*2.8);let motor=fallen?0:(this.stun>0?12:65)*(.18+.82*this.recovery);const attackPose=Math.sin(clamp(this.attack/(this.player?(this.swing?.duration||.42):.42),0,1)*Math.PI),walk=time*10;
- for(let i=0;i<this.nodes.length;i++){const n=this.nodes[i],rest={...n.rest};if(n.name==='foot'||n.name==='knee'){rest.z+=Math.sin(walk+(i%2)*Math.PI)*Math.min(speed*.09,.25);if(n.name==='foot')rest.y+=Math.max(0,Math.sin(walk+(i%2)*Math.PI))*.15*Math.min(speed,1)}if(n.name==='hand'){rest.z+=attackPose*1.4;rest.y+=attackPose*(this.player&&combo===2?1.1:.6);if(this.player)rest.x+=Math.sin((1-this.attack/.45)*Math.PI*2)*attackPose*(combo===1?-.8:.8);if(this.parry>0){rest.y+=.9;rest.z+=.6}}if(n.name==='offhand'&&this.parry>0){rest.y+=.65;rest.z+=.55}if(this.wind>0&&n.name==='hand'){rest.y+=1.1;rest.z-=.5}
- const goal=add(this.pos,this.local(rest));let velocity=mul(sub(n.p,n.prev),fallen?.987:.93);n.prev={...n.p};n.p=add(n.p,velocity);n.p.y-=18*dt*dt;if(motor){n.p=add(n.p,mul(sub(goal,n.p),Math.min(motor*dt*dt, .1)));n.p.y+=18*dt*dt*.85}}
+ physics(dt){let speed=Math.hypot(this.vel.x,this.vel.z);const fallen=this.hp<=0||this.down>0;this.recovery=fallen?0:Math.min(1,this.recovery+dt*2.8);let motor=fallen?0:(this.stun>0?12:65)*(.18+.82*this.recovery);const walk=time*10;
+ for(let i=0;i<this.nodes.length;i++){
+ const n=this.nodes[i],rest=this.player?poseTarget(this,n):{...n.rest};
+ if((n.name==='foot'||n.name==='knee')&&this.attack===0){rest.z+=Math.sin(walk+(i%2)*Math.PI)*Math.min(speed*.09,.25);if(n.name==='foot')rest.y+=Math.max(0,Math.sin(walk+(i%2)*Math.PI))*.15*Math.min(speed,1)}
+ if(!this.player&&n.name==='hand'){const phase=Math.sin(clamp(this.attack/.42,0,1)*Math.PI);rest.z+=phase*1.4;rest.y+=phase*.6;if(this.wind>0){rest.y+=1.1;rest.z-=.5}}
+ if(this.parry>0&&(n.name==='hand'||n.name==='offhand')){rest.y+=.8;rest.z+=.55}
+ const goal=add(this.pos,this.local(rest));let velocity=mul(sub(n.p,n.prev),fallen?.987:.93);n.prev={...n.p};n.p=add(n.p,velocity);n.p.y-=18*dt*dt;if(motor){n.p=add(n.p,mul(sub(goal,n.p),Math.min(motor*(this.attack>0?(n.name==='hand'||n.name==='elbow'?3.3:1.6):1)*dt*dt, .1)));n.p.y+=18*dt*dt*.85}}
  const fallingSpeed=(this.nodes[0].p.y-this.nodes[0].prev.y)/dt;
  for(let pass=0;pass<7;pass++){for(const l of this.links){const a=this.nodes[l.a],b=this.nodes[l.b],v=sub(b.p,a.p),d=len(v)||.001,c=mul(v,(d-l.length)/d*.5);a.p=add(a.p,c);b.p=sub(b.p,c)}for(const n of this.nodes){if(n.p.y<n.r){n.p.y=n.r;n.prev.x+=(n.p.x-n.prev.x)*.16;n.prev.z+=(n.p.z-n.prev.z)*.16}const rad=Math.hypot(n.p.x,n.p.z);if(rad>11.5){n.p.x*=11.5/rad;n.p.z*=11.5/rad}}}
  const hip=this.nodes[0];this.impactCool=Math.max(0,this.impactCool-dt);
@@ -125,7 +156,7 @@ function playerAttack(){
  const finisher=boss.broken>0,counter=player.counter>0;
  combo=player.comboWindow>0?(combo+1)%3:0;
  const move=MOVES[combo];player.swing={...move,combo,finisher,counter};
- player.attack=finisher?.62:move.duration;player.swingClock=finisher?.17:move.wind;
+ player.attack=finisher?.68:move.duration;player.swingClock=finisher?.25:move.wind;player.motion=finisher?2:combo;player.motionDuration=player.attack;player.motionContact=player.swingClock;
  player.cool=finisher?.65:move.recover;player.comboWindow=.82;
  player.dash=.13;const v=sub(boss.pos,player.pos);player.face=Math.atan2(v.x,v.z);
  const distance=len(v),u=norm(v),stop=.9+boss.spec.scale*.5;
@@ -218,7 +249,7 @@ function floorRing(p,r,color,width=1){
 function box(x,y,z,w,h,d,color){const a=V(x-w/2,y,z-d/2),b=V(x+w/2,y,z-d/2),c=V(x+w/2,y,z+d/2),e=V(x-w/2,y,z+d/2),lift=p=>add(p,V(0,h,0));polygon([a,b,lift(b),lift(a)],color);polygon([b,c,lift(c),lift(b)],'#253039');polygon([c,e,lift(e),lift(c)],color);polygon([e,a,lift(a),lift(e)],'#17212a');polygon([lift(a),lift(b),lift(c),lift(e)],'#4d5558')}
 function drawDoll(d){let color=d.invuln>0?'#f7ecd6':d.spec.color;for(const l of d.links)segment(d.nodes[l.a].p,d.nodes[l.b].p,l.r,color);for(const n of d.nodes)orb(n.p,n.r,n.name==='head'?'#e4d4b5':color);
  const head=d.nodes[2].p,eyes=add(head,d.local(V(0,.02,d.nodes[2].r*.88)));segment(add(eyes,d.local(V(-.15,0,0))),add(eyes,d.local(V(.15,0,0))),.035,d.player?'#c6ffff':'#ffdf8d');
- if(d.spec.type==='human'){const hand=d.nodes.find(n=>n.name==='hand').p,blade=add(hand,d.local(V(.03,d.attack>0?.35:.85,d.attack>0?1.3:.55)));segment(hand,blade,.045,d.player?'#c5f8ee':'#f2c57c');orb(hand,.12,'#e9c989');if(d.attack>0){const end=add(blade,d.local(V(-.5,.1,-.15)));segment(blade,end,.06,'#ffe5a077')}}
+ if(d.spec.type==='human'){const hand=d.nodes.find(n=>n.name==='hand').p,blade=add(hand,d.local(mul(d.player?motionPose(d).blade:V(.03,d.attack>0?.35:.85,d.attack>0?1.3:.55),d.spec.scale)));segment(hand,blade,.045,d.player?'#c5f8ee':'#f2c57c');orb(hand,.12,'#e9c989');if(d.attack>0){const end=add(blade,d.local(V(-.5,.1,-.15)));segment(blade,end,.06,'#ffe5a077')}}
  if(d.parry>0){const p=project(d.nodes[1].p);shapes.push({depth:p.z-.3,draw(){ctx.strokeStyle='#b9ffef';ctx.lineWidth=2;ctx.beginPath();ctx.arc(p.x,p.y,p.s*.85,-2.8,.2);ctx.stroke()}})}
 }
 function render(){setCamera();ctx.save();const recoil=feel.reduced?0:shake;ctx.translate(Math.sin(feel.clock*113)*recoil*14,Math.cos(feel.clock*139)*recoil*8);const bg=ctx.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#0b131e');bg.addColorStop(.55,'#27313a');bg.addColorStop(1,'#101820');ctx.fillStyle=bg;ctx.fillRect(-20,-20,W+40,H+40);shapes=[];
