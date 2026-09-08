@@ -50,7 +50,7 @@ setCamera=function(){
  let contact=clamp((3.40-distance)/1.70,0,1)*(active?1:.45);
  if(boss.spec.scale>1.8)contact*=.72;
  if(contact<=.01)return;
- const heavyBeat=player.attack>0&&player.motion===2?1.38:1;
+ const heavyBeat=player.attack>0&&player.motion===2?1.8:1;
  const side=(level%2?-.82:1),shift=(W<H?.34:1.15)*contact*side*heavyBeat;
  camera=add(camera,mul(basis.right,shift));
  const mid=add(mul(player.pos,.44),mul(boss.pos,.56)),focus=V(mid.x,1.28+Math.max(0,boss.spec.scale-1.3)*.48,mid.z);
