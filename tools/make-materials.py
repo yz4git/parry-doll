@@ -18,7 +18,7 @@ for row in range(4):
    draw.line(points,fill=130,width=1)
 seam=np.asarray(seams.filter(ImageFilter.GaussianBlur(1)),dtype=np.float32)/255
 height=np.clip(height-seam*.28,0,1)
-base=np.stack([52+height*47,63+height*43,65+height*37],axis=-1)
+base=np.stack([155+height*62,155+height*59,145+height*54],axis=-1)
 base+=fine[:,:,None]*1.8;base*=1-seam[:,:,None]*.35
 moss=np.maximum(0,h-.67)*40;base[:,:,1]+=moss;base[:,:,0]-=moss*.3
 Image.fromarray(np.uint8(np.clip(base,0,255))).save(out/'stone-color.png',optimize=True)
