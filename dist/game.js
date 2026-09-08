@@ -2,7 +2,7 @@
 // Dependency-free 3D projection + fixed-step active position-based ragdolls.
 const $=id=>document.getElementById(id),canvas=$('game'),ctx=canvas.getContext('2d');
 const V=(x=0,y=0,z=0)=>({x,y,z}),add=(a,b)=>V(a.x+b.x,a.y+b.y,a.z+b.z),sub=(a,b)=>V(a.x-b.x,a.y-b.y,a.z-b.z),mul=(a,s)=>V(a.x*s,a.y*s,a.z*s),len=a=>Math.hypot(a.x,a.y,a.z),norm=a=>mul(a,1/(len(a)||1)),clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
-const bosses=[{name:'灰の剣士',sub:'ASHEN DUELIST',type:'human',scale:1.15,hp:135,color:'#bd6449',speed:2.2,damage:12,wind:1.0},{name:'鎖骨の獣',sub:'THE HOLLOW HOUND',type:'beast',scale:1.3,hp:175,color:'#859eac',speed:3.1,damage:14,wind:.88},{name:'糸なき蜘蛛',sub:'THE THREADLESS',type:'spider',scale:1.2,hp:210,color:'#a090be',speed:2.0,damage:15,wind:.82},{name:'鐘楼の巨人',sub:'BELL TOWER COLOSSUS',type:'human',scale:2.15,hp:290,color:'#ba975a',speed:1.45,damage:22,wind:1.15}];
+const bosses=[{name:'灰の剣士',sub:'ASHEN DUELIST',type:'human',scale:1.15,hp:135,color:'#bd6449',speed:2.2,damage:12,wind:1.0,attackName:'連ね斬り'},{name:'鎖骨の獣',sub:'THE HOLLOW HOUND',type:'beast',scale:1.3,hp:175,color:'#859eac',speed:3.1,damage:14,wind:.88,attackName:'牙の突進'},{name:'糸なき蜘蛛',sub:'THE THREADLESS',type:'spider',scale:1.2,hp:210,color:'#a090be',speed:2.0,damage:15,wind:.82,attackName:'八脚薙ぎ'},{name:'鐘楼の巨人',sub:'BELL TOWER COLOSSUS',type:'human',scale:2.15,hp:290,color:'#ba975a',speed:1.45,damage:22,wind:1.15,attackName:'鐘砕き'}];
 let W=1,H=1,DPR=1,time=0,mode='title',level=0,player,boss,particles=[],rings=[],shapes=[],shake=0,hitstop=0,toastT=0,combo=0,parries=0,perfects=0,elapsed=0,muted=false,audio=null,camera=V(0,12,18),target=V(0,1,0),last=0,acc=0,attackQueued=false,parryQueued=false;
 let attackBuffer=0,parryBuffer=0;
 const MOVES=[{duration:.38,wind:.09,recover:.27,damage:13,force:13,lunge:4.8},{duration:.4,wind:.10,recover:.29,damage:15,force:17,lunge:5.4},{duration:.52,wind:.15,recover:.43,damage:25,force:32,lunge:6.2}];
@@ -59,7 +59,7 @@ function drawFeel(){
  if(feel.damage>0){ctx.strokeStyle=`rgba(193,62,43,${Math.min(.6,feel.damage)})`;ctx.lineWidth=14;ctx.strokeRect(0,0,W,H)}
 }
 class Doll{
- constructor(spec,isPlayer=false){this.spec=spec;this.player=isPlayer;this.pos=V(0,0,isPlayer?3:-3);this.vel=V();this.face=isPlayer?Math.PI:0;this.hp=spec.hp;this.posture=0;this.stun=0;this.down=0;this.invuln=0;this.attack=0;this.parry=0;this.cool=0;this.parryCool=0;this.ai=1.6;this.wind=0;this.strike=0;this.didHit=false;this.sequence=0;this.comboWindow=0;this.counter=0;this.broken=0;this.swing=null;this.swingClock=0;this.dash=0;this.nodes=[];this.links=[];this.build();}
+ constructor(spec,isPlayer=false){this.spec=spec;this.player=isPlayer;this.pos=V(0,0,isPlayer?3:-3);this.vel=V();this.face=isPlayer?Math.PI:0;this.hp=spec.hp;this.posture=0;this.stun=0;this.down=0;this.invuln=0;this.attack=0;this.parry=0;this.cool=0;this.parryCool=0;this.ai=1.6;this.wind=0;this.strike=0;this.didHit=false;this.sequence=0;this.comboWindow=0;this.counter=0;this.broken=0;this.swing=null;this.swingClock=0;this.dash=0;this.recovery=1;this.airborne=false;this.impactCool=0;this.enraged=false;this.nodes=[];this.links=[];this.build();}
  node(name,p,r){this.nodes.push({name,rest:p,p:add(this.pos,p),prev:add(this.pos,p),r:r*this.spec.scale});return this.nodes.length-1}
  link(a,b,r){this.links.push({a,b,length:len(sub(this.nodes[a].rest,this.nodes[b].rest)),r:r*this.spec.scale})}
  build(){let s=this.spec.scale;const n=(name,x,y,z,r=.17)=>this.node(name,V(x*s,y*s,z*s),r),l=(a,b,r=.14)=>this.link(a,b,r);
@@ -68,11 +68,32 @@ class Doll{
  // Cross braces retain torso structure when motors release.
  }
  local(p){const c=Math.cos(this.face),s=Math.sin(this.face);return V(p.x*c+p.z*s,p.y,-p.x*s+p.z*c)}
- impulse(point,force){const sorted=this.nodes.map(n=>({n,d:len(sub(n.p,point))})).sort((a,b)=>a.d-b.d);for(let i=0;i<sorted.length;i++){const n=sorted[i].n,w=i===0?1:.24/(1+sorted[i].d);n.prev=sub(n.prev,mul(force,w/60))}this.vel=add(this.vel,mul(force,.15));}
- physics(dt){let speed=Math.hypot(this.vel.x,this.vel.z);const fallen=this.hp<=0||this.down>0;let motor=fallen?0:this.stun>0?12:65;const attackPose=Math.sin(clamp(this.attack/(this.player?(this.swing?.duration||.42):.42),0,1)*Math.PI),walk=time*10;
+ impulse(point,force){
+  const heavy=len(force)>24,center=this.nodes[0].p;
+  const sorted=this.nodes.map(n=>({n,d:len(sub(n.p,point))})).sort((a,b)=>a.d-b.d);
+  for(let i=0;i<sorted.length;i++){
+   const n=sorted[i].n,w=(heavy?.30:.035)+(i===0?.7:.2/(1+sorted[i].d));
+   const offset=sub(n.p,center),spin=heavy?V(-offset.y*force.x*.10,(offset.x*force.x+offset.z*force.z)*.08,-offset.y*force.z*.10):V();
+   n.prev=sub(n.prev,mul(add(mul(force,w),spin),1/60));
+  }
+  this.vel=add(this.vel,mul(force,heavy?.27:.15));
+ }
+ physics(dt){let speed=Math.hypot(this.vel.x,this.vel.z);const fallen=this.hp<=0||this.down>0;this.recovery=fallen?0:Math.min(1,this.recovery+dt*2.8);let motor=fallen?0:(this.stun>0?12:65)*(.18+.82*this.recovery);const attackPose=Math.sin(clamp(this.attack/(this.player?(this.swing?.duration||.42):.42),0,1)*Math.PI),walk=time*10;
  for(let i=0;i<this.nodes.length;i++){const n=this.nodes[i],rest={...n.rest};if(n.name==='foot'||n.name==='knee'){rest.z+=Math.sin(walk+(i%2)*Math.PI)*Math.min(speed*.09,.25);if(n.name==='foot')rest.y+=Math.max(0,Math.sin(walk+(i%2)*Math.PI))*.15*Math.min(speed,1)}if(n.name==='hand'){rest.z+=attackPose*1.4;rest.y+=attackPose*(this.player&&combo===2?1.1:.6);if(this.player)rest.x+=Math.sin((1-this.attack/.45)*Math.PI*2)*attackPose*(combo===1?-.8:.8);if(this.parry>0){rest.y+=.9;rest.z+=.6}}if(n.name==='offhand'&&this.parry>0){rest.y+=.65;rest.z+=.55}if(this.wind>0&&n.name==='hand'){rest.y+=1.1;rest.z-=.5}
  const goal=add(this.pos,this.local(rest));let velocity=mul(sub(n.p,n.prev),fallen?.987:.93);n.prev={...n.p};n.p=add(n.p,velocity);n.p.y-=18*dt*dt;if(motor){n.p=add(n.p,mul(sub(goal,n.p),Math.min(motor*dt*dt, .1)));n.p.y+=18*dt*dt*.85}}
+ const fallingSpeed=(this.nodes[0].p.y-this.nodes[0].prev.y)/dt;
  for(let pass=0;pass<7;pass++){for(const l of this.links){const a=this.nodes[l.a],b=this.nodes[l.b],v=sub(b.p,a.p),d=len(v)||.001,c=mul(v,(d-l.length)/d*.5);a.p=add(a.p,c);b.p=sub(b.p,c)}for(const n of this.nodes){if(n.p.y<n.r){n.p.y=n.r;n.prev.x+=(n.p.x-n.prev.x)*.16;n.prev.z+=(n.p.z-n.prev.z)*.16}const rad=Math.hypot(n.p.x,n.p.z);if(rad>11.5){n.p.x*=11.5/rad;n.p.z*=11.5/rad}}}
+ const hip=this.nodes[0];this.impactCool=Math.max(0,this.impactCool-dt);
+ if(fallen){
+  this.pos.x=hip.p.x;this.pos.z=hip.p.z;
+  if(hip.p.y>hip.r+.55)this.airborne=true;
+  if(this.airborne&&hip.p.y<hip.r+.16&&fallingSpeed<-1.4&&this.impactCool===0){
+   this.airborne=false;this.impactCool=.55;groundImpact(hip.p,this.spec.scale);
+  }
+  if(Math.hypot(hip.p.x,hip.p.z)>11.15&&this.impactCool===0){
+   this.impactCool=.65;groundImpact(hip.p,this.spec.scale);this.vel=mul(this.vel,-.22);
+  }
+ }
  }
 }
 function reset(l=0){level=l;player=new Doll({type:'human',scale:.85,hp:100,color:'#78c1bb'},true);boss=new Doll(bosses[l]);particles=[];rings=[];combo=-1;parries=0;perfects=0;elapsed=0;time=0;hitstop=0;feel.impacts=[];feel.slashes=[];feel.zoom=feel.slow=feel.flash=feel.pulse=feel.damage=0;clearInput();updateHUD()}
@@ -90,7 +111,12 @@ stick.onpointerdown=e=>{e.preventDefault();if(input.id!==null)return;input.id=e.
 for(const id of ['attack','parry']){const b=$(id);b.onpointerdown=e=>{e.preventDefault();b.setPointerCapture(e.pointerId);b.classList.add('pressed');if(id==='attack')attackQueued=true;else parryQueued=true};for(const event of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(event,()=>b.classList.remove('pressed'))}
 function burst(p,color,count=24,power=6){for(let i=0;i<count;i++){const v=V((Math.random()-.5)*power,Math.random()*power,(Math.random()-.5)*power);particles.push({p:{...p},v,life:.35+Math.random()*.4,max:.75,color})}if(particles.length>260)particles.splice(0,particles.length-260)}
 function ring(p,color){rings.push({p:{...p},life:.5,color})}
-function hurt(d,amount,force,point){if(d.invuln>0||d.hp<=0)return false;d.hp=Math.max(0,d.hp-amount);d.invuln=d.player?.32:.12;d.stun=d.player?.22:.075;if(d.player){d.swing=null;d.attack=0;d.counter=0;}d.impulse(point,force);burst(point,d.player?'#8ce6df':'#edac73',18,5);shake=Math.max(shake,amount>=25?.25:.12);hitstop=amount>=25?.08:.042;impact(point,amount>=60?'finish':'hit',amount>=25?1.5:1);if(d.player)feel.damage=.5;if(len(force)>24){d.down=.85;d.stun=1.3}if(d.hp<=0){d.down=99;d.impulse(point,mul(force,1.8));d.wind=0;announce(d.player?'敗 北':'討 伐',2.6);transition=2.7}return true}
+function groundImpact(p,power){
+ burst(V(p.x,.12,p.z),'#a39e8b',Math.round(12+power*7),3.5+power);
+ ring(V(p.x,.06,p.z),'#d4b98a');shake=Math.max(shake,Math.min(.3,power*.12));
+ impact(V(p.x,.18,p.z),'ground',Math.min(1.7,power));
+}
+function hurt(d,amount,force,point){if(d.invuln>0||d.hp<=0)return false;d.hp=Math.max(0,d.hp-amount);d.invuln=d.player?.32:.12;d.stun=d.player?.22:.075;if(d.player){d.swing=null;d.attack=0;d.counter=0;}d.impulse(point,force);burst(point,d.player?'#8ce6df':'#edac73',18,5);shake=Math.max(shake,amount>=25?.25:.12);hitstop=amount>=25?.08:.042;impact(point,amount>=60?'finish':'hit',amount>=25?1.5:1);if(d.player)feel.damage=.5;if(len(force)>24){d.down=amount>=60?1.2:.85;d.stun=amount>=60?1.6:1.15}if(d.hp<=0){d.down=99;d.impulse(point,mul(force,1.8));d.wind=0;if(!d.player){impact(point,'finish',2.3);feel.slow=.65;groundImpact(d.pos,d.spec.scale)}announce(d.player?'敗 北':'討 伐',2.6);transition=2.7}return true}
 let transition=0;
 function playerAttack(){
  if(player.cool>0||player.down>0||player.hp<=0)return false;
@@ -126,24 +152,24 @@ function playerParry(){if(player.parryCool>0||player.down>0||player.hp<=0)return
 function enemyImpact(){if(boss.hp<=0||boss.stun>0||player.hp<=0)return;const v=sub(player.pos,boss.pos),distance=len(v);if(distance>2.5+boss.spec.scale*.8)return;
  if(player.parry>0){const perfect=player.parry>.22;parries++;if(perfect)perfects++;boss.posture+=perfect?32:24;boss.stun=.5;boss.wind=0;boss.strike=0;player.invuln=.28;player.counter=1.25;player.parryCool=.1;player.cool=0;const point=boss.nodes[2].p;boss.impulse(point,add(mul(norm(v),-15),V(0,6,0)));burst(player.nodes[1].p,'#ffde8e',45,10);ring(player.nodes[1].p,'#ffdf91');announce(perfect?'PERFECT PARRY':'PARRY',.65);shake=.28;hitstop=.075;impact(player.nodes[1].p,'parry',1.6);player.parry=0;
  }else{const force=add(mul(norm(v),boss.spec.scale>2?29:18),V(0,boss.spec.scale>2?11:5,0));hurt(player,boss.spec.damage,force,player.nodes[boss.sequence%2?2:1].p)}}
-function updateHUD(){$('bossName').textContent=boss.spec.name;$('phase').textContent=`0${level+1} / 04`;$('bossHP').style.width=100*boss.hp/boss.spec.hp+'%';$('posture').style.width=clamp(boss.posture,0,100)+'%';$('playerHP').style.width=player.hp+'%';$('stats').textContent=player.counter>0?'反撃チャンス！':`PARRY ${parries} · PERFECT ${perfects}`;$('round').textContent=boss.spec.sub;}
-function step(dt){time+=dt;for(const d of [player,boss]){for(const k of ['invuln','stun','down','attack','parry','cool','parryCool','comboWindow','counter','broken','dash'])d[k]=Math.max(0,d[k]-dt)}if(mode==='play'){elapsed+=dt;
- if(player.hp>0&&boss.hp>0){if(attackQueued)attackBuffer=.24;if(parryQueued)parryBuffer=.18;attackQueued=parryQueued=false;
+function updateHUD(){$('bossName').textContent=boss.spec.name;$('phase').textContent=boss.enraged?'覚醒':`0${level+1} / 04`;$('bossHP').style.width=100*boss.hp/boss.spec.hp+'%';$('posture').style.width=clamp(boss.posture,0,100)+'%';$('playerHP').style.width=player.hp+'%';$('stats').textContent=player.counter>0?'反撃チャンス！':`PARRY ${parries} · PERFECT ${perfects}`;$('round').textContent=boss.spec.sub;}
+function step(dt){time+=dt;for(const d of [player,boss]){for(const k of ['invuln','stun','down','attack','parry','cool','parryCool','comboWindow','counter','broken','dash'])d[k]=Math.max(0,d[k]-dt)}if(mode==='play'){
+ if(player.hp>0&&boss.hp>0){if(!boss.enraged&&boss.hp<=boss.spec.hp*.5){boss.enraged=true;ring(boss.pos,'#ff9564');announce('覚 醒 — '+boss.spec.attackName,1);combatSound('break')}if(attackQueued)attackBuffer=.24;if(parryQueued)parryBuffer=.18;attackQueued=parryQueued=false;
  attackBuffer=Math.max(0,attackBuffer-dt);parryBuffer=Math.max(0,parryBuffer-dt);
  if(parryBuffer>0&&playerParry()){parryBuffer=0;attackBuffer=0;}else if(attackBuffer>0&&playerAttack())attackBuffer=0;
  if(player.swing){player.swingClock-=dt;if(player.swingClock<=0)resolveSwing();}
  let x=input.x+(keys.has('KeyD')||keys.has('ArrowRight')?1:0)-(keys.has('KeyA')||keys.has('ArrowLeft')?1:0),z=input.z+(keys.has('KeyS')||keys.has('ArrowDown')?1:0)-(keys.has('KeyW')||keys.has('ArrowUp')?1:0);let magnitude=Math.max(1,Math.hypot(x,z));if(player.down===0&&player.stun===0&&player.dash===0){player.vel.x+=(x/magnitude*4.4-player.vel.x)*.2;player.vel.z+=(z/magnitude*4.4-player.vel.z)*.2;player.face=Math.atan2(boss.pos.x-player.pos.x,boss.pos.z-player.pos.z)}
- let v=sub(player.pos,boss.pos),dist=len(v);if(boss.stun===0&&boss.down===0){boss.face=Math.atan2(v.x,v.z);if(boss.wind>0){boss.wind-=dt;boss.vel.x*=.88;boss.vel.z*=.88;if(boss.wind<=0){boss.strike=.28;boss.attack=.42;boss.didHit=false;boss.sequence++;boss.ai=boss.hp<boss.spec.hp*.5?.55:.95;}}
- else if(boss.strike>0){boss.strike-=dt;const u=norm(v);boss.vel.x=u.x*(boss.spec.type==='beast'?8:3);boss.vel.z=u.z*(boss.spec.type==='beast'?8:3);if(boss.strike<.16&&!boss.didHit){boss.didHit=true;slash(boss,{combo:boss.sequence%3});enemyImpact()}}
+ let v=sub(player.pos,boss.pos),dist=len(v);if(boss.stun===0&&boss.down===0){boss.face=Math.atan2(v.x,v.z);if(boss.wind>0){boss.wind-=dt;boss.vel.x*=.88;boss.vel.z*=.88;if(boss.wind<=0){boss.strike=.28;boss.attack=.42;boss.didHit=false;boss.sequence++;boss.ai=boss.spec.type==='human'&&boss.spec.scale<2&&boss.sequence%2===1?.3:boss.hp<boss.spec.hp*.5?.55:.95;}}
+ else if(boss.strike>0){boss.strike-=dt;const u=norm(v);boss.vel.x=u.x*(boss.spec.type==='beast'?8:3);boss.vel.z=u.z*(boss.spec.type==='beast'?8:3);if(boss.strike<.16&&!boss.didHit){boss.didHit=true;slash(boss,{combo:boss.sequence%3});if(boss.spec.scale>2)groundImpact(add(boss.pos,boss.local(V(0,0,1.7))),1.5);enemyImpact()}}
  else if(dist>2.1+boss.spec.scale*.55){const u=norm(v);boss.vel.x=u.x*boss.spec.speed;boss.vel.z=u.z*boss.spec.speed;boss.ai=Math.max(.3,boss.ai-dt)}else{boss.vel.x*=.8;boss.vel.z*=.8;boss.ai-=dt;if(boss.ai<=0){boss.wind=boss.spec.wind*(boss.hp<boss.spec.hp*.5?.82:1);sound(220,.1,'sine',.015)}}}else if(boss.down>0||boss.broken>0){boss.wind=0;boss.strike=0}
  if(boss.posture>=100&&boss.stun<1.5){boss.posture=0;boss.stun=3.5;boss.broken=3.5;boss.down=.65;boss.wind=0;announce('体 勢 崩 し — 斬 れ',1.8);impact(boss.nodes[1].p,'break',2)}if(boss.stun===0)boss.posture=Math.max(0,boss.posture-dt*2);
  // Root collision avoids interpenetration without freezing the limb response.
  v=sub(player.pos,boss.pos);dist=len(v);const separation=.65+boss.spec.scale*.5;if(dist<separation){const push=mul(norm(dist?v:V(1,0,0)),(separation-dist)*.5);player.pos=add(player.pos,push);boss.pos=sub(boss.pos,push)}
- }else{transition-=dt;attackQueued=parryQueued=false;if(transition<=0){if(player.hp<=0){mode='lost';showOverlay('もう一度、弾け。',`${boss.spec.name}との再戦。パリィは金色の合図から少し早めでも成功します。`,'この敵に再挑戦')}else if(level<3){const health=Math.min(100,player.hp+35);level++;boss=new Doll(bosses[level]);player.pos=V(0,0,3);player.vel=V();player.hp=health;player.invuln=1;announce(boss.spec.name,2)}else{mode='won';showOverlay('四 異 討 伐',`全4体を撃破。パリィ ${parries}回 / PERFECT ${perfects}回 / ${Math.floor(elapsed)}秒`,'もう一度挑む')}}}
+ }else{transition-=dt;attackQueued=parryQueued=false;if(transition<=0){if(player.hp<=0){mode='lost';showOverlay('もう一度、弾け。',`${boss.spec.name}との再戦。パリィは金色の合図から少し早めでも成功します。`,'この敵に再挑戦')}else if(level<3){const health=Math.min(100,player.hp+35);level++;boss=new Doll(bosses[level]);const shift=sub(V(0,0,3),player.pos);player.pos=V(0,0,3);player.vel=V();for(const n of player.nodes){n.p=add(n.p,shift);n.prev={...n.p}}player.swing=null;player.attack=0;player.cool=0;player.counter=0;player.hp=health;player.invuln=1;announce(boss.spec.name,2)}else{mode='won';showOverlay('四 異 討 伐',`全4体を撃破。パリィ ${parries}回 / PERFECT ${perfects}回 / ${Math.floor(elapsed)}秒`,'もう一度挑む')}}}
  }
- for(const d of [player,boss]){if(d.hp>0){d.pos.x+=d.vel.x*dt;d.pos.z+=d.vel.z*dt;d.vel=mul(d.vel,.97);let r=Math.hypot(d.pos.x,d.pos.z);if(r>10){d.pos.x*=10/r;d.pos.z*=10/r}}d.physics(dt)}
+ for(const d of [player,boss]){if(d.hp>0&&d.down===0){d.pos.x+=d.vel.x*dt;d.pos.z+=d.vel.z*dt;d.vel=mul(d.vel,.97);let r=Math.hypot(d.pos.x,d.pos.z);if(r>10){d.pos.x*=10/r;d.pos.z*=10/r}}d.physics(dt)}
  for(const p of particles){p.life-=dt;p.p=add(p.p,mul(p.v,dt));p.v.y-=16*dt;if(p.p.y<.05){p.p.y=.05;p.v.y*=-.35}}particles=particles.filter(p=>p.life>0);for(const r of rings)r.life-=dt;rings=rings.filter(r=>r.life>0);toastT-=dt;if(toastT<=0)$('toast').textContent='';
- $('cue').textContent=mode==='play'&&boss.wind>0&&boss.wind<.55?'弾 け':mode==='play'&&boss.wind>=.55?'構 え':'';updateHUD();}
+ $('cue').textContent=mode==='play'&&boss.wind>0&&boss.wind<.36?'弾 け':mode==='play'&&boss.wind>=.36?boss.spec.attackName:'';updateHUD();}
 // Perspective painter: all geometry shares one camera transform and depth ordering.
 let basis;
 function setCamera(){
@@ -173,14 +199,17 @@ function render(){setCamera();ctx.save();const recoil=feel.reduced?0:shake;ctx.t
  box(-4,0,-12,1.5,6,1.3,'#37424a');box(4,0,-12,1.5,6,1.3,'#37424a');box(0,5.5,-12,9,1,1.5,'#404b51');
  shapes.sort((a,b)=>b.depth-a.depth);for(const s of shapes)s.draw();shapes=[];
  floorRing(V(0,.03,0),9.8,'#c4a57155',2);floorRing(V(0,.035,0),4,'#b3a28a33');
+ if(mode==='play'&&boss.wind>0){const ready=boss.wind<.36;floorRing(V(boss.pos.x,.04,boss.pos.z),(2.2+boss.spec.scale*.6)*(1-clamp(boss.wind/boss.spec.wind,0,1)*.18),ready?'#ffcf8288':'#ed886644',ready?2.5:1)}
+ if(boss.broken>0)floorRing(V(boss.pos.x,.05,boss.pos.z),1.3+Math.sin(feel.clock*7)*.08,'#ffe2a3',2);
+ if(player.counter>0)floorRing(V(player.pos.x,.05,player.pos.z),.8,'#99ffee',2);
  for(const d of [player,boss]){const p=project(V(d.pos.x,.02,d.pos.z));ctx.fillStyle='#03060955';ctx.beginPath();ctx.ellipse(p.x,p.y,p.s*d.spec.scale*.75,p.s*d.spec.scale*.28,0,0,Math.PI*2);ctx.fill();drawDoll(d)}
  for(const p of particles)orb(p.p,.035+p.life*.025,p.color);shapes.sort((a,b)=>b.depth-a.depth);for(const s of shapes)s.draw();for(const r of rings)floorRing(V(r.p.x,.06,r.p.z),(.5-r.life)*7,r.color,Math.max(1,r.life*5));
- if(boss.wind>0&&mode==='play'){const q=project(add(boss.nodes[2].p,V(0,.55,0)));ctx.fillStyle=boss.wind<.55?'#ffdc86':'#d48d64';ctx.font='bold 24px system-ui';ctx.textAlign='center';ctx.fillText(boss.wind<.55?'◇':'·',q.x,q.y)}
+ if(boss.wind>0&&mode==='play'){const q=project(add(boss.nodes[2].p,V(0,.55,0)));ctx.fillStyle=boss.wind<.36?'#ffdc86':'#d48d64';ctx.font='bold 24px system-ui';ctx.textAlign='center';ctx.fillText(boss.wind<.36?'◇':'·',q.x,q.y)}
  drawFeel();ctx.restore();}
 function frame(now){
  const dt=Math.min((now-last)/1000||0,.05);last=now;
  if(mode!=='paused'){
-  updateFeel(dt);
+  updateFeel(dt);if(mode==='play')elapsed+=dt;
   if(hitstop>0)hitstop=Math.max(0,hitstop-dt);
   else{acc+=dt*(feel.slow>0?.45:1);let steps=0;while(acc>=1/60&&steps++<4){step(1/60);acc-=1/60;if(hitstop>0){acc=0;break}}}
  }
