@@ -73,8 +73,8 @@ setCamera=function(){
  cameraRig.yaw=p6CameraYaw;
  const forward=V(Math.sin(p6CameraYaw),0,Math.cos(p6CameraYaw)),right=V(-forward.z,0,forward.x),portrait=W<H;
  const giant=Math.max(0,boss.spec.scale-1.3),lookAhead=Math.min(2.4,distance*.43);
- const normalTarget=add(player.pos,add(mul(forward,lookAhead),V(0,1.28+giant*.28,0)));
- const bossFocus=add(boss.pos,V(0,1.20+giant*.42,0));
+ const normalTarget=add(player.pos,add(mul(forward,lookAhead),V(0,1.28+giant*.72,0)));
+ const bossFocus=add(boss.pos,V(0,1.20+giant*.82,0));
  const desiredTarget=add(mul(normalTarget,1-cine*.72),mul(bossFocus,cine*.72));
  const smoothing=1-Math.exp(-feel.dt*(cine>0?9:5));
  if(!Number.isFinite(target.x))target={...desiredTarget};
