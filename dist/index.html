@@ -81,6 +81,11 @@
             flow.onload=()=>{
               const product=document.createElement('script');
               product.src='./combat-product-pass.js?v='+version;
+              product.onload=()=>{
+                const polish=document.createElement('script');
+                polish.src='./combat-polish-v2.js?v='+version;
+                document.body.appendChild(polish);
+              };
               document.body.appendChild(product);
             };
             document.body.appendChild(flow);
