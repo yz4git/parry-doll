@@ -3,11 +3,11 @@
 let p5ParryGlow=0,p5BreakPrompt=0,p5FinishBeat=0;
 const p5Style=document.createElement('style');
 p5Style.textContent=`
-#attackHud{position:absolute;top:53px;left:0;width:100%;height:26px;display:flex;align-items:center;justify-content:center;gap:8px;pointer-events:none;font-size:clamp(11px,1.8vw,14px);font-weight:750;letter-spacing:2px;color:#d9b984;text-shadow:0 2px 8px #000;opacity:0;transform:translateY(-2px);transition:opacity .12s,transform .12s,color .12s}
-#attackHud.show{opacity:1;transform:none}#attackHud.ready{color:#ffd98e}#attackHud.finish{color:#ffe7aa;font-size:clamp(14px,2.2vw,18px);letter-spacing:4px}
-#attackHud .gem{font-size:10px;opacity:.75}#attackHud.ready .gem{opacity:1}
+#attackHud{position:absolute;top:31px;left:8%;width:84%;height:20px;display:flex;align-items:center;justify-content:center;gap:7px;pointer-events:none;font-size:clamp(10px,1.6vw,13px);font-weight:750;letter-spacing:1.8px;color:#d9b984;text-shadow:0 2px 8px #000;background:linear-gradient(90deg,transparent,#0b1118b8 18%,#0b1118b8 82%,transparent);opacity:0;transform:translateY(-2px);transition:opacity .12s,transform .12s,color .12s}
+#attackHud.show{opacity:1;transform:none}#attackHud.ready{color:#ffd98e}#attackHud.finish{color:#ffe7aa;font-size:clamp(13px,2vw,17px);letter-spacing:3.5px}
+#attackHud .gem{font-size:9px;opacity:.65}#attackHud.ready .gem{opacity:1}
 #cue{top:19%!important;font-size:clamp(12px,1.9vw,15px)!important;letter-spacing:3px!important}
-@media(max-height:500px){#attackHud{top:50px}#cue{top:18%!important}}
+@media(max-height:500px){#attackHud{top:30px}#cue{top:18%!important}}
 `;
 document.head.appendChild(p5Style);
 const p5AttackHud=document.createElement('div');p5AttackHud.id='attackHud';p5AttackHud.innerHTML='<span class="gem">◇</span><span class="name"></span><span class="gem">◇</span>';$('bossHud').appendChild(p5AttackHud);
@@ -36,8 +36,8 @@ function p5MaintainSpacing(){
 }
 function p5SyncAttackHud(){
  if(!boss||mode!=='play'){p5AttackHud.className='';p5AttackName.textContent='';return}
- if(p5BreakPrompt>0){p5AttackName.textContent='斬 れ';p5AttackHud.className='show finish';return}
  if(p5FinishBeat>0){p5AttackName.textContent='FINISH';p5AttackHud.className='show finish';return}
+ if(p5BreakPrompt>0){p5AttackName.textContent='斬 れ';p5AttackHud.className='show finish';return}
  if(boss.wind>0||boss.strike>0){
   const move=enemyMove(),ready=boss.wind>0&&boss.wind<Math.max(.06,.48-move.hits[0]);
   p5AttackName.textContent=move.name;p5AttackHud.className='show'+(ready?' ready':'');
@@ -49,7 +49,7 @@ function p5SyncAttackHud(){
 const p5AnnounceBase=announce;
 announce=function(t,d){
  if(t==='体 勢 崩 し — 斬 れ'||t==='斬 れ'){p5BreakPrompt=Math.max(p5BreakPrompt,d||1.8);$('toast').textContent='';return}
- if(t==='決 着 の 一 撃'){p5FinishBeat=Math.max(p5FinishBeat,.55);$('toast').textContent='';return}
+ if(t==='決 着 の 一 撃'){p5BreakPrompt=0;p5FinishBeat=Math.max(p5FinishBeat,.55);$('toast').textContent='';return}
  return p5AnnounceBase(t,d);
 };
 
@@ -80,9 +80,9 @@ setCamera=function(){
  p5SetCameraBase();
  if(!player||!boss||mode!=='play'||!basis)return;
  let up=0,back=0,side=0;
- if(boss.spec.type==='beast'){up=.42;back=.22;side=.28}
+ if(boss.spec.type==='beast'){up=.56;back=.40;side=.62}
  else if(boss.spec.type==='spider'){up=.86;back=.55;side=.48}
- else if(boss.spec.scale>1.8){up=.18;back=.88;side=.12}
+ else if(boss.spec.scale>1.8){up=.18;back=.92;side=.20}
  if(!up&&!back&&!side)return;
  const s=(level%2?-1:1);
  camera.y+=up;camera=sub(camera,mul(basis.f,back));camera=add(camera,mul(basis.right,side*s));
