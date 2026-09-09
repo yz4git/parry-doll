@@ -1,0 +1,93 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cat > visual-src/couture.js <<'EOF'
+import * as THREE from 'three';
+
+const WHITE=new THREE.Color('#e7e4df'),DARK=new THREE.Color('#171b27'),TRIM=new THREE.Color('#aeb9c5');
+function paint(geometry,color){
+ const c=[];for(let i=0;i<geometry.attributes.position.count;i++)c.push(color.r,color.g,color.b);
+ geometry.setAttribute('color',new THREE.Float32BufferAttribute(c,3));return geometry;
+}
+function panelGeometry({side=1,topY=-.12,bottomY=-1.48,topX=.48,bottomX=.82,z=-.56,topHalf=.20,bottomHalf=.30,curve=.10,rows=8,cols=4}){
+ const p=[],idx=[];
+ for(let r=0;r<=rows;r++){
+  const t=r/rows,ease=t*t*(3-2*t),cy=THREE.MathUtils.lerp(topY,bottomY,t),cx=THREE.MathUtils.lerp(topX,bottomX,ease)*side,half=THREE.MathUtils.lerp(topHalf,bottomHalf,t),cz=z-curve*Math.sin(Math.PI*t);
+  for(let c=0;c<=cols;c++){
+   const u=c/cols-.5,edge=1-Math.pow(Math.abs(u)*2,3)*.045;
+   p.push(cx+u*half*2,cy+(1-edge)*.035,cz+Math.abs(u)*.055+Math.sin(t*Math.PI)*.018);
+  }
+ }
+ for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){const a=r*(cols+1)+c,b=a+1,d=(r+1)*(cols+1)+c,e=d+1;idx.push(a,d,b,b,d,e)}
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));g.setIndex(idx);g.computeVertexNormals();return g;
+}
+function addPanel(group,name,opts,color=WHITE){
+ const g=paint(panelGeometry(opts),color),m=new THREE.Mesh(g,group.userData.materials.cloth);m.name=name;m.castShadow=true;m.receiveShadow=true;m.userData.role='panel';m.userData.side=opts.side||1;m.userData.topY=opts.topY;m.userData.bottomY=opts.bottomY;group.add(m);
+ const lining=g.clone(),p=lining.attributes.position,c=lining.attributes.color;for(let i=0;i<p.count;i++){p.setZ(i,p.getZ(i)+.018);c.setXYZ(i,DARK.r,DARK.g,DARK.b)}const ii=Array.from(lining.index.array);for(let i=0;i<ii.length;i+=3)[ii[i+1],ii[i+2]]=[ii[i+2],ii[i+1]];lining.setIndex(ii);lining.computeVertexNormals();const inner=new THREE.Mesh(lining,group.userData.materials.cloth);inner.name=name+'-lining';inner.userData.role='lining';inner.userData.side=opts.side||1;inner.userData.topY=opts.topY;inner.userData.bottomY=opts.bottomY;group.add(inner);
+}
+export function makeSkirt(materials){
+ const group=new THREE.Group();group.name='split-combat-skirt';group.userData.materials=materials;
+ const yoke=paint(new THREE.CylinderGeometry(.92,1.03,.46,36,2,true),WHITE);yoke.scale(1,1,.76);const ym=new THREE.Mesh(yoke,materials.cloth);ym.position.y=.08;ym.name='high-waist-yoke';ym.castShadow=true;ym.receiveShadow=true;ym.userData.role='yoke';group.add(ym);
+ const yokeIn=yoke.clone(),yp=yokeIn.attributes.position,yc=yokeIn.attributes.color;for(let i=0;i<yp.count;i++){yp.setX(i,yp.getX(i)*.985);yp.setZ(i,yp.getZ(i)*.985);yc.setXYZ(i,DARK.r,DARK.g,DARK.b)}const yi=Array.from(yokeIn.index.array);for(let i=0;i<yi.length;i+=3)[yi[i+1],yi[i+2]]=[yi[i+2],yi[i+1]];yokeIn.setIndex(yi);yokeIn.computeVertexNormals();const yim=new THREE.Mesh(yokeIn,materials.cloth);yim.position.y=.08;yim.name='yoke-lining';yim.userData.role='yoke';group.add(yim);
+ addPanel(group,'rear-left',{side:-1,topX:.48,bottomX:.83,topHalf:.18,bottomHalf:.27,topY:-.10,bottomY:-1.52,z:-.57,curve:.13});
+ addPanel(group,'rear-right',{side:1,topX:.48,bottomX:.83,topHalf:.18,bottomHalf:.27,topY:-.10,bottomY:-1.52,z:-.57,curve:.13});
+ addPanel(group,'side-left',{side:-1,topX:.76,bottomX:.92,topHalf:.12,bottomHalf:.18,topY:-.08,bottomY:-.76,z:-.08,curve:.04,rows:5,cols:3},DARK);
+ addPanel(group,'side-right',{side:1,topX:.76,bottomX:.92,topHalf:.12,bottomHalf:.18,topY:-.08,bottomY:-.76,z:-.08,curve:.04,rows:5,cols:3},DARK);
+ const trim=paint(new THREE.TorusGeometry(.94,.027,6,36),TRIM);trim.scale(1,1,.76);trim.rotateX(Math.PI/2);const tm=new THREE.Mesh(trim,materials.metal);tm.position.y=.30;tm.name='waist-trim';tm.userData.role='yoke';group.add(tm);
+ group.traverse(m=>{if(m.isMesh)m.userData.base=Float32Array.from(m.geometry.attributes.position.array)});delete group.userData.materials;return group;
+}
+export function updateSkirt(group,clock,flow,motion){
+ group.traverse(m=>{if(!m.isMesh||!m.userData.base||m.userData.role==='yoke')return;const a=m.geometry.attributes.position,b=m.userData.base,top=m.userData.topY??-.1,bottom=m.userData.bottomY??-1.5,span=Math.max(.2,top-bottom),side=m.userData.side||1;
+  for(let i=0;i<a.count;i++){
+   const x=b[i*3],y=b[i*3+1],z=b[i*3+2],t=THREE.MathUtils.clamp((top-y)/span,0,1),w=t*t*(3-2*t),wave=Math.sin(clock*2.8+i*.17+side*.8)*.018;
+   const lateral=flow.z*w*.20+side*Math.sin(clock*2.15+i*.07)*.008*w;
+   const trail=(motion*.17+Math.max(0,-flow.x)*.12+wave)*w;
+   a.setXYZ(i,x+lateral,y+motion*.035*w,z-trail);
+  }
+  a.needsUpdate=true;m.geometry.computeVertexNormals();
+ });
+}
+EOF
+
+python3 - <<'PY'
+from pathlib import Path
+p=Path('tests/reference-models.mjs')
+s=p.read_text()
+old="""assert(actors[0].hair.length>=8,'Missing layered hair');assert(actors[0].tails.length===1&&actors[0].skirt,'Missing continuous skirt');
+ const skirt=actors[0].skirt,outer=skirt.children.find(m=>m.name==='woven-outer'),lining=skirt.children.find(m=>m.name==='dark-lining');assert(outer&&lining,'Missing fabric or lining');const p=outer.geometry.attributes.position,base=outer.userData.base,normal=outer.geometry.attributes.normal;
+ // A single level rear hem avoids recreating paired hanging lobes.
+ for(let i=p.count-65;i<p.count;i++)assert(Math.abs(p.getY(i)+1.74)<1e-5,'Uneven or sagging rear hem');
+ for(let i=0;i<65;i++)assert(Math.abs(p.getX(i)-base[i*3])<1e-6&&Math.abs(p.getZ(i)-base[i*3+2])<1e-6,'Waist attachment moved');
+ assert(normal.getX(6*65+20)*p.getX(6*65+20)+normal.getZ(6*65+20)*p.getZ(6*65+20)>0,'Skirt faces inward');actors.forEach(a=>a.dispose());"""
+new="""assert(actors[0].hair.length>=8,'Missing layered hair');assert(actors[0].tails.length===1&&actors[0].skirt,'Missing split combat skirt');
+ const skirt=actors[0].skirt,yoke=skirt.children.find(m=>m.name==='high-waist-yoke'),left=skirt.children.find(m=>m.name==='rear-left'),right=skirt.children.find(m=>m.name==='rear-right'),sideL=skirt.children.find(m=>m.name==='side-left'),sideR=skirt.children.find(m=>m.name==='side-right');assert(yoke&&left&&right&&sideL&&sideR,'Missing split skirt pieces');
+ assert.equal(skirt.name,'split-combat-skirt');yoke.geometry.computeBoundingBox();left.geometry.computeBoundingBox();right.geometry.computeBoundingBox();
+ assert(yoke.position.y>.05,'Waistline is not visually raised');assert(left.geometry.boundingBox.max.x<-.20&&right.geometry.boundingBox.min.x>.20,'Rear panels close the centre leg gap');assert(left.geometry.boundingBox.min.y<-1.4&&right.geometry.boundingBox.min.y<-1.4,'Rear panels too short to create vertical leg lines');
+ for(const panel of [left,right,sideL,sideR]){const pos=panel.geometry.attributes.position,base=panel.userData.base;for(let i=0;i<pos.count;i++)assert(Number.isFinite(pos.getX(i)+pos.getY(i)+pos.getZ(i)),'Non-finite skirt panel');for(let i=0;i<Math.min(5,pos.count);i++)assert(Math.abs(pos.getY(i)-base[i*3+1])<.08,'Panel waist attachment drifted');}
+ actors.forEach(a=>a.dispose());"""
+if old not in s:
+    if 'Missing split combat skirt' not in s: raise SystemExit('expected couture test block not found')
+else:
+    p.write_text(s.replace(old,new))
+
+d=Path('docs/COUTURE_REFINEMENT.md')
+text=d.read_text() if d.exists() else '# Couture refinement\n'
+marker='## Split combat-skirt silhouette pass'
+if marker not in text:
+    text += "\n## Split combat-skirt silhouette pass\nThe continuous rear wrap was replaced by a high-waist rigid yoke with four independently animated panels. Two narrow rear panels sweep outward and leave a deliberate centre gap, preventing the old paired-lobe silhouette while extending vertical lines down the legs. Two short lateral panels frame the upper thigh without covering the front stride. Only the panel lengths receive secondary motion; the waist remains fixed to the pelvis.\n"
+    d.write_text(text)
+PY
+
+(
+  cd visual-src
+  npm ci
+  npm run build
+)
+node tests/reference-models.mjs
+
+git config user.name 'github-actions[bot]'
+git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+git add visual-src/couture.js dist/visual-engine.js tests/reference-models.mjs docs/COUTURE_REFINEMENT.md
+git diff --cached --quiet && exit 0
+git commit -m 'feat: redesign heroine skirt for mobility and longer leg silhouette'
+git push origin HEAD:main
