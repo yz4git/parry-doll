@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {HeroineRig} from './heroine-rig.js';
+import {bodyData} from './heroine-mesh-data.js';
 // All coordinates belong to the render rig. The simulation dolls are read-only.
 const Y=new THREE.Vector3(0,1,0);
 function taper(points,radius){const curve=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p)));const g=new THREE.TubeGeometry(curve,18,radius,6,false),p=g.attributes.position;for(let i=0;i<p.count;i++){const t=Math.floor(i/7)/18,center=curve.getPointAt(t),f=Math.pow(1-t,.55)*.94+.035;p.setXYZ(i,center.x+(p.getX(i)-center.x)*f,center.y+(p.getY(i)-center.y)*f,center.z+(p.getZ(i)-center.z)*f)}g.computeVertexNormals();return g}
@@ -8,17 +9,19 @@ export class Heroine {
  constructor(d,scene,mats,{Assembly,frame}){
   this.frame=frame;this.root=new THREE.Group();scene.add(this.root);this.rig=new HeroineRig(this.root);this.links=[];this.nodes=[];this.hair=[];this.tails=[];
   const white='#e8e5df',black='#171b27',silver='#aeb9c5',skin='#edc1ab',hair='#25232c';
+  const bodyGeometry=new THREE.BufferGeometry();bodyGeometry.setAttribute('position',new THREE.Float32BufferAttribute(bodyData.positions,3));bodyGeometry.setAttribute('color',new THREE.Float32BufferAttribute(bodyData.colors,3));bodyGeometry.setAttribute('skinIndex',new THREE.Uint16BufferAttribute(bodyData.skinIndices,4));bodyGeometry.setAttribute('skinWeight',new THREE.Float32BufferAttribute(bodyData.skinWeights,4));bodyGeometry.setIndex(bodyData.indices);bodyGeometry.computeVertexNormals();
+  this.body=new THREE.SkinnedMesh(bodyGeometry,mats.porcelain);this.body.castShadow=true;this.body.receiveShadow=true;this.body.frustumCulled=false;this.root.add(this.body);this.body.bind(this.rig.skeleton);this.body.normalizeSkinWeights();
   const add=a=>{const p=a.build();this.root.add(p);return p};
   for(const l of d.links){const a=new Assembly(mats),names=[d.nodes[l.a].name,d.nodes[l.b].name],torso=l.a===0&&l.b===1,neck=names.includes('head'),leg=names.includes('knee')||names.includes('foot');
    if(torso){
-    a.add(profile([[.75,-.5],[.78,-.4],[.66,-.16],[.76,.12],[.96,.34],[.88,.5]]),white,[0,0,0],[1,1,.68],[0,0,0],'porcelain');
+    // Continuous, weighted torso is supplied by the offline-authored body mesh.
     a.add('box',black,[0,-.05,-.53],[.22,.83,.08],[0,0,0],'cloth');
     for(const s of [-1,1]){a.add('box',black,[s*.59,.05,-.43],[.11,.83,.09],[0,0,-s*.14],'cloth');a.add('box',silver,[s*.61,.08,-.49],[.055,.3,.04]);a.add('plate',black,[s*.57,.32,.4],[.38,.3,.23],[0,s*.3,0],'cloth');a.add('box',silver,[s*.62,.19,.57],[.045,.4,.04],[0,0,-s*.22]);}
     a.add('ring',silver,[0,.05,-.59],[.21,.15,.21]);
    }else if(neck){a.add('cylinder',skin,[0,.02,0],[.45,.85,.45],[0,0,0],'skin');a.add('cylinder',black,[0,-.29,0],[.59,.3,.55],[0,0,0],'cloth');}
    else{
     const width=leg?.57:.49;
-    a.add(profile([[width*.75,-.5],[width,-.35],[width*1.08,.2],[width*.9,.5]]),black,[0,0,0],[1,1,.88],[0,0,0],'cloth');
+    // Smooth limb surface is skinned across the elbow/knee, with separate armor accents.
     if(names.includes('elbow')&&!names.includes('shoulder')){a.add('plate',silver,[0,-.01,.48],[.48,.55,.2]);a.add('plate',black,[0,.13,.57],[.39,.38,.1]);}
     if(names.includes('foot')){a.add('plate',white,[0,.10,.55],[.43,.65,.13],[0,0,0],'porcelain');a.add('box',silver,[0,.11,.65],[.07,.52,.06]);}
     if(names.includes('shoulder'))a.add('cylinder',silver,[0,.25,0],[width*1.06,.045,width*.94]);
@@ -37,12 +40,12 @@ export class Heroine {
     for(const s of [-1,1])for(let i=0;i<3;i++){const g=taper([[s*.62,.47,0],[s*(.76+i*.03),-.08,.06],[s*.70,-.83,.19],[s*.80,-1.48-i*.15,-.02]],.13);a.add(g,hair,[0,0,0],[1,1,1],[0,0,0],'hair');g.dispose();}
     a.add('ring',silver,[0,.51,-.70],[.29,.28,.29],[Math.PI/2,0,0]);
    }else if(n.name==='hip'){
-    a.add('sphere',black,[0,-.1,0],[.87,.63,.68],[0,0,0],'cloth');a.add('cylinder',black,[0,.2,0],[1.0,.22,.75],[0,0,0],'cloth');a.add('box',silver,[.32,.2,.72],[.25,.17,.06]);
+    a.add('cylinder',black,[0,.2,0],[1.0,.22,.75],[0,0,0],'cloth');a.add('box',silver,[.32,.2,.72],[.25,.17,.06]);
     for(const s of [-1,1]){a.add('plate',white,[s*.72,-.27,.1],[.47,.68,.37],[0,s*.22,s*.15],'porcelain');a.add('box',silver,[s*.72,-.2,.37],[.07,.62,.05],[0,0,s*.15]);}
    }else if(n.name==='chest'){a.add('sphere',black,[0,0,0],[.68,.33,.49],[0,0,0],'cloth');a.add('ring',silver,[0,.26,0],[.37,.37,.37],[Math.PI/2,0,0]);}
-   else if(n.name==='shoulder'){a.add('sphere',black,[0,0,0],[.83,.7,.78],[0,0,0],'cloth');a.add('plate',white,[0,.25,-.05],[.65,.45,.55],[.25,0,0],'porcelain');a.add('plate',silver,[0,.24,.33],[.39,.24,.1]);}
+   else if(n.name==='shoulder'){a.add('plate',white,[0,.25,-.05],[.65,.45,.55],[.25,0,0],'porcelain');a.add('plate',silver,[0,.24,.33],[.39,.24,.1]);}
    else if(n.name==='foot'){a.add('sphere',black,[0,-.15,.18],[.65,.53,.99],[0,0,0],'cloth');a.add('box',black,[0,-.45,.17],[1.03,.17,1.5],[0,0,0],'cloth');a.add('box',silver,[0,-.33,.76],[.7,.13,.09]);}
-   else{a.add('sphere',black,[0,0,0],[.68,.68,.66],[0,0,0],'cloth');a.add('plate',silver,[0,.02,.54],[.33,.27,.09]);}
+   else if(n.name==='hand'||n.name==='offhand'){a.add('box',black,[0,-.1,0],[.72,.9,.42],[0,0,0],'cloth');for(let j=0;j<4;j++){a.add('sphere',black,[(j-1.5)*.18,-.53,.13],[.12,.32,.13],[.18,0,0],'cloth');a.add('box',silver,[(j-1.5)*.18,-.12,.25],[.12,.22,.045]);}}else{a.add('plate',silver,[0,.02,.54],[.33,.27,.09]);}
    const p=add(a);this.nodes.push(p);
   });
   for(let i=0;i<9;i++){const a=new Assembly(mats),x=(i-4)*.10,g=taper([[x,.52,-.66],[x+.12,.24,-1.14],[x+.20,-1.1,-1.2],[x-.12,-2.7,-.95],[x+.28,-4.2-(i%3)*.24,-.7]],.18);a.add(g,i%3?'#27252e':'#49434b',[0,0,0],[1,1,1],[0,0,0],'hair');g.dispose();const p=a.build();this.nodes[2].add(p);this.hair.push(p);}
