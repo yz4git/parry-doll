@@ -1,1 +1,1 @@
-2026-09-09 measured-reference Blender heroine CLASSIC vs BLENDER audit v3
+2026-09-09 fixed four-view Blender heroine v1.3 audit
