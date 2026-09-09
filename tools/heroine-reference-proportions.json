@@ -1,0 +1,63 @@
+{
+  "source": {
+    "description": "User-provided four-view heroine reference sheet measured from the front and side views",
+    "image_px": [1448, 1086],
+    "front_character_height_px": 920,
+    "front_crown_y_px": 35,
+    "front_sole_y_px": 955
+  },
+  "vertical_landmarks_from_sole": {
+    "sole": 0.0,
+    "ankle": 0.102,
+    "knee": 0.288,
+    "crotch": 0.489,
+    "high_hip": 0.611,
+    "waist": 0.661,
+    "bust": 0.748,
+    "shoulder": 0.816,
+    "chin": 0.853,
+    "crown": 1.0
+  },
+  "front_width_over_height": {
+    "head": 0.128,
+    "neck": 0.047,
+    "shoulders": 0.163,
+    "bust": 0.136,
+    "waist": 0.083,
+    "pelvis": 0.123,
+    "upper_arm": 0.034,
+    "forearm": 0.029,
+    "thigh_each": 0.048,
+    "knee_each": 0.038,
+    "calf_each": 0.046,
+    "ankle_each": 0.028
+  },
+  "side_depth_over_height": {
+    "head": 0.114,
+    "bust": 0.096,
+    "waist": 0.067,
+    "pelvis": 0.089,
+    "thigh": 0.055,
+    "calf": 0.047,
+    "ankle": 0.030
+  },
+  "derived_world_units": {
+    "nominal_height": 2.42,
+    "shoulder_joint_half_width": 0.197,
+    "hip_joint_half_width": 0.149,
+    "head_width": 0.310,
+    "bust_width": 0.329,
+    "waist_width": 0.201,
+    "pelvis_width": 0.298,
+    "upper_arm_diameter": 0.082,
+    "forearm_diameter": 0.070,
+    "thigh_diameter": 0.116,
+    "calf_diameter": 0.111
+  },
+  "notes": [
+    "Ratios are silhouette measurements, not anatomical claims.",
+    "Hair, skirt panels and heels are excluded where they would inflate body width/depth.",
+    "The Blender variant uses these values as visual retarget targets only; gameplay/PBD collision state remains unchanged.",
+    "CLASSIC model geometry and runtime are intentionally untouched."
+  ]
+}
