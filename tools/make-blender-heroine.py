@@ -237,6 +237,7 @@ TH_L=empty('BL_THIGH_L',ROOT);SH_L=empty('BL_SHIN_L',ROOT);FOOT_L=empty('BL_FOOT
 # REFERENCE_V37: separate skull width from hair span and retarget portrait features to the narrower face.
 # REFERENCE_V38: tilted expressive almond eyes and stronger central portrait cues.
 # REFERENCE_V39: portrait de-doll pass with slimmer eyes, stronger nose/lips and finer asymmetric fringe.
+# REFERENCE_V40: narrower shoulder flow and split couture skirt that exposes the long-leg silhouette.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
@@ -261,9 +262,9 @@ for side in(-1,1):
  add_box(TORSO,f'WaistContour_{side}',(side*waist_w*.44,-.150,waist_d*.50),(.012,.175,.009),SILVER,.0035,rot=(0,0,-side*.15))
 # Anatomical clavicle/deltoid bridge inside the measured shoulder envelope.
 for side in(-1,1):
- add_sphere(TORSO,f'DeltoidBridge_{side}',(side*bust_w*.405,.238,.002),(bust_w*.125,.064,bust_d*.150),BLACK,30,20)
- add_panel(TORSO,f'ClaviclePlane_{side}',[(side*bust_w*.080,.270,bust_d*.30),(side*bust_w*.285,.258,bust_d*.28),(side*bust_w*.430,.225,bust_d*.18),(side*bust_w*.275,.210,bust_d*.31)],.013,BLACK_SOFT)
- add_box(TORSO,f'ClavicleTrim_{side}',(side*bust_w*.225,.247,bust_d*.325),(bust_w*.285,.010,.008),SILVER,.0025,rot=(0,0,-side*.11))
+ add_sphere(TORSO,f'DeltoidBridge_{side}',(side*bust_w*.365,.238,.002),(bust_w*.108,.061,bust_d*.142),BLACK,30,20)
+ add_panel(TORSO,f'ClaviclePlane_{side}',[(side*bust_w*.080,.270,bust_d*.30),(side*bust_w*.285,.258,bust_d*.28),(side*bust_w*.392,.225,bust_d*.18),(side*bust_w*.275,.210,bust_d*.31)],.013,BLACK_SOFT)
+ add_box(TORSO,f'ClavicleTrim_{side}',(side*bust_w*.225,.247,bust_d*.325),(bust_w*.250,.010,.008),SILVER,.0025,rot=(0,0,-side*.11))
 # Reference-like harness: thin lines, no square robot chest plates.
 add_box(TORSO,'Sternum',(0,.085,bust_d*.43),(.020,.355,.016),SILVER,.006)
 add_box(TORSO,'Collar',(0,.305,.010),(W('neck')*1.15,.055,.105),BLACK,.014)
@@ -295,24 +296,22 @@ add_section_mesh(PELVIS,'PelvisSuit',[
 ],BLACK,36)
 add_box(PELVIS,'HighWaist',(0,.105,.012),(pelvis_w*.96,.070,pelvis_d*.88),BLACK,.018)
 add_box(PELVIS,'HipBelt',(0,.145,.018),(pelvis_w*1.08,.028,pelvis_d*.94),SILVER,.008)
-# Layered pointed skirt measured from the reference silhouette.
-# A short radial mini-skirt carries the front silhouette; long tails are deliberately outside the leg columns.
-add_panel(PELVIS,'FrontCenterL',[(-.150,.122,.138),(-.008,.116,.148),(-.020,-.205,.157),(-.082,-.335,.142),(-.178,-.185,.102)],.018,WHITE)
-add_panel(PELVIS,'FrontCenterR',[(.008,.116,.148),(.150,.122,.138),(.178,-.185,.102),(.082,-.335,.142),(.020,-.205,.157)],.018,WHITE)
-add_panel(PELVIS,'HipPetalL',[(-.115,.118,.120),(-.238,.094,.094),(-.292,-.100,.070),(-.220,-.275,.088),(-.126,-.160,.122)],.016,BLACK)
-add_panel(PELVIS,'HipPetalR',[(.115,.118,.120),(.126,-.160,.122),(.220,-.275,.088),(.292,-.100,.070),(.238,.094,.094)],.016,BLACK)
-add_panel(PELVIS,'WhitePetalL',[(-.188,.105,.106),(-.258,.070,.074),(-.304,-.185,.052),(-.238,-.365,.070),(-.170,-.195,.110)],.014,WHITE)
-add_panel(PELVIS,'WhitePetalR',[(.188,.105,.106),(.170,-.195,.110),(.238,-.365,.070),(.304,-.185,.052),(.258,.070,.074)],.014,WHITE)
-# Side tails stay narrow from the front but become broad, layered shapes in profile.
-add_panel(PELVIS,'SideTailWhiteL',[(-.235,.085,.000),(-.285,.055,-.030),(-.338,-.370,-.062),(-.305,-.690,-.022),(-.255,-.455,.028)],.016,WHITE)
-add_panel(PELVIS,'SideTailWhiteR',[(.235,.085,.000),(.255,-.455,.028),(.305,-.690,-.022),(.338,-.370,-.062),(.285,.055,-.030)],.016,WHITE)
-add_panel(PELVIS,'SideTailBlackL',[(-.265,.070,-.055),(-.305,.040,-.085),(-.355,-.430,-.112),(-.318,-.780,-.068),(-.285,-.510,-.038)],.013,BLACK)
-add_panel(PELVIS,'SideTailBlackR',[(.265,.070,-.055),(.285,-.510,-.038),(.318,-.780,-.068),(.355,-.430,-.112),(.305,.040,-.085)],.013,BLACK)
-# Rear panels start away from the center line; from the front they sit behind/outside the thighs instead of making white vertical stripes.
-add_panel(PELVIS,'RearTailWhiteL',[(-.205,.090,-.120),(-.105,.082,-.145),(-.120,-.450,-.178),(-.178,-.790,-.152),(-.275,-.500,-.095)],.016,WHITE)
-add_panel(PELVIS,'RearTailWhiteR',[(.105,.082,-.145),(.205,.090,-.120),(.275,-.500,-.095),(.178,-.790,-.152),(.120,-.450,-.178)],.016,WHITE)
-add_panel(PELVIS,'RearTailBlackL',[(-.250,.070,-.145),(-.165,.062,-.165),(-.185,-.520,-.195),(-.245,-.875,-.132),(-.315,-.485,-.105)],.012,BLACK)
-add_panel(PELVIS,'RearTailBlackR',[(.165,.062,-.165),(.250,.070,-.145),(.315,-.485,-.105),(.245,-.875,-.132),(.185,-.520,-.195)],.012,BLACK)
+# Layered split skirt v4.0: short front petals keep the thigh line visible; long tails move behind/outside the legs.
+add_panel(PELVIS,'FrontCenterV40_L',[(-.145,.124,.142),(-.010,.118,.152),(-.024,-.150,.160),(-.080,-.295,.142),(-.170,-.155,.108)],.016,WHITE)
+add_panel(PELVIS,'FrontCenterV40_R',[(.010,.118,.152),(.145,.124,.142),(.170,-.155,.108),(.080,-.295,.142),(.024,-.150,.160)],.016,WHITE)
+add_panel(PELVIS,'HipPetalV40_L',[(-.112,.120,.116),(-.226,.096,.092),(-.276,-.080,.070),(-.218,-.245,.090),(-.132,-.150,.122)],.015,BLACK)
+add_panel(PELVIS,'HipPetalV40_R',[(.112,.120,.116),(.132,-.150,.122),(.218,-.245,.090),(.276,-.080,.070),(.226,.096,.092)],.015,BLACK)
+# Bright outer split panels stop high on the thigh instead of becoming calf-length white stripes.
+add_panel(PELVIS,'OuterPetalV40_L',[(-.180,.108,.104),(-.252,.072,.070),(-.300,-.135,.050),(-.250,-.335,.068),(-.174,-.190,.112)],.013,WHITE)
+add_panel(PELVIS,'OuterPetalV40_R',[(.180,.108,.104),(.174,-.190,.112),(.250,-.335,.068),(.300,-.135,.050),(.252,.072,.070)],.013,WHITE)
+# Black under-petals create a clean split silhouette and visually lengthen the legs.
+add_panel(PELVIS,'SplitUnderV40_L',[(-.210,.095,.040),(-.278,.060,.010),(-.318,-.205,-.018),(-.276,-.455,.018),(-.218,-.250,.060)],.012,BLACK)
+add_panel(PELVIS,'SplitUnderV40_R',[(.210,.095,.040),(.218,-.250,.060),(.276,-.455,.018),(.318,-.205,-.018),(.278,.060,.010)],.012,BLACK)
+# Only two long couture tails remain, swept backward and outward so the front leg columns stay clear.
+add_panel(PELVIS,'RearTailV40_L',[(-.250,.080,-.120),(-.158,.070,-.160),(-.205,-.420,-.205),(-.285,-.820,-.145),(-.350,-.470,-.090)],.014,BLACK)
+add_panel(PELVIS,'RearTailV40_R',[(.158,.070,-.160),(.250,.080,-.120),(.350,-.470,-.090),(.285,-.820,-.145),(.205,-.420,-.205)],.014,BLACK)
+add_panel(PELVIS,'RearTailInlayV40_L',[(-.270,.050,-.132),(-.190,.045,-.168),(-.226,-.405,-.188),(-.282,-.690,-.140),(-.326,-.445,-.104)],.009,WHITE)
+add_panel(PELVIS,'RearTailInlayV40_R',[(.190,.045,-.168),(.270,.050,-.132),(.326,-.445,-.104),(.282,-.690,-.140),(.226,-.405,-.188)],.009,WHITE)
 
 # === REFERENCE COUTURE MICRO DETAIL v2.6 ===
 add_box(TORSO,'BackSpineRail',(0,.040,-bust_d*.505),(.018,.390,.014),SILVER,.004)
