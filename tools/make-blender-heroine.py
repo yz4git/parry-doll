@@ -110,6 +110,7 @@ TH_L=empty('BL_THIGH_L',ROOT);SH_L=empty('BL_SHIN_L',ROOT);FOOT_L=empty('BL_FOOT
 # REFERENCE_V19: continuous portrait shell and face-plane retarget.
 # REFERENCE_V20: fuller bodice curve, longer fringe, deeper ponytail and broader front couture.
 # REFERENCE_V21: solid scalp coverage and panel-based fringe.
+# REFERENCE_V22: eye-clear tapered fringe proportions.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
@@ -210,16 +211,16 @@ add_sphere(HEAD,'HairCrown',(0,.093,-head_d*.380),(head_w*.450,.047,head_d*.270)
 for side in(-1,1):add_sphere(HEAD,f'HairTemple_{side}',(side*head_w*.414,.006,-.030),(head_w*.093,.080,head_d*.150),HAIR,28,18)
 add_sphere(HEAD,'HairTopCap',(0,.078,-head_d*.105),(head_w*.500,.071,head_d*.405),HAIR,42,24)
 add_sphere(HEAD,'HairFrontCrown',(0,.082,head_d*.105),(head_w*.455,.046,head_d*.235),HAIR,38,22)
-# Five overlapping panel bangs create a solid, readable fringe instead of thin vertical teeth.
+# Five overlapping panel bangs stay above/around the eyes; the center lock is only slightly longer.
 bang_z=face_z+.018
-add_panel(HEAD,'BangOuterL',[(-.145,.092,bang_z),(-.070,.108,bang_z),(-.078,-.004,bang_z),(-.128,-.032,bang_z)],.0060,HAIR)
-add_panel(HEAD,'BangInnerL',[(-.092,.108,bang_z),(-.012,.116,bang_z),(-.024,-.030,bang_z),(-.064,-.060,bang_z)],.0062,HAIR_HI)
-add_panel(HEAD,'BangCenter',[(-.032,.117,bang_z),(.032,.116,bang_z),(.018,-.048,bang_z),(-.012,-.070,bang_z)],.0064,HAIR)
-add_panel(HEAD,'BangInnerR',[(.012,.116,bang_z),(.092,.107,bang_z),(.064,-.060,bang_z),(.024,-.030,bang_z)],.0062,HAIR_HI)
-add_panel(HEAD,'BangOuterR',[(.070,.108,bang_z),(.145,.090,bang_z),(.128,-.034,bang_z),(.078,-.004,bang_z)],.0060,HAIR)
-# Small broken tips keep the lower edge from reading as a straight helmet line.
-add_ribbon(HEAD,'BangTipL',[(-.064,.030,bang_z+.003),(-.055,-.018,bang_z+.004),(-.046,-.074,bang_z+.002)],[.020,.015,.006],.0035,HAIR)
-add_ribbon(HEAD,'BangTipR',[(.064,.030,bang_z+.003),(.055,-.018,bang_z+.004),(.046,-.070,bang_z+.002)],[.020,.015,.006],.0035,HAIR)
+add_panel(HEAD,'BangOuterL',[(-.138,.096,bang_z),(-.078,.108,bang_z),(-.084,.032,bang_z),(-.126,.012,bang_z)],.0056,HAIR)
+add_panel(HEAD,'BangInnerL',[(-.096,.108,bang_z),(-.026,.116,bang_z),(-.036,.016,bang_z),(-.070,-.002,bang_z)],.0058,HAIR_HI)
+add_panel(HEAD,'BangCenter',[(-.038,.118,bang_z),(.028,.116,bang_z),(.016,-.014,bang_z),(-.014,-.026,bang_z)],.0060,HAIR)
+add_panel(HEAD,'BangInnerR',[(.022,.116,bang_z),(.094,.106,bang_z),(.068,-.002,bang_z),(.034,.016,bang_z)],.0058,HAIR_HI)
+add_panel(HEAD,'BangOuterR',[(.076,.108,bang_z),(.138,.094,bang_z),(.126,.010,bang_z),(.084,.032,bang_z)],.0056,HAIR)
+# Two fine tapered center-side locks break the silhouette without masking the eyes.
+add_ribbon(HEAD,'BangTipL',[(-.057,.050,bang_z+.003),(-.050,.020,bang_z+.004),(-.046,-.010,bang_z+.002)],[.016,.011,.004],.0032,HAIR)
+add_ribbon(HEAD,'BangTipR',[(.057,.050,bang_z+.003),(.050,.020,bang_z+.004),(.046,-.008,bang_z+.002)],[.016,.011,.004],.0032,HAIR)
 # Longer side fringe frames the jaw like the supplied sheet.
 for side in(-1,1):
  add_ribbon(HEAD,f'FaceFrame_{side}',[(side*head_w*.365,.070,-.006),(side*head_w*.445,-.012,head_d*.115),(side*head_w*.458,-.178,head_d*.044),(side*head_w*.395,-.415,-.020)],[.042,.038,.026,.010],.0052,HAIR)
