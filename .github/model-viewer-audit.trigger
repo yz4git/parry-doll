@@ -1,1 +1,1 @@
-2026-09-09 Hair v3.1 crown coverage WebGL audit
+2026-09-09 Hair v3.2 fringe and material WebGL audit
