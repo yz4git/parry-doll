@@ -1,1 +1,1 @@
-2026-09-09 first Blender heroine CLASSIC vs BLENDER audit
+2026-09-09 refined Blender heroine CLASSIC vs BLENDER audit v2
