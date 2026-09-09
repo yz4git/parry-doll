@@ -1,108 +1,140 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-cat > visual-src/couture.js <<'EOF'
-import * as THREE from 'three';
-
-const YOKE=new THREE.Color('#e7e4df'),PANEL=new THREE.Color('#d8dce0'),DARK=new THREE.Color('#171b27'),TRIM=new THREE.Color('#aeb9c5');
-function paint(geometry,color){
- const c=[];for(let i=0;i<geometry.attributes.position.count;i++)c.push(color.r,color.g,color.b);
- geometry.setAttribute('color',new THREE.Float32BufferAttribute(c,3));return geometry;
-}
-function highCutYokeGeometry(innerScale=1){
- const seg=48,p=[],idx=[];
- for(let r=0;r<3;r++){
-  for(let i=0;i<=seg;i++){
-   const a=i/seg*Math.PI*2,x=Math.cos(a),z=Math.sin(a),side=Math.abs(x);
-   const top=.39,mid=.29+.055*side,bottom=.15+.15*side;
-   const y=r===0?top:r===1?mid:bottom;
-   const radiusX=(r===0?.88:r===1?.93:.98)*innerScale,radiusZ=(r===0?.67:r===1?.70:.72)*innerScale;
-   p.push(x*radiusX,y,z*radiusZ);
-  }
+cat > dist/parry-cinematic-v3.js <<'EOF'
+'use strict';
+// Key-art parry presentation: additive screen-space burst, cinematic camera push and hero rim.
+(()=>{
+ if(window.__parryCinematicV3Loaded)return;window.__parryCinematicV3Loaded=true;
+ const baseCanvas=$('game'),fx=document.createElement('canvas');fx.id='parry-cinematic-v3';fx.setAttribute('aria-hidden','true');
+ Object.assign(fx.style,{position:'fixed',inset:'0',width:'100%',height:'100%',pointerEvents:'none',zIndex:'7'});baseCanvas.parentNode.insertBefore(fx,baseCanvas.nextSibling);
+ const c=fx.getContext('2d',{alpha:true});let dpr=1,last=performance.now(),beat=null;
+ const clamp01=x=>Math.max(0,Math.min(1,x)),rand=(a,b)=>a+Math.random()*(b-a);
+ function resize(){const nd=Math.min(devicePixelRatio||1,1.35),w=Math.max(1,Math.round(W*nd)),h=Math.max(1,Math.round(H*nd));if(fx.width!==w||fx.height!==h){fx.width=w;fx.height=h;dpr=nd}c.setTransform(dpr,0,0,dpr,0,0)}
+ function contactPoint(){
+  const hand=player?.nodes?.find(n=>n.name==='hand')?.p||player?.nodes?.[1]?.p||player?.pos||V();
+  if(!boss?.nodes?.length)return {...hand};
+  let best=boss.nodes[0].p,dist=Infinity;for(const n of boss.nodes){const q=sub(n.p,hand),dd=len(q);if(dd<dist){dist=dd;best=n.p}}
+  return mul(add(hand,best),.5);
  }
- for(let r=0;r<2;r++)for(let i=0;i<seg;i++){const a=r*(seg+1)+i,b=a+1,d=(r+1)*(seg+1)+i,e=d+1;idx.push(a,d,b,b,d,e)}
- const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));g.setIndex(idx);g.computeVertexNormals();return g;
-}
-function panelGeometry({side=1,topY=.12,bottomY=-1.18,topX=.54,bottomX=.84,z=-.54,topHalf=.18,bottomHalf=.055,curve=.075,rows=10,cols=5}){
- const p=[],idx=[];
- for(let r=0;r<=rows;r++){
-  const t=r/rows,ease=t*t*(3-2*t),cy=THREE.MathUtils.lerp(topY,bottomY,t),cx=THREE.MathUtils.lerp(topX,bottomX,ease)*side,half=THREE.MathUtils.lerp(topHalf,bottomHalf,Math.pow(t,.88)),cz=z-curve*Math.sin(Math.PI*t);
-  for(let c=0;c<=cols;c++){
-   const u=c/cols-.5,edgeLift=Math.pow(Math.abs(u)*2,2)*.014;
-   p.push(cx+u*half*2,cy+edgeLift,cz+Math.abs(u)*.032+Math.sin(t*Math.PI)*.012);
-  }
+ function makeBurst(point,perfect){
+  const p2=project(point),cx=p2&&p2.z>.01?p2.x:W*.52,cy=p2&&p2.z>.01?p2.y:H*.50;
+  const rays=[],sparks=[],streaks=[];
+  for(let i=0;i<(perfect?46:34);i++){const a=rand(-Math.PI,Math.PI),bias=i%4===0?rand(-.18,.18):rand(-.8,.8);rays.push({a:a+bias,len:rand(65,perfect?245:180),w:rand(.7,perfect?4.1:3),delay:rand(0,.06),warm:Math.random()>.24})}
+  for(let i=0;i<(perfect?34:26);i++){const a=rand(-Math.PI,Math.PI),sp=rand(90,perfect?330:240);sparks.push({a,sp,size:rand(1.2,4.5),life:rand(.18,.42),spin:rand(-8,8)})}
+  const base=perfect?-.28:-.22;for(let i=0;i<4;i++)streaks.push({a:base+(i-1.5)*rand(.22,.38)+(i%2?1.55:0),offset:rand(-18,18),w:rand(2.5,perfect?9:6.8),len:rand(.45,.82)*Math.hypot(W,H)});
+  beat={point:{...point},cx,cy,perfect,life:perfect?.48:.37,max:perfect?.48:.37,rays,sparks,streaks};
+  hitstop=Math.max(hitstop,perfect?.158:.126);shake=Math.max(shake,perfect?.72:.56);
+  if(typeof feel==='object'&&feel)feel.slow=Math.max(feel.slow||0,perfect?.18:.10);
  }
- for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){const a=r*(cols+1)+c,b=a+1,d=(r+1)*(cols+1)+c,e=d+1;idx.push(a,b,d,b,e,d)}
- const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));g.setIndex(idx);g.computeVertexNormals();return g;
-}
-function addPanel(group,name,opts){
- const g=paint(panelGeometry(opts),PANEL),m=new THREE.Mesh(g,group.userData.materials.cloth);m.name=name;m.castShadow=true;m.receiveShadow=true;m.userData.role='panel';m.userData.side=opts.side;m.userData.topY=opts.topY;m.userData.bottomY=opts.bottomY;group.add(m);
- const lining=g.clone(),p=lining.attributes.position,c=lining.attributes.color;for(let i=0;i<p.count;i++){p.setZ(i,p.getZ(i)+.014);c.setXYZ(i,DARK.r,DARK.g,DARK.b)}const ii=Array.from(lining.index.array);for(let i=0;i<ii.length;i+=3)[ii[i+1],ii[i+2]]=[ii[i+2],ii[i+1]];lining.setIndex(ii);lining.computeVertexNormals();const inner=new THREE.Mesh(lining,group.userData.materials.cloth);inner.name=name+'-lining';inner.userData.role='lining';inner.userData.side=opts.side;inner.userData.topY=opts.topY;inner.userData.bottomY=opts.bottomY;group.add(inner);
-}
-function waistTrimGeometry(){
- const seg=64,p=[];
- for(let i=0;i<=seg;i++){
-  const a=i/seg*Math.PI*2,x=Math.cos(a),z=Math.sin(a),side=Math.abs(x),y=.385-.025*(1-side);
-  p.push(new THREE.Vector3(x*.89,y,z*.675));
+ function glowLine(x1,y1,x2,y2,color,w,a,blur=18){c.save();c.globalCompositeOperation='lighter';c.globalAlpha=a;c.strokeStyle=color;c.shadowColor=color;c.shadowBlur=blur;c.lineCap='round';c.lineWidth=w;c.beginPath();c.moveTo(x1,y1);c.lineTo(x2,y2);c.stroke();c.restore()}
+ function draw(){
+  resize();c.clearRect(0,0,W,H);if(!beat)return;
+  const t=1-beat.life/beat.max,fade=Math.pow(1-t,.56),flash=clamp01((.18-t)/.18),p2=project(beat.point),cx=p2&&p2.z>.01?p2.x:beat.cx,cy=p2&&p2.z>.01?p2.y:beat.cy;
+  // Brief exposure lift plus darker edges makes the clash read like a promo-frame photograph.
+  c.save();const vign=c.createRadialGradient(cx,cy,35,cx,cy,Math.max(W,H)*.78);vign.addColorStop(0,'rgba(0,0,0,0)');vign.addColorStop(.50,`rgba(4,7,12,${.06*fade})`);vign.addColorStop(1,`rgba(0,0,0,${.38*fade})`);c.fillStyle=vign;c.fillRect(0,0,W,H);c.restore();
+  if(flash>0){c.save();c.globalCompositeOperation='screen';c.globalAlpha=(beat.perfect?.50:.34)*flash;c.fillStyle='#fff9e9';c.fillRect(0,0,W,H);c.restore()}
+  const coreR=(beat.perfect?150:112)*(1+t*.7);c.save();c.globalCompositeOperation='lighter';const g=c.createRadialGradient(cx,cy,0,cx,cy,coreR);g.addColorStop(0,`rgba(255,255,255,${.98*fade})`);g.addColorStop(.08,`rgba(255,239,190,${.82*fade})`);g.addColorStop(.34,`rgba(255,176,72,${.28*fade})`);g.addColorStop(.68,`rgba(112,222,255,${.12*fade})`);g.addColorStop(1,'rgba(0,0,0,0)');c.fillStyle=g;c.fillRect(cx-coreR,cy-coreR,coreR*2,coreR*2);c.restore();
+  for(const s of beat.streaks){const cs=Math.cos(s.a),sn=Math.sin(s.a),px=cx-sn*s.offset,py=cy+cs*s.offset,l=s.len*(.5+.5*Math.sin(Math.min(1,t*1.7)*Math.PI*.72));glowLine(px-cs*l*.52,py-sn*l*.52,px+cs*l*.48,py+sn*l*.48,'#ffffff',s.w,fade*.78,s.w*4.2);glowLine(px-cs*l*.46,py-sn*l*.46,px+cs*l*.42,py+sn*l*.42,beat.perfect?'#ffd46a':'#bff7ff',s.w*2.0,fade*.25,s.w*6)}
+  for(const r of beat.rays){if(t<r.delay)continue;const q=clamp01((t-r.delay)/(1-r.delay)),grow=Math.sin(Math.min(1,q)*Math.PI*.76),L=r.len*grow,cs=Math.cos(r.a),sn=Math.sin(r.a),a=fade*(1-q*.45);glowLine(cx+cs*8,cy+sn*8,cx+cs*L,cy+sn*L,r.warm?'#ffd073':'#d8fbff',r.w,a,r.w*4)}
+  // Expanding double shock ring.
+  for(let k=0;k<2;k++){const q=clamp01(t-k*.08);if(q<=0)continue;const r=(30+q*(beat.perfect?190:145))*(1+k*.18);c.save();c.globalCompositeOperation='lighter';c.globalAlpha=fade*(.58-k*.18);c.strokeStyle=k?'#9eefff':'#ffe099';c.lineWidth=Math.max(1,5*(1-q));c.shadowColor=c.strokeStyle;c.shadowBlur=18;c.beginPath();c.ellipse(cx,cy,r,r*.45,-.16,0,Math.PI*2);c.stroke();c.restore()}
+  c.save();c.globalCompositeOperation='lighter';for(const s of beat.sparks){const q=Math.min(1,t/(s.life/beat.max)),dist=s.sp*t,ang=s.a+s.spin*t*.035,x=cx+Math.cos(ang)*dist,y=cy+Math.sin(ang)*dist+t*t*65;c.globalAlpha=fade*(1-q*.42);c.fillStyle=Math.random()>.38?'#fff4c7':'#ffad45';c.fillRect(x,y,s.size*(1-q*.55),s.size*(1-q*.55))}c.restore();
+  // Readable but brief key-art title treatment.
+  const textA=fade*clamp01((.34-t)/.12)*clamp01(t/.045);if(textA>0){c.save();c.globalAlpha=textA;c.textAlign='center';c.font=`600 ${beat.perfect?Math.max(24,Math.min(42,W*.043)):Math.max(21,Math.min(34,W*.036))}px system-ui,sans-serif`;c.letterSpacing='0.22em';c.shadowColor=beat.perfect?'#ffd36b':'#c9f7ff';c.shadowBlur=22;c.fillStyle='#ffffff';c.fillText(beat.perfect?'PERFECT PARRY':'PARRY',cx,Math.min(H-54,cy+96));c.restore()}
  }
- const curve=new THREE.CatmullRomCurve3(p,true,'centripetal');return new THREE.TubeGeometry(curve,64,.018,5,true);
-}
-export function makeSkirt(materials){
- const group=new THREE.Group();group.name='split-combat-skirt';group.userData.materials=materials;
- // High-cut yoke: the lower edge climbs over the outer hip so the visible leg begins higher.
- const yoke=paint(highCutYokeGeometry(1),YOKE),ym=new THREE.Mesh(yoke,materials.cloth);ym.name='high-waist-yoke';ym.castShadow=true;ym.receiveShadow=true;ym.userData.role='yoke';group.add(ym);
- const yokeIn=paint(highCutYokeGeometry(.985),DARK),yi=Array.from(yokeIn.index.array);for(let i=0;i<yi.length;i+=3)[yi[i+1],yi[i+2]]=[yi[i+2],yi[i+1]];yokeIn.setIndex(yi);yokeIn.computeVertexNormals();const yim=new THREE.Mesh(yokeIn,materials.cloth);yim.name='yoke-lining';yim.userData.role='yoke';group.add(yim);
- // Two visible rear spears: wide enough at the root to read as cloth, tapered enough to avoid the old drooping-lobe silhouette.
- addPanel(group,'rear-left',{side:-1,topX:.54,bottomX:.84,topHalf:.18,bottomHalf:.055,topY:.12,bottomY:-1.18,z:-.54,curve:.075,rows:10,cols:5});
- addPanel(group,'rear-right',{side:1,topX:.54,bottomX:.84,topHalf:.18,bottomHalf:.055,topY:.12,bottomY:-1.18,z:-.54,curve:.075,rows:10,cols:5});
- const trim=paint(waistTrimGeometry(),TRIM),tm=new THREE.Mesh(trim,materials.metal);tm.name='waist-trim';tm.userData.role='yoke';group.add(tm);
- group.traverse(m=>{if(m.isMesh)m.userData.base=Float32Array.from(m.geometry.attributes.position.array)});delete group.userData.materials;return group;
-}
-export function updateSkirt(group,clock,flow,motion){
- group.traverse(m=>{if(!m.isMesh||!m.userData.base||m.userData.role==='yoke')return;const a=m.geometry.attributes.position,b=m.userData.base,top=m.userData.topY??.12,bottom=m.userData.bottomY??-1.18,span=Math.max(.2,top-bottom),side=m.userData.side||1;
-  for(let i=0;i<a.count;i++){
-   const x=b[i*3],y=b[i*3+1],z=b[i*3+2],t=THREE.MathUtils.clamp((top-y)/span,0,1),w=t*t*(3-2*t),wave=Math.sin(clock*2.45+i*.11+side*.9)*.011;
-   const lateral=flow.z*w*.12+side*(motion*.017+Math.sin(clock*1.85+i*.05)*.004)*w;
-   const trail=(motion*.085+Math.max(0,-flow.x)*.055+wave)*w;
-   a.setXYZ(i,x+lateral,y+motion*.015*w,z-trail);
-  }
-  a.needsUpdate=true;m.geometry.computeVertexNormals();
- });
-}
+ const baseEnemyImpact=enemyImpact;enemyImpact=function(move=null){const bp=parries,bpf=perfects,p=contactPoint(),out=baseEnemyImpact(move);if(parries>bp)makeBurst(p,perfects>bpf);return out};
+ const baseSetCamera=setCamera;setCamera=function(){baseSetCamera();if(!beat||!basis?.f)return;const phase=Math.sin(clamp01(1-beat.life/beat.max)*Math.PI),strength=(beat.perfect?.64:.46)*phase;camera=add(camera,mul(basis.f,strength));camera.y-=.07*phase;const f=norm(sub(target,camera)),r=norm(V(-f.z,0,f.x)),u=V(r.y*f.z-r.z*f.y,r.z*f.x-r.x*f.z,r.x*f.y-r.y*f.x);basis={f,right:r,up:u}};
+ const baseRender=render;render=function(){baseRender();const now=performance.now(),dt=Math.min(.05,Math.max(1/120,(now-last)/1000));last=now;draw();if(beat){beat.life=Math.max(0,beat.life-dt);if(beat.life<=0)beat=null}};
+ const baseReset=reset;reset=function(l=0){beat=null;return baseReset(l)};
+ window.parryCinematicV3Diagnostics=()=>beat?{active:true,perfect:beat.perfect,life:+beat.life.toFixed(3)}:{active:false};
+})();
 EOF
 
 python3 - <<'PY'
 from pathlib import Path
-p=Path('tests/reference-models.mjs')
-s=p.read_text()
-start=s.index("assert(actors[0].hair.length>=8")
-end=s.index("actors.forEach(a=>a.dispose());",start)+len("actors.forEach(a=>a.dispose());")
-new="""assert(actors[0].hair.length>=8,'Missing layered hair');assert(actors[0].tails.length===1&&actors[0].skirt,'Missing split combat skirt');
- const skirt=actors[0].skirt,yoke=skirt.children.find(m=>m.name==='high-waist-yoke'),left=skirt.children.find(m=>m.name==='rear-left'),right=skirt.children.find(m=>m.name==='rear-right'),trim=skirt.children.find(m=>m.name==='waist-trim');assert(yoke&&left&&right&&trim,'Missing streamlined split skirt');assert(!skirt.children.some(m=>m.name==='side-left'||m.name==='side-right'),'Legacy side tabs returned');
- assert.equal(skirt.name,'split-combat-skirt');yoke.geometry.computeBoundingBox();left.geometry.computeBoundingBox();right.geometry.computeBoundingBox();
- assert(yoke.geometry.boundingBox.max.y>.38&&yoke.geometry.boundingBox.min.y<.17,'High-cut yoke profile collapsed');assert(left.geometry.boundingBox.max.x<-.34&&right.geometry.boundingBox.min.x>.34,'Rear panels close the centre leg gap');assert(left.geometry.boundingBox.min.y<-1.1&&right.geometry.boundingBox.min.y<-1.1,'Rear panels too short to create vertical leg lines');
- for(const panel of [left,right]){const pos=panel.geometry.attributes.position,base=panel.userData.base,normal=panel.geometry.attributes.normal,count=6;const mid=Math.floor(pos.count*.5);assert(normal.getZ(mid)<-.25,'Rear panel outer face does not face the rear camera');for(let i=0;i<pos.count;i++)assert(Number.isFinite(pos.getX(i)+pos.getY(i)+pos.getZ(i)),'Non-finite skirt panel');for(let i=0;i<count;i++)assert(Math.abs(pos.getY(i)-base[i*3+1])<.05,'Panel waist attachment drifted');const topXs=[],bottomXs=[];for(let i=0;i<count;i++){topXs.push(base[i*3]);const j=pos.count-count+i;bottomXs.push(base[j*3])}assert(Math.max(...bottomXs)-Math.min(...bottomXs)<Math.max(...topXs)-Math.min(...topXs)*.75+Math.min(...topXs)*-.75,'Rear panel does not taper strongly enough');}
- actors.forEach(a=>a.dispose());"""
-p.write_text(s[:start]+new+s[end:])
 
-d=Path('docs/COUTURE_REFINEMENT.md')
-text=d.read_text() if d.exists() else '# Couture refinement\n'
-marker='## High-cut waist finish'
+# Load the cinematic pass last so its camera/render wrapper stays outermost.
+p=Path('dist/index.html');s=p.read_text()
+if "parry-cinematic-v3.js" not in s:
+    old="const st2=document.createElement('script');st2.src='./stage-break-v2.js?v='+version;document.body.appendChild(st2)"
+    new="const st2=document.createElement('script');st2.src='./stage-break-v2.js?v='+version;st2.onload=()=>{const cinematic=document.createElement('script');cinematic.src='./parry-cinematic-v3.js?v='+version;document.body.appendChild(cinematic)};document.body.appendChild(st2)"
+    if old not in s: raise SystemExit('stage-break-v2 loader anchor not found')
+    s=s.replace(old,new)
+    p.write_text(s)
+
+# Slightly longer-leg, shorter-torso visual rig while gameplay endpoints remain untouched.
+p=Path('visual-src/heroine-rig.js');s=p.read_text()
+old="const pelvis=V(source[0].p).addScaledVector(up,.28*s),points={pelvis,spine:pelvis.clone().addScaledVector(up,.26*s),chest:pelvis.clone().addScaledVector(up,.56*s),neck:pelvis.clone().addScaledVector(up,.71*s),head:pelvis.clone().addScaledVector(up,.91*s)};"
+new="const pelvis=V(source[0].p).addScaledVector(up,.33*s),points={pelvis,spine:pelvis.clone().addScaledVector(up,.24*s),chest:pelvis.clone().addScaledVector(up,.52*s),neck:pelvis.clone().addScaledVector(up,.66*s),head:pelvis.clone().addScaledVector(up,.85*s)};"
+if old not in s and new not in s: raise SystemExit('heroine rig torso anchor not found')
+s=s.replace(old,new)
+old="points['hip'+suffix]=pelvis.clone().addScaledVector(right,side*.18*s).addScaledVector(up,-.02*s);"
+new="points['hip'+suffix]=pelvis.clone().addScaledVector(right,side*.17*s).addScaledVector(up,.005*s);"
+if old not in s and new not in s: raise SystemExit('heroine rig hip anchor not found')
+s=s.replace(old,new)
+p.write_text(s)
+
+# Refine the weighted costume: tighter waist and cleaner upper-thigh taper.
+p=Path('tools/make-heroine-mesh.py');s=p.read_text()
+old="rx=np.interp(y,[1.30,1.4,1.57,1.73,1.86,1.99],[.245,.245,.183,.21,.26,.225]);rz=np.interp(y,[1.30,1.48,1.67,1.85,1.99],[.145,.123,.135,.158,.12])"
+new="rx=np.interp(y,[1.30,1.4,1.57,1.73,1.86,1.99],[.238,.232,.169,.198,.252,.218]);rz=np.interp(y,[1.30,1.48,1.67,1.85,1.99],[.137,.118,.130,.154,.116])"
+if old not in s and new not in s: raise SystemExit('heroine mesh torso profile anchor not found')
+s=s.replace(old,new)
+old="points=[np.array([side*.165,1.40,-.005]),np.array([side*.22,.78,.045]),np.array([side*.275,.16,.22])];boneNames=['hip'+suffix,'knee'+suffix];radii=[.105,.112,.086,.088,.055]"
+new="points=[np.array([side*.158,1.415,-.005]),np.array([side*.214,.78,.045]),np.array([side*.272,.16,.22])];boneNames=['hip'+suffix,'knee'+suffix];radii=[.100,.107,.082,.087,.054]"
+if old not in s and new not in s: raise SystemExit('heroine mesh leg profile anchor not found')
+s=s.replace(old,new)
+p.write_text(s)
+
+# Character styling: smaller head, more layered armor and longer flowing hair.
+p=Path('visual-src/heroine.js');s=p.read_text()
+old="const white='#e8e5df',black='#171b27',silver='#aeb9c5',skin='#edc1ab',hair='#25232c';"
+new="const white='#ece9e3',black='#151923',silver='#b9c4cf',skin='#edc1ab',hair='#2a252c';"
+if old not in s and new not in s: raise SystemExit('heroine palette anchor not found')
+s=s.replace(old,new)
+old="a.add('box',silver,[0,.18,-.59],[.065,.34,.025]);a.add('box',black,[0,.39,-.57],[1.2,.065,.035],[0,0,0],'cloth');"
+new="a.add('box',silver,[0,.18,-.59],[.065,.34,.025]);a.add('box',black,[0,.39,-.57],[1.2,.065,.035],[0,0,0],'cloth');a.add('plate',white,[0,.18,-.585],[.72,.24,.045],[0,0,0],'porcelain');a.add('plate',white,[0,-.12,-.56],[.56,.18,.04],[0,0,0],'porcelain');a.add('box',silver,[0,.02,-.625],[.055,.62,.025]);"
+if old not in s and new not in s: raise SystemExit('heroine torso detail anchor not found')
+s=s.replace(old,new)
+old="if(names.includes('elbow')&&!names.includes('shoulder')){a.add('plate',silver,[0,-.01,.48],[.48,.55,.2]);a.add('plate',black,[0,.13,.57],[.39,.38,.1]);}"
+new="if(names.includes('elbow')&&!names.includes('shoulder')){a.add('plate',white,[0,-.02,.49],[.52,.58,.21],[0,0,0],'porcelain');a.add('plate',black,[0,.13,.575],[.35,.34,.085]);a.add('box',silver,[0,.08,.615],[.06,.48,.04]);}"
+if old not in s and new not in s: raise SystemExit('heroine forearm detail anchor not found')
+s=s.replace(old,new)
+old="if(names.includes('shoulder'))a.add('cylinder',silver,[0,.25,0],[width*1.06,.045,width*.94]);"
+new="if(names.includes('shoulder')){a.add('cylinder',silver,[0,.25,0],[width*1.04,.04,width*.92]);a.add('plate',white,[0,.08,.46],[.48,.38,.13],[.05,0,0],'porcelain');}if(names.includes('knee')&&names.includes('hip')){a.add('plate',white,[0,.06,.48],[.34,.50,.11],[0,0,0],'porcelain');a.add('box',silver,[0,.12,.57],[.055,.46,.03]);}"
+if old not in s and new not in s: raise SystemExit('heroine shoulder/thigh detail anchor not found')
+s=s.replace(old,new)
+old="for(let i=0;i<13;i++){const a=new Assembly(mats),x=(i-6)*.071,g=taper([[x,.52,-.66],[x+.12,.24,-1.14],[x+.20,-1.1,-1.2],[x-.12,-2.7,-.95],[x+.28,-4.35-(i%3)*.24,-.7]],.17);a.add(g,i%3?'#27252e':'#393540',[0,0,0],[1,1,.67],[0,0,0],'hair');g.dispose();const p=a.build();this.nodes[2].add(p);this.hair.push(p);}"
+new="for(let i=0;i<17;i++){const a=new Assembly(mats),x=(i-8)*.058,fan=(i-8)*.018,g=taper([[x,.54,-.66],[x*.82+.10,.16,-1.15],[x+fan,-1.18,-1.19],[x*.72-.12,-2.95,-.92],[x+fan*2+.22,-4.85-(i%4)*.18,-.63]],.145);a.add(g,i%4?'#29262f':'#403943',[0,0,0],[1,1,.70],[0,0,0],'hair');g.dispose();const p=a.build();this.nodes[2].add(p);this.hair.push(p);}"
+if old not in s and new not in s: raise SystemExit('heroine ponytail anchor not found')
+s=s.replace(old,new)
+old="p.scale.setScalar(n.r*(i===2?.90:n.name==='shoulder'?.78:n.name==='elbow'||n.name==='knee'?.75:1))"
+new="p.scale.setScalar(n.r*(n.name==='head'?.84:n.name==='shoulder'?.74:n.name==='elbow'||n.name==='knee'?.72:1))"
+if old not in s and new not in s: raise SystemExit('heroine node scale anchor not found')
+s=s.replace(old,new)
+p.write_text(s)
+
+# Keep a concise design note for later visual passes.
+d=Path('docs/COUTURE_REFINEMENT.md');text=d.read_text() if d.exists() else '# Couture refinement\n'
+marker='## Key-art heroine and parry pass'
 if marker not in text:
-    text += "\n## High-cut waist finish\nThe second WebGL pass removed the four-tab clutter but made the rear spears too subtle and left a strong horizontal waist ring. The final silhouette pass uses a sculpted high-cut yoke whose lower edge rises over the outer hips, a slimmer curved metal trim, and two slightly broader pale rear spears that remain clearly separated and strongly tapered. The result keeps the legs visually uninterrupted while preserving a readable piece of moving cloth behind the character.\n"
+    text += "\n## Key-art heroine and parry pass\nThe combat silhouette now uses a slightly higher visual pelvis, shorter upper-body spacing, a smaller head, tighter waist and upper-thigh profile, longer multi-strand ponytail, and layered white/silver armor accents on the back, forearms, shoulders and thighs. Gameplay endpoints and hitboxes are unchanged. Perfect parries receive a dedicated screen-space cinematic layer with large diagonal clash streaks, dense sparks, a double shock ring, brief exposure lift, edge darkening, stronger hit-stop and a small camera push.\n"
     d.write_text(text)
 PY
 
+python3 tools/make-heroine-mesh.py
 (
   cd visual-src
   npm ci
   npm run build
 )
+node --check dist/parry-cinematic-v3.js
 node tests/reference-models.mjs
 
 git config user.name 'github-actions[bot]'
 git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-git add visual-src/couture.js dist/visual-engine.js tests/reference-models.mjs docs/COUTURE_REFINEMENT.md
-git diff --cached --quiet && exit 0
-git commit -m 'fix: finish heroine high-cut skirt silhouette'
+git add dist/parry-cinematic-v3.js dist/index.html dist/visual-engine.js visual-src/heroine.js visual-src/heroine-rig.js visual-src/heroine-mesh-data.js tools/make-heroine-mesh.py docs/COUTURE_REFINEMENT.md
+if git diff --cached --quiet; then exit 0; fi
+git commit -m 'feat: push parry and heroine toward key art'
 git push origin HEAD:main
