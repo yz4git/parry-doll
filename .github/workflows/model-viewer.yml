@@ -29,8 +29,21 @@ jobs:
           s=p.read_text()
           old=r"ui.write_text(r'''\'use strict\';"
           new="ui.write_text(r'''\"use strict\";"
-          if old not in s:
-              raise SystemExit('model viewer directive anchor missing')
-          p.write_text(s.replace(old,new))
+          if old in s:
+              s=s.replace(old,new)
+          p.write_text(s)
+
+          idx=Path('dist/index.html')
+          h=idx.read_text()
+          early="bridge.onload=()=>{const fx=document.createElement('script');"
+          early_new="bridge.onload=()=>{const viewer=document.createElement('script');viewer.src='./model-viewer.js?v='+version;document.body.appendChild(viewer);const fx=document.createElement('script');"
+          late="const cinematic=document.createElement('script');cinematic.src='./parry-cinematic-v3.js?v='+version;cinematic.onload=()=>{const viewer=document.createElement('script');viewer.src='./model-viewer.js?v='+version;document.body.appendChild(viewer)};document.body.appendChild(cinematic)"
+          late_new="const cinematic=document.createElement('script');cinematic.src='./parry-cinematic-v3.js?v='+version;document.body.appendChild(cinematic)"
+          if early_new not in h:
+              if early not in h: raise SystemExit('bridge onload anchor missing')
+              h=h.replace(early,early_new)
+          if late in h:
+              h=h.replace(late,late_new)
+          idx.write_text(h)
           PY
           bash .github/scripts/model-viewer.sh
