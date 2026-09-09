@@ -1,1 +1,1 @@
-2026-09-09 split combat skirt pass v3
+2026-09-09 key-art heroine and parry pass
