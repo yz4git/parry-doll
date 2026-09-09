@@ -15,3 +15,6 @@ The continuous rear wrap was replaced by a high-waist rigid yoke with four indep
 
 ## WebGL silhouette review pass
 A real WebGL gameplay capture showed that four hanging panels read as rigid black tabs around the hips. The design was simplified to a thinner raised yoke and two narrow, outward-swept spear panels with tapered tips. This keeps the centre line and upper thighs open, improves the long-leg read, and removes the X-shaped rear cluster. Secondary motion was reduced so the panels trail cleanly instead of behaving like loose armor.
+
+## High-cut waist finish
+The second WebGL pass removed the four-tab clutter but made the rear spears too subtle and left a strong horizontal waist ring. The final silhouette pass uses a sculpted high-cut yoke whose lower edge rises over the outer hips, a slimmer curved metal trim, and two slightly broader pale rear spears that remain clearly separated and strongly tapered. The result keeps the legs visually uninterrupted while preserving a readable piece of moving cloth behind the character.
