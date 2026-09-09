@@ -1,9 +1,28 @@
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
-import {HeroineRig,axes} from './heroine-rig.js';
+import {HeroineRig,axes,solveJoint} from './heroine-rig.js';
 
 const Y=new THREE.Vector3(0,1,0);
 const TMP=new THREE.Vector3();
+// Measured from the user-provided four-view sheet, normalized to the Blender model's 2.42u nominal height.
+// These are visual-only retarget values. Gameplay/PBD nodes remain untouched.
+const REF_SHOULDER_HALF=.197;
+const REF_HIP_HALF=.149;
+
+function referenceRetarget(d,base){
+ const s=d.spec.scale,right=new THREE.Vector3(Math.cos(d.face),0,-Math.sin(d.face)),forward=new THREE.Vector3(Math.sin(d.face),0,Math.cos(d.face)),up=base.neck.clone().sub(base.pelvis).normalize();
+ const p={};for(const [name,q] of Object.entries(base))p[name]=q.clone();
+ p.shoulderL=p.chest.clone().addScaledVector(right,-REF_SHOULDER_HALF*s).addScaledVector(up,.010*s);
+ p.shoulderR=p.chest.clone().addScaledVector(right, REF_SHOULDER_HALF*s).addScaledVector(up,.010*s);
+ p.hipL=p.pelvis.clone().addScaledVector(right,-REF_HIP_HALF*s).addScaledVector(up,.004*s);
+ p.hipR=p.pelvis.clone().addScaledVector(right, REF_HIP_HALF*s).addScaledVector(up,.004*s);
+ for(const side of ['L','R']){
+  const sign=side==='L'?-1:1;
+  p['elbow'+side]=solveJoint(p['shoulder'+side],p['hand'+side],base['elbow'+side].clone().addScaledVector(right,sign*.050*s),.50*s,.50*s);
+  p['knee'+side]=solveJoint(p['hip'+side],p['foot'+side],base['knee'+side].clone().addScaledVector(forward,.18*s),.62*s,.62*s);
+ }
+ return p;
+}
 
 export class BlenderHeroine{
  constructor(d,scene,{assetBase}){
@@ -22,7 +41,7 @@ export class BlenderHeroine{
  setPoint(name,point,quat,scale){const g=this.groups[name];if(!g)return;g.position.copy(point);g.quaternion.copy(quat);g.scale.setScalar(scale)}
  setSegment(name,a,b,face,widthScale){const g=this.groups[name];if(!g)return;const delta=b.clone().sub(a),length=delta.length();g.position.copy(a).lerp(b,.5);g.quaternion.copy(axes(delta,face));g.scale.set(widthScale,Math.max(.001,length),widthScale)}
  update(d,pose,clock=0){
-  if(!this.ready)return;const s=d.spec.scale,points=this.rig.update(d),torsoDir=points.neck.clone().sub(points.pelvis),torsoQ=axes(torsoDir,d.face);
+  if(!this.ready)return;const s=d.spec.scale,points=referenceRetarget(d,this.rig.update(d)),torsoDir=points.neck.clone().sub(points.pelvis),torsoQ=axes(torsoDir,d.face);
   const torsoMid=points.pelvis.clone().lerp(points.neck,.5);this.setPoint('BL_PELVIS',points.pelvis,torsoQ,s);this.setPoint('BL_TORSO',torsoMid,torsoQ,s);this.setPoint('BL_HEAD',points.head,torsoQ,s);
   for(const side of ['L','R']){
    this.setSegment('BL_UPPER_ARM_'+side,points['shoulder'+side],points['elbow'+side],d.face,s);
