@@ -1,1 +1,1 @@
-2026-09-09 fixed four-view Blender heroine v1.6 side-curve portrait pony-root audit
+2026-09-09 fixed four-view Blender heroine v1.7 portrait shoulder and heel audit
