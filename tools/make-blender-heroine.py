@@ -16,7 +16,7 @@ def bpos(v):x,y,z=v;return(x,-z,y)
 def bscale(v):x,y,z=v;return(x,z,y)
 def material(name,color,metallic=0.0,roughness=.45):
  m=bpy.data.materials.new(name);m.use_nodes=True;b=m.node_tree.nodes.get('Principled BSDF');b.inputs['Base Color'].default_value=(*color,1);b.inputs['Metallic'].default_value=metallic;b.inputs['Roughness'].default_value=roughness;return m
-SKIN=material('Skin',(0.60,0.41,0.39),0,.56)
+SKIN=material('Skin',(0.57,0.39,0.37),0,.60)
 BLACK=material('Suit Black',(0.014,0.018,0.027),.08,.30)
 BLACK_SOFT=material('Suit Soft',(0.030,0.035,0.048),.02,.44)
 WHITE=material('Porcelain White',(0.86,0.88,0.88),.18,.28)
@@ -32,7 +32,7 @@ for _hair_mat,_spec in ((HAIR,.14),(HAIR_HI,.18)):
   if _ior:_ior.default_value=_spec
   elif _old:_old.default_value=_spec
 SCLERA=material('Sclera',(0.76,0.72,0.69),0,.46)
-IRIS=material('Iris',(0.10,0.067,0.055),.02,.30)
+IRIS=material('Iris',(0.18,0.105,0.080),.02,.28)
 PUPIL=material('Pupil',(0.004,0.005,0.006),0,.30)
 LIP=material('Lip',(0.34,0.16,0.17),0,.56)
 FACE_DARK=material('Face Detail',(0.20,0.075,0.070),0,.68)
@@ -292,6 +292,7 @@ TH_L=empty('BL_THIGH_L',ROOT);SH_L=empty('BL_SHIN_L',ROOT);FOOT_L=empty('BL_FOOT
 # REFERENCE_V43: softer adult portrait, blunt side-swept fringe and a true side-flow ponytail.
 # REFERENCE_V44: rebuilt portrait head topology, larger inset eyes and sheet-like swept bangs.
 # REFERENCE_V45: safe layered lock fringe, warmer portrait materials and stronger eyes/lips.
+# REFERENCE_V46: cinematic almond eyes, readable nasal bridge and fuller natural mouth.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
@@ -401,38 +402,42 @@ add_cylinder(HEAD,'Neck',(0,-.158,-.008),W('neck')*.33,.084,SKIN,26)
 add_cylinder(HEAD,'Choker',(0,-.139,-.006),W('neck')*.46,.034,BLACK,28)
 add_cylinder(HEAD,'ChokerTrim',(0,-.124,-.006),W('neck')*.47,.009,SILVER,28)
 for side in(-1,1):add_sphere(HEAD,f'Ear_{side}',(side*head_w*.445,-.018,-.014),(.010,.023,.009),SKIN,18,10)
-# Anatomy v4.4: portrait proportions matched to the key-art close-up.
+# Anatomy v4.6: wider almond eyes, visible iris separation and a readable central face plane.
 face_front=head_d*.514
-eye_y=.0320
-eye_x=head_w*.145
-eye_rx=head_w*.105
-eye_ry=.0142
-eye_tilt=.0034
+eye_y=.0325
+eye_x=head_w*.146
+eye_rx=head_w*.112
+eye_ry=.0123
+eye_tilt=.0037
 for side in(-1,1):
  ex=side*eye_x
- add_sphere(HEAD,f'EyeballHiddenV44_{side}',(ex,eye_y,head_d*.420),(head_w*.083,.0175,head_d*.062),SCLERA,40,24)
- add_almond_surface(HEAD,f'EyeOpeningV44_{side}',ex,eye_y,face_front,eye_rx,eye_ry,.0026,SCLERA,44,side,eye_tilt)
- add_sphere(HEAD,f'IrisV44_{side}',(ex,eye_y+.0003,face_front+.0059),(head_w*.0480,.0108,.0030),IRIS,34,20)
- add_sphere(HEAD,f'PupilV44_{side}',(ex,eye_y+.0002,face_front+.0086),(head_w*.0142,.0051,.0019),PUPIL,24,14)
- add_sphere(HEAD,f'EyeLightV44_{side}',(ex-side*head_w*.0092,eye_y+.0052,face_front+.0106),(head_w*.0052,.0023,.0011),SCLERA,12,8)
+ add_sphere(HEAD,f'EyeballHiddenV46_{side}',(ex,eye_y,head_d*.418),(head_w*.086,.0170,head_d*.064),SCLERA,42,24)
+ add_almond_surface(HEAD,f'EyeOpeningV46_{side}',ex,eye_y,face_front,eye_rx,eye_ry,.0027,SCLERA,48,side,eye_tilt)
+ # Larger warm-brown iris and smaller pupil recreate the reference's glossy dark eye without a black-dot stare.
+ add_sphere(HEAD,f'IrisV46_{side}',(ex,eye_y+.0002,face_front+.0060),(head_w*.0525,.0108,.0031),IRIS,36,20)
+ add_sphere(HEAD,f'PupilV46_{side}',(ex,eye_y+.0001,face_front+.0088),(head_w*.0105,.0048,.0019),PUPIL,24,14)
+ add_sphere(HEAD,f'EyeLightV46_{side}',(ex-side*head_w*.0100,eye_y+.0053,face_front+.0108),(head_w*.0055,.0024,.0011),SCLERA,12,8)
  inner=ex-side*eye_rx*.95;outer=ex+side*eye_rx*1.02
  inner_y=eye_y-eye_tilt;outer_y=eye_y+eye_tilt
- add_strand(HEAD,f'UpperLidV44_{side}',[(inner,inner_y+.0011,face_front+.0035),(ex,eye_y+.0143,face_front+.0059),(outer,outer_y+.0012,face_front+.0035)],.00066,SKIN)
- add_strand(HEAD,f'UpperLashV44_{side}',[(inner,inner_y+.0018,face_front+.0064),(ex,eye_y+.0148,face_front+.0080),(outer,outer_y+.0020,face_front+.0065)],.00078,HAIR)
- add_strand(HEAD,f'LashWingV44_{side}',[(outer,outer_y+.0020,face_front+.0065),(outer+side*head_w*.016,outer_y+.0065,face_front+.0070)],.00056,HAIR)
- add_strand(HEAD,f'BrowV44_{side}',[(ex-side*eye_rx*.82,.0680,head_d*.510),(ex,.0785,head_d*.516),(ex+side*eye_rx*1.02,.0660,head_d*.511)],.00108,HAIR)
+ # The upper lid carries most of the graphic weight; the lower lid is skin-toned and much finer.
+ add_strand(HEAD,f'UpperLidV46_{side}',[(inner,inner_y+.0010,face_front+.0035),(ex,eye_y+.0128,face_front+.0059),(outer,outer_y+.0011,face_front+.0035)],.00070,SKIN)
+ add_strand(HEAD,f'LowerLidV46_{side}',[(inner,inner_y-.0004,face_front+.0025),(ex,eye_y-.0071,face_front+.0032),(outer,outer_y-.0004,face_front+.0025)],.00042,SKIN)
+ add_strand(HEAD,f'UpperLashV46_{side}',[(inner,inner_y+.0017,face_front+.0064),(ex,eye_y+.0137,face_front+.0081),(outer,outer_y+.0019,face_front+.0066)],.00082,HAIR)
+ add_strand(HEAD,f'LashWingV46_{side}',[(outer,outer_y+.0019,face_front+.0066),(outer+side*head_w*.017,outer_y+.0068,face_front+.0071)],.00058,HAIR)
+ add_strand(HEAD,f'BrowV46_{side}',[(ex-side*eye_rx*.80,.0690,head_d*.510),(ex,.0790,head_d*.516),(ex+side*eye_rx*.99,.0665,head_d*.511)],.00113,HAIR)
 
-# Small explicit nose pieces finish the profile; the main bridge and cheeks now come from the shell itself.
-add_sphere(HEAD,'NoseTipV44',(0,-.0445,head_d*.553),(.0108,.0091,.0068),SKIN,28,16)
-add_sphere(HEAD,'ColumellaV44',(0,-.0540,head_d*.548),(.0031,.0047,.0030),SKIN,18,10)
+# A skin-volume bridge catches the side light; the shell still supplies the broad nose planes.
+add_sphere(HEAD,'NoseBridgeV46',(0,-.0040,head_d*.535),(.0062,.041,.0064),SKIN,28,16)
+add_sphere(HEAD,'NoseTipV46',(0,-.0450,head_d*.554),(.0105,.0090,.0067),SKIN,28,16)
+add_sphere(HEAD,'ColumellaV46',(0,-.0540,head_d*.549),(.0030,.0046,.0030),SKIN,18,10)
 for side in(-1,1):
- add_sphere(HEAD,f'NoseWingV44_{side}',(side*.0104,-.0505,head_d*.545),(.0052,.0047,.0037),SKIN,20,12)
- add_sphere(HEAD,f'NostrilV44_{side}',(side*.0072,-.0526,head_d*.550),(.00145,.0010,.00085),FACE_DARK,12,8)
+ add_sphere(HEAD,f'NoseWingV46_{side}',(side*.0102,-.0508,head_d*.546),(.0050,.0046,.0036),SKIN,20,12)
+ add_sphere(HEAD,f'NostrilV46_{side}',(side*.0070,-.0528,head_d*.551),(.00135,.00095,.00080),FACE_DARK,12,8)
 
-# Two continuous almond surfaces give the soft, slightly parted key-art mouth without red point artifacts.
-add_almond_surface(HEAD,'UpperLipV45',0,-.0810,head_d*.550,.0340,.0052,.0020,LIP,44,1,0.0)
-add_almond_surface(HEAD,'LowerLipV45',0,-.0893,head_d*.549,.0315,.0060,.0023,LIP,44,1,0.0)
-add_strand(HEAD,'MouthSeamV45',[(-.0290,-.0852,head_d*.552),(0,-.0864,head_d*.553),(.0290,-.0852,head_d*.552)],.00036,FACE_DARK)
+# Slightly wider, softer lips replace the tiny-point read visible in earlier audits.
+add_almond_surface(HEAD,'UpperLipV46',0,-.0813,head_d*.551,.0370,.0055,.0021,LIP,48,1,0.0)
+add_almond_surface(HEAD,'LowerLipV46',0,-.0896,head_d*.550,.0340,.0063,.0024,LIP,48,1,0.0)
+add_strand(HEAD,'MouthSeamV46',[(-.0315,-.0855,head_d*.553),(0,-.0867,head_d*.554),(.0315,-.0855,head_d*.553)],.00034,FACE_DARK)
 
 # Hair v4.5: overlapping curved lock fringe using the proven local-space lock helper.
 add_sphere(HEAD,'HairBackV45',(0,.032,-head_d*.366),(head_w*.510,.130,head_d*.456),HAIR,56,36)
