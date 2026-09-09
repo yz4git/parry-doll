@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {Heroine} from './heroine.js';
+import {BlenderHeroine} from './blender-heroine.js';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 import {makeEnvironment} from './environment.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
@@ -29,8 +30,27 @@ class Assembly {
 function frame(up,face){const y=up.clone().normalize(),f=new THREE.Vector3(Math.sin(face),0,Math.cos(face)),x=new THREE.Vector3().crossVectors(y,f);if(x.lengthSq()<.001)x.set(1,0,0);x.normalize();const z=new THREE.Vector3().crossVectors(x,y).normalize();return new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(x,y,z))}
 function copyP(dst,p){dst.set(p.x,p.y,p.z)}
 function palette(d){return d.player?{plate:'#345e60',dark:'#142a32',trim:'#d0a263',cloth:'#226e71',bone:'#bfc8c0',glow:'#90ffe8'}:d.spec.type==='beast'?{plate:'#5f737d',dark:'#1f303a',trim:'#a9b6b2',cloth:'#282c31',bone:'#d8ccb0',glow:'#eebc68'}:d.spec.type==='spider'?{plate:'#535e72',dark:'#252d3d',trim:'#abb5be',cloth:'#292f39',bone:'#9eafbc',glow:'#c397ff'}:d.spec.scale>1.8?{plate:'#56606b',dark:'#222a34',trim:'#bbaa88',cloth:'#33323b',bone:'#b1b6b8',glow:'#ff9867'}:{plate:'#424b56',dark:'#1d242e',trim:'#a6a1a0',cloth:'#332d31',bone:'#919ea8',glow:'#ff7755'}}
+const HEROINE_APPEARANCE_KEY='parry-doll.heroineAppearance';
+const heroineSwitchers=new Set();
+const normalizeHeroineAppearance=value=>value==='blender'?'blender':'classic';
+function readHeroineAppearance(){try{return normalizeHeroineAppearance(localStorage.getItem(HEROINE_APPEARANCE_KEY))}catch(_){return'classic'}}
+let heroineAppearance=readHeroineAppearance();
+function heroineAppearanceState(){const all=[...heroineSwitchers],ready=all.some(s=>s.blenderReady),active=heroineAppearance==='blender'&&ready?'blender':'classic';return{selected:heroineAppearance,active,blenderReady:ready}}
+function setHeroineAppearance(value){heroineAppearance=normalizeHeroineAppearance(value);try{localStorage.setItem(HEROINE_APPEARANCE_KEY,heroineAppearance)}catch(_){}for(const s of heroineSwitchers)s.setAppearance(heroineAppearance);return heroineAppearanceState()}
+class HeroineSwitcher{
+ constructor(d,scene,mats,tools){this.root=new THREE.Group();this.root.name='heroine-appearance-switcher';scene.add(this.root);this.classic=new Heroine(d,this.root,mats,tools);this.blender=new BlenderHeroine(d,this.root,{assetBase:ASSET_BASE});this.appearance=heroineAppearance;this.weaponVisible=true;this.weaponProxy={};Object.defineProperty(this.weaponProxy,'visible',{get:()=>this.weaponVisible,set:value=>this.setWeaponVisible(value)});heroineSwitchers.add(this);this.updateVisibility()}
+ get blenderReady(){return this.blender?.ready===true}
+ get activeKind(){return this.appearance==='blender'&&this.blenderReady?'blender':'classic'}
+ get weapon(){return this.weaponProxy}
+ setAppearance(value){this.appearance=normalizeHeroineAppearance(value);this.updateVisibility();return this.activeKind}
+ setWeaponVisible(value){this.weaponVisible=!!value;if(this.classic?.weapon)this.classic.weapon.visible=this.weaponVisible;this.blender?.setWeaponVisible?.(this.weaponVisible)}
+ updateVisibility(){const blender=this.activeKind==='blender';if(this.classic?.root)this.classic.root.visible=!blender;if(this.blender?.root)this.blender.root.visible=blender;this.setWeaponVisible(this.weaponVisible)}
+ update(d,pose,clock=0){this.appearance=heroineAppearance;if(this.activeKind==='blender')this.blender.update(d,pose,clock);else this.classic.update(d,pose,clock);this.updateVisibility()}
+ dispose(){heroineSwitchers.delete(this);this.classic.dispose();this.blender.dispose();this.root.removeFromParent()}
+}
+window.ParryHeroineAppearance={get:()=>heroineAppearance,set:setHeroineAppearance,toggle:()=>setHeroineAppearance(heroineAppearance==='classic'?'blender':'classic'),state:heroineAppearanceState};
 export class Actor {
- constructor(d,scene,mats){if(d.player)return new Heroine(d,scene,mats,{Assembly,frame});this.d=d;this.root=new THREE.Group();scene.add(this.root);this.parts=[];this.palette=palette(d);const c=this.palette;
+ constructor(d,scene,mats){if(d.player)return new HeroineSwitcher(d,scene,mats,{Assembly,frame});this.d=d;this.root=new THREE.Group();scene.add(this.root);this.parts=[];this.palette=palette(d);const c=this.palette;
   for(const link of d.links){const a=d.nodes[link.a],b=d.nodes[link.b],assembly=new Assembly(mats),torso=link.a===0&&link.b===1;
    assembly.add('cylinder',c.dark,[0,0,0],[.82,1,.78],[0,0,0],'cloth');
    if(torso){
