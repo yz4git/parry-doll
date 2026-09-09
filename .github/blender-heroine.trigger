@@ -1,1 +1,1 @@
-2026-09-09 build Blender heroine v3.1 single-shell face curve hair
+2026-09-09 build Blender heroine v3.2 volumetric hair stronger face
