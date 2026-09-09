@@ -9,3 +9,6 @@ A charcoal hem, woven seams, fitted waist hardware and smaller belt loops define
 Source assets and the runtime bundle are saved together. All gameplay, rig and camera behavior is preserved. Blender is unavailable; Python and Three.js provide the editable mesh workflow.
 
 Post-integration checks: 1,200 model frames across four enemy rigs passed, including finite skinned vertices, preserved wrist/ankle endpoints, normalized weights, outward skirt faces, a fixed waist attachment, and a level hem. Existing gameplay scripts and the anatomical rig are byte-identical to the baseline. Actual iPhone/WebGL rendering and performance were not tested.
+
+## Split combat-skirt silhouette pass
+The continuous rear wrap was replaced by a high-waist rigid yoke with four independently animated panels. Two narrow rear panels sweep outward and leave a deliberate centre gap, preventing the old paired-lobe silhouette while extending vertical lines down the legs. Two short lateral panels frame the upper thigh without covering the front stride. Only the panel lengths receive secondary motion; the waist remains fixed to the pelvis.

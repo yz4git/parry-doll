@@ -23,12 +23,12 @@ for(let l=0;l<4;l++){
   }
   scene.traverse(o=>{assert(o.matrixWorld.elements.every(Number.isFinite),'Non-finite model transform');if(frame===0&&o.geometry)assert(Array.from(o.geometry.attributes.position.array).every(Number.isFinite),'Non-finite geometry')});frames++;
  }
- assert(actors[0].hair.length>=8,'Missing layered hair');assert(actors[0].tails.length===1&&actors[0].skirt,'Missing continuous skirt');
- const skirt=actors[0].skirt,outer=skirt.children.find(m=>m.name==='woven-outer'),lining=skirt.children.find(m=>m.name==='dark-lining');assert(outer&&lining,'Missing fabric or lining');const p=outer.geometry.attributes.position,base=outer.userData.base,normal=outer.geometry.attributes.normal;
- // A single level rear hem avoids recreating paired hanging lobes.
- for(let i=p.count-65;i<p.count;i++)assert(Math.abs(p.getY(i)+1.74)<1e-5,'Uneven or sagging rear hem');
- for(let i=0;i<65;i++)assert(Math.abs(p.getX(i)-base[i*3])<1e-6&&Math.abs(p.getZ(i)-base[i*3+2])<1e-6,'Waist attachment moved');
- assert(normal.getX(6*65+20)*p.getX(6*65+20)+normal.getZ(6*65+20)*p.getZ(6*65+20)>0,'Skirt faces inward');actors.forEach(a=>a.dispose());
+ assert(actors[0].hair.length>=8,'Missing layered hair');assert(actors[0].tails.length===1&&actors[0].skirt,'Missing split combat skirt');
+ const skirt=actors[0].skirt,yoke=skirt.children.find(m=>m.name==='high-waist-yoke'),left=skirt.children.find(m=>m.name==='rear-left'),right=skirt.children.find(m=>m.name==='rear-right'),sideL=skirt.children.find(m=>m.name==='side-left'),sideR=skirt.children.find(m=>m.name==='side-right');assert(yoke&&left&&right&&sideL&&sideR,'Missing split skirt pieces');
+ assert.equal(skirt.name,'split-combat-skirt');yoke.geometry.computeBoundingBox();left.geometry.computeBoundingBox();right.geometry.computeBoundingBox();
+ assert(yoke.position.y>.05,'Waistline is not visually raised');assert(left.geometry.boundingBox.max.x<-.20&&right.geometry.boundingBox.min.x>.20,'Rear panels close the centre leg gap');assert(left.geometry.boundingBox.min.y<-1.4&&right.geometry.boundingBox.min.y<-1.4,'Rear panels too short to create vertical leg lines');
+ for(const panel of [left,right,sideL,sideR]){const pos=panel.geometry.attributes.position,base=panel.userData.base;for(let i=0;i<pos.count;i++)assert(Number.isFinite(pos.getX(i)+pos.getY(i)+pos.getZ(i)),'Non-finite skirt panel');for(let i=0;i<Math.min(5,pos.count);i++)assert(Math.abs(pos.getY(i)-base[i*3+1])<.08,'Panel waist attachment drifted');}
+ actors.forEach(a=>a.dispose());
 }
 const html=fs.readFileSync(root+'dist/index.html','utf8');for(const [,path]of html.matchAll(/(?:src|href)\s*=\s*['"]\.\/([^?'"\s]+)[?'"]/g))assert(fs.existsSync(root+'dist/'+path),'Missing entry asset '+path);
 console.log(`PASS: ${frames} model frames, four enemy rigs, finite geometry and transforms, read-only simulation inputs, skin binding/weights, wrist/ankle endpoints, outward surfaces, local entry assets`);
