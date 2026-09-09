@@ -22,4 +22,6 @@ jobs:
         with:
           node-version: 22
       - name: Implement model viewer
-        run: bash .github/scripts/model-viewer.sh
+        run: |
+          sed -i "s/r'''\\\\'use strict\\\\';/r'''use strict';/" .github/scripts/model-viewer.sh
+          bash .github/scripts/model-viewer.sh
