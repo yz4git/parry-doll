@@ -1,0 +1,51 @@
+name: Key Art Parry Polish
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/keyart-parry-polish.trigger
+
+permissions:
+  contents: write
+
+jobs:
+  polish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Balance parry cinematic exposure and typography
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('dist/parry-cinematic-v3.js')
+          s=p.read_text()
+          replacements={
+            "c.globalAlpha=(beat.perfect?.50:.34)*flash":"c.globalAlpha=(beat.perfect?.36:.27)*flash",
+            "const coreR=(beat.perfect?150:112)*(1+t*.7)":"const coreR=(beat.perfect?118:96)*(1+t*.62)",
+            "g.addColorStop(0,`rgba(255,255,255,${.98*fade})`)":"g.addColorStop(0,`rgba(255,255,255,${.86*fade})`)",
+            "g.addColorStop(.08,`rgba(255,239,190,${.82*fade})`)":"g.addColorStop(.08,`rgba(255,239,190,${.65*fade})`)",
+            "glowLine(px-cs*l*.52,py-sn*l*.52,px+cs*l*.48,py+sn*l*.48,'#ffffff',s.w,fade*.78,s.w*4.2)":"glowLine(px-cs*l*.52,py-sn*l*.52,px+cs*l*.48,py+sn*l*.48,'#ffffff',s.w,fade*.70,s.w*4.2)",
+            "c.font=`600 ${beat.perfect?Math.max(24,Math.min(42,W*.043)):Math.max(21,Math.min(34,W*.036))}px system-ui,sans-serif`":"c.font=`600 ${beat.perfect?Math.max(21,Math.min(30,W*.032)):Math.max(19,Math.min(27,W*.029))}px system-ui,sans-serif`",
+            "c.fillText(beat.perfect?'PERFECT PARRY':'PARRY',cx,Math.min(H-54,cy+96))":"c.fillText('PARRY',cx,Math.min(H-72,cy+78))"
+          }
+          for old,new in replacements.items():
+              if old not in s and new not in s:
+                  raise SystemExit('missing cinematic anchor: '+old[:70])
+              s=s.replace(old,new)
+          p.write_text(s)
+          PY
+          node --check dist/parry-cinematic-v3.js
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add dist/parry-cinematic-v3.js
+          git diff --cached --quiet && exit 0
+          git commit -m 'fix: balance key-art parry readability'
+          git push origin HEAD:main
