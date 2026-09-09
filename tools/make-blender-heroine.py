@@ -104,20 +104,22 @@ TH_L=empty('BL_THIGH_L',ROOT);SH_L=empty('BL_SHIN_L',ROOT);FOOT_L=empty('BL_FOOT
 # Source sheet measured at H=961 px and normalized in heroine-reference-proportions.json.
 # REFERENCE_V14: direct silhouette-driven Blender authoring pass.
 # REFERENCE_V15: hair mass, portrait and layered couture polish.
+# REFERENCE_V16: side-curve, face and pony-root polish.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
+# Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
 add_section_mesh(TORSO,'TorsoSuit',[
- (-.340,waist_w*.54,waist_d*.48,waist_d*.52,0.000),
- (-.245,waist_w*.50,waist_d*.48,waist_d*.54,0.004),
- (-.120,bust_w*.40,bust_d*.39,bust_d*.45,0.010),
- (.020,bust_w*.47,bust_d*.42,bust_d*.51,0.014),
- (.145,bust_w*.50,bust_d*.43,bust_d*.55,0.016),
- (.255,bust_w*.45,bust_d*.39,bust_d*.45,0.008),
- (.330,bust_w*.37,bust_d*.34,bust_d*.37,0.000)
-],BLACK_SOFT,40)
-# Small front-biased bust volumes blend into the suit rather than becoming two spherical armor pods.
+ (-.340,waist_w*.53,waist_d*.52,waist_d*.58,-.004),
+ (-.245,waist_w*.49,waist_d*.50,waist_d*.58,0.000),
+ (-.115,bust_w*.39,bust_d*.42,bust_d*.49,0.007),
+ (.010,bust_w*.46,bust_d*.44,bust_d*.58,0.018),
+ (.130,bust_w*.50,bust_d*.45,bust_d*.66,0.028),
+ (.225,bust_w*.47,bust_d*.41,bust_d*.53,0.016),
+ (.315,bust_w*.38,bust_d*.35,bust_d*.40,0.003)
+],BLACK,40)
+# Small front-biased contours carry the chest highlight from oblique/profile views.
 for side in(-1,1):
- add_sphere(TORSO,f'BustContour_{side}',(side*bust_w*.205,.135,bust_d*.235),(bust_w*.185,.078,bust_d*.205),BLACK,28,18)
+ add_sphere(TORSO,f'BustContour_{side}',(side*bust_w*.205,.125,bust_d*.330),(bust_w*.190,.082,bust_d*.215),BLACK,30,18)
 # Reference-like harness: thin lines, no square robot chest plates.
 add_box(TORSO,'Sternum',(0,.085,bust_d*.43),(.020,.355,.016),SILVER,.006)
 add_box(TORSO,'Collar',(0,.305,.010),(W('neck')*1.15,.055,.105),BLACK,.014)
@@ -135,10 +137,10 @@ for side in(-1,1):
 
 # Compact pelvis and high waist: measured 0.123H width and 0.089H depth.
 add_section_mesh(PELVIS,'PelvisSuit',[
- (-.170,pelvis_w*.43,pelvis_d*.43,pelvis_d*.47,0.000),
- (-.070,pelvis_w*.50,pelvis_d*.48,pelvis_d*.52,0.004),
- (.055,pelvis_w*.49,pelvis_d*.47,pelvis_d*.50,0.004),
- (.155,waist_w*.57,waist_d*.54,waist_d*.58,0.000)
+ (-.180,pelvis_w*.42,pelvis_d*.60,pelvis_d*.48,-.018),
+ (-.080,pelvis_w*.50,pelvis_d*.58,pelvis_d*.52,-.012),
+ (.040,pelvis_w*.49,pelvis_d*.52,pelvis_d*.51,-.005),
+ (.155,waist_w*.57,waist_d*.56,waist_d*.59,0.000)
 ],BLACK,36)
 add_box(PELVIS,'HighWaist',(0,.105,.012),(pelvis_w*.96,.070,pelvis_d*.88),BLACK,.018)
 add_box(PELVIS,'HipBelt',(0,.145,.018),(pelvis_w*1.08,.028,pelvis_d*.94),SILVER,.008)
@@ -162,52 +164,54 @@ add_panel(PELVIS,'RearTailBlackL',[(-.250,.070,-.145),(-.165,.062,-.165),(-.185,
 add_panel(PELVIS,'RearTailBlackR',[(.165,.062,-.165),(.250,.070,-.145),(.315,-.485,-.105),(.245,-.875,-.132),(.185,-.520,-.195)],.012,BLACK)
 
 # === HEAD / FACE ===
-# The sheet reads as a compact ~7-head stylized adult: keep the skull wide enough but reduce vertical helmet height.
-add_sphere(HEAD,'Cranium',(0,.012,-.018),(head_w*.490,.116,head_d*.480),SKIN,40,26)
-add_sphere(HEAD,'Jaw',(0,-.058,.030),(head_w*.400,.070,head_d*.400),SKIN,38,22)
-add_sphere(HEAD,'Chin',(0,-.108,.058),(head_w*.230,.027,head_d*.235),SKIN,28,16)
-add_cylinder(HEAD,'Neck',(0,-.160,-.004),W('neck')*.37,.100,SKIN,24)
-face_z=head_d*.500
+# Compact skull with a narrower jaw/chin; dimensions remain tied to the measured head width/depth.
+add_sphere(HEAD,'Cranium',(0,.010,-.020),(head_w*.488,.114,head_d*.475),SKIN,42,28)
+add_sphere(HEAD,'Jaw',(0,-.058,.034),(head_w*.365,.069,head_d*.375),SKIN,38,22)
+add_sphere(HEAD,'Chin',(0,-.108,.061),(head_w*.195,.025,head_d*.220),SKIN,28,16)
+add_cylinder(HEAD,'Neck',(0,-.158,-.004),W('neck')*.36,.098,SKIN,24)
+for side in(-1,1):add_sphere(HEAD,f'Ear_{side}',(side*head_w*.475,-.012,-.005),(.012,.025,.010),SKIN,18,10)
+face_z=head_d*.495
 for side in(-1,1):
- add_sphere(HEAD,f'EyeWhite_{side}',(side*head_w*.170,.010,face_z),(head_w*.080,.0105,.006),SCLERA,22,12)
- add_sphere(HEAD,f'Iris_{side}',(side*head_w*.170,.010,face_z+.0065),(head_w*.032,.0085,.004),IRIS,18,10)
- add_sphere(HEAD,f'Pupil_{side}',(side*head_w*.170,.010,face_z+.009),(head_w*.012,.0055,.0025),PUPIL,14,8)
- add_box(HEAD,f'Eyeliner_{side}',(side*head_w*.170,.027,face_z+.0085),(head_w*.096,.005,.0032),HAIR,.0014,rot=(0,0,-side*.085))
- add_box(HEAD,f'Brow_{side}',(side*head_w*.170,.058,face_z+.001),(head_w*.105,.005,.0035),HAIR,.0014,rot=(0,0,-side*.09))
-add_sphere(HEAD,'Nose',(0,-.012,face_z+.006),(.009,.021,.008),SKIN,18,10)
-add_box(HEAD,'Mouth',(0,-.066,face_z+.003),(.040,.005,.0035),LIP,.0012)
-# Scalp volumes stay behind the face; temple fills prevent bald-looking gaps without forming a spherical helmet.
-add_sphere(HEAD,'HairBack',(0,.026,-head_d*.24),(head_w*.530,.136,head_d*.565),HAIR,38,24)
-add_sphere(HEAD,'HairCrown',(0,.080,-.035),(head_w*.510,.070,head_d*.500),HAIR,36,22)
-for side in(-1,1):add_sphere(HEAD,f'HairTemple_{side}',(side*head_w*.405,.012,.000),(head_w*.120,.095,head_d*.210),HAIR,26,18)
-# Five broad overlapping swept bang sheets replace the picket-fence fringe.
-bangs=[
- (-.090,-.045,-.072,.060),(-.052,-.012,-.038,.067),(-.010,.012,.010,.070),(.040,-.006,.043,.064),(.085,-.050,.078,.057)
-]
+ add_sphere(HEAD,f'EyeWhite_{side}',(side*head_w*.160,.006,face_z),(head_w*.074,.009,.0055),SCLERA,24,12)
+ add_sphere(HEAD,f'Iris_{side}',(side*head_w*.160,.006,face_z+.006),(head_w*.029,.0075,.0037),IRIS,18,10)
+ add_sphere(HEAD,f'Pupil_{side}',(side*head_w*.160,.006,face_z+.0085),(head_w*.0105,.0048,.0023),PUPIL,14,8)
+ add_box(HEAD,f'Eyeliner_{side}',(side*head_w*.160,.022,face_z+.008),(head_w*.091,.0045,.0030),HAIR,.0013,rot=(0,0,-side*.095))
+ add_box(HEAD,f'Brow_{side}',(side*head_w*.160,.052,face_z+.001),(head_w*.098,.0045,.0032),HAIR,.0013,rot=(0,0,-side*.095))
+add_sphere(HEAD,'Nose',(0,-.013,face_z+.006),(.0085,.020,.0075),SKIN,18,10)
+add_box(HEAD,'Mouth',(0,-.064,face_z+.003),(.038,.0045,.0032),LIP,.0011)
+# Move the solid scalp behind the hairline; forehead silhouette now comes from swept layers, not a helmet rim.
+add_sphere(HEAD,'HairBack',(0,.022,-head_d*.31),(head_w*.515,.126,head_d*.535),HAIR,40,26)
+add_sphere(HEAD,'HairCrown',(0,.074,-head_d*.18),(head_w*.475,.061,head_d*.425),HAIR,38,24)
+for side in(-1,1):add_sphere(HEAD,f'HairTemple_{side}',(side*head_w*.405,.002,-.010),(head_w*.105,.086,head_d*.190),HAIR,26,18)
+# Broad crown sweeps give the parting visible in the reference before the bangs fall over the forehead.
+add_ribbon(HEAD,'TopSweepL',[(-.015,.122,-.035),(-.055,.102,.020),(-.095,.070,face_z*.50),(-.105,.020,face_z*.80)],[.074,.072,.058,.025],.0065,HAIR)
+add_ribbon(HEAD,'TopSweepR',[(.015,.122,-.035),(.050,.102,.018),(.090,.070,face_z*.48),(.102,.018,face_z*.78)],[.070,.068,.054,.024],.0065,HAIR_HI)
+# Five overlapping asymmetric bangs, all tapered before they reach eye level.
+bangs=[(-.086,-.032,-.070,.056),(-.048,-.004,-.033,.061),(-.008,.014,.012,.064),(.038,-.008,.043,.058),(.080,-.038,.073,.052)]
 for i,(sx,ey,ex,w0) in enumerate(bangs):
- add_ribbon(HEAD,f'BangSheet_{i}',[(sx,.104,.010),(sx*.80,.082,face_z*.62),(ex*.84,.043,face_z-.003),(ex,ey,face_z+.004)],[w0,w0*.96,w0*.68,w0*.28],.0065,HAIR_HI if i in(1,3) else HAIR)
+ add_ribbon(HEAD,f'BangSheet_{i}',[(sx,.096,.012),(sx*.80,.073,face_z*.58),(ex*.84,.038,face_z-.004),(ex,ey,face_z+.003)],[w0,w0*.94,w0*.60,w0*.20],.006,HAIR_HI if i in(1,3) else HAIR)
 for side in(-1,1):
- add_ribbon(HEAD,f'FaceFrame_{side}',[(side*head_w*.365,.070,.015),(side*head_w*.445,-.010,head_d*.16),(side*head_w*.465,-.180,head_d*.08),(side*head_w*.405,-.420,-.005)],[.050,.046,.034,.014],.0065,HAIR)
- add_ribbon(HEAD,f'FaceFrameFine_{side}',[(side*head_w*.410,.050,.000),(side*head_w*.485,-.075,head_d*.11),(side*head_w*.500,-.270,.035),(side*head_w*.445,-.500,-.025)],[.028,.026,.020,.010],.005,HAIR_HI)
+ add_ribbon(HEAD,f'FaceFrame_{side}',[(side*head_w*.370,.060,.005),(side*head_w*.445,-.025,head_d*.13),(side*head_w*.455,-.190,head_d*.055),(side*head_w*.395,-.410,-.012)],[.046,.042,.030,.012],.006,HAIR)
+ add_ribbon(HEAD,f'FaceFrameFine_{side}',[(side*head_w*.410,.040,-.005),(side*head_w*.480,-.090,head_d*.08),(side*head_w*.490,-.275,.015),(side*head_w*.435,-.490,-.032)],[.024,.023,.017,.008],.0045,HAIR_HI)
+# High gathered root is visible above/behind the crown like the supplied four-view sheet.
+add_sphere(HEAD,'PonyRootMass',(0,.142,-head_d*.36),(.085,.070,.068),HAIR,30,20)
+add_box(HEAD,'HairTie',(0,.142,-head_d*.43),(.098,.026,.038),SILVER,.008)
 PONY=empty('BL_PONY_DYNAMIC',HEAD)
-# Continuous ponytail core: this is the dark hair mass seen in the side/back reference.
 add_section_mesh(PONY,'PonyCore',[
- (.100,.050,.030,.038,-head_d*.47),
- (-.030,.078,.040,.052,-head_d*.67),
- (-.300,.118,.052,.068,-.390),
- (-.650,.142,.060,.074,-.325),
- (-1.000,.128,.052,.064,-.235),
- (-1.300,.092,.038,.048,-.155),
- (-1.500,.045,.022,.028,-.080)
-],HAIR,32)
-# Wide ribbons sit over the core, with fine strands only at the outside edge.
+ (.145,.048,.030,.038,-head_d*.43),
+ (.020,.080,.042,.054,-head_d*.66),
+ (-.285,.122,.054,.070,-.395),
+ (-.640,.145,.061,.076,-.325),
+ (-1.000,.130,.053,.065,-.232),
+ (-1.305,.090,.037,.047,-.150),
+ (-1.505,.043,.021,.027,-.075)
+],HAIR,34)
 for i in range(7):
  lane=(i-3)/3
- add_ribbon(PONY,f'PonyLayer_{i}',[(lane*.025,.095,-head_d*.49),(lane*.070,-.055,-head_d*.70),(lane*.135,-.410,-.405),(lane*.205,-.900,-.285),(lane*.270,-1.470,-.090)],[.055,.062,.066,.050,.014],.006,HAIR_HI if i in(1,5) else HAIR)
+ add_ribbon(PONY,f'PonyLayer_{i}',[(lane*.025,.138,-head_d*.45),(lane*.072,-.020,-head_d*.69),(lane*.140,-.400,-.405),(lane*.210,-.900,-.285),(lane*.278,-1.485,-.085)],[.054,.062,.067,.050,.013],.006,HAIR_HI if i in(1,5) else HAIR)
 for i in range(8):
  lane=(i-3.5)/3.5
- add_strand(PONY,f'PonyEdge_{i}',[(lane*.030,.090,-head_d*.50),(lane*.085,-.090,-head_d*.72),(lane*.160,-.500,-.390),(lane*.245,-1.020,-.245),(lane*.330,-1.535,-.060)],.0038+(i%2)*.0007,HAIR_HI if i%3==0 else HAIR)
-add_box(HEAD,'HairTie',(0,.086,-head_d*.49),(.102,.028,.040),SILVER,.008)
+ add_strand(PONY,f'PonyEdge_{i}',[(lane*.030,.135,-head_d*.46),(lane*.088,-.060,-head_d*.71),(lane*.165,-.505,-.385),(lane*.250,-1.025,-.235),(lane*.335,-1.550,-.055)],.0036+(i%2)*.0007,HAIR_HI if i%3==0 else HAIR)
 
 # === LIMBS ===
 # Diameters come directly from the front sheet; side depth comes from the side view.
