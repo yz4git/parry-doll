@@ -23,5 +23,14 @@ jobs:
           node-version: 22
       - name: Implement model viewer
         run: |
-          sed -i "s/r'''\\\\'use strict\\\\';/r'''use strict';/" .github/scripts/model-viewer.sh
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('.github/scripts/model-viewer.sh')
+          s=p.read_text()
+          old=r"ui.write_text(r'''\'use strict\';"
+          new="ui.write_text(r'''\"use strict\";"
+          if old not in s:
+              raise SystemExit('model viewer directive anchor missing')
+          p.write_text(s.replace(old,new))
+          PY
           bash .github/scripts/model-viewer.sh
