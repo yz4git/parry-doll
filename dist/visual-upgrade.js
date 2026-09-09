@@ -119,16 +119,16 @@
  const modelViewer={active:false,preset:'full',yaw:-.46,pitch:.055,distance:4.65,auto:true,weapon:true,baseFace:0};
  function modelViewerScale(){return Math.max(.72,player?.spec?.scale||1)}
  function modelViewerPreset(name){const s=modelViewerScale();modelViewer.preset=name;if(name==='face'){modelViewer.distance=1.38*s;modelViewer.pitch=.015}else if(name==='upper'){modelViewer.distance=2.55*s;modelViewer.pitch=.035}else{modelViewer.distance=4.65*s;modelViewer.pitch=.055}return modelViewerState()}
- function modelViewerTarget(){
-  const nodes=player?.nodes||[],head=nodes.find(n=>n.name==='head')?.p,chest=nodes.find(n=>n.name==='chest')?.p,hip=nodes.find(n=>n.name==='hip')?.p,feet=nodes.filter(n=>n.name==='foot').map(n=>n.p);
-  const fallback=player?.pos||v(0,0,0),minFoot=feet.length?feet.reduce((a,b)=>a.y<b.y?a:b):fallback;
+ function modelViewerTarget(d=player){
+  const nodes=d?.nodes||[],head=nodes.find(n=>n.name==='head')?.p,chest=nodes.find(n=>n.name==='chest')?.p,hip=nodes.find(n=>n.name==='hip')?.p,feet=nodes.filter(n=>n.name==='foot').map(n=>n.p);
+  const fallback=d?.pos||v(0,0,0),minFoot=feet.length?feet.reduce((a,b)=>a.y<b.y?a:b):fallback;
   if(modelViewer.preset==='face'&&head)return v(head.x,head.y+.015*modelViewerScale(),head.z);
   if(modelViewer.preset==='upper'&&head&&chest)return mixv(chest,head,.48);
   if(head)return v(head.x,(head.y+minFoot.y)*.5+.10*modelViewerScale(),head.z);
   return v(fallback.x,(fallback.y||0)+1.15*modelViewerScale(),fallback.z);
  }
- function modelViewerCamera(){
-  const target=modelViewerTarget(),s=modelViewerScale(),minD=.82*s,maxD=7.2*s;modelViewer.distance=Math.max(minD,Math.min(maxD,modelViewer.distance));modelViewer.pitch=Math.max(-.38,Math.min(.58,modelViewer.pitch));
+ function modelViewerCamera(d=player){
+  const target=modelViewerTarget(d),s=modelViewerScale(),minD=.82*s,maxD=7.2*s;modelViewer.distance=Math.max(minD,Math.min(maxD,modelViewer.distance));modelViewer.pitch=Math.max(-.38,Math.min(.58,modelViewer.pitch));
   const a=modelViewer.baseFace+modelViewer.yaw,h=Math.cos(modelViewer.pitch)*modelViewer.distance,cam=v(target.x+Math.sin(a)*h,target.y+Math.sin(modelViewer.pitch)*modelViewer.distance,target.z+Math.cos(a)*h),f=vn(subv(target,cam));
   return{camera:cam,forward:f,up:v(0,1,0)};
  }
@@ -144,7 +144,7 @@
   if(modelViewer.active){
    try{
     if(modelViewer.auto)modelViewer.yaw+=dt*.19;
-    const view=modelViewerCamera(),visualPlayer=proxyFor(player),visualBoss=proxyFor(boss);
+    const visualPlayer=proxyFor(player),visualBoss=proxyFor(boss),view=modelViewerCamera(visualPlayer);
     visualPlayer.face=modelViewer.baseFace;visualPlayer.vel=v(0,0,0);visualPlayer.attack=0;visualPlayer.parry=0;visualPlayer.wind=0;visualPlayer.strike=0;visualPlayer.down=0;visualPlayer.stun=0;visualPlayer.hitRegionT=0;visualPlayer.motion=0;
     if(scene.actors?.[1]?.root)scene.actors[1].root.visible=false;if(scene.actors?.[0]?.root)scene.actors[0].root.visible=true;if(scene.actors?.[0]?.weapon)scene.actors[0].weapon.visible=modelViewer.weapon;
     ribbonMeshes.forEach(m=>m.visible=false);ribbonCoreMeshes.forEach(m=>m.visible=false);
