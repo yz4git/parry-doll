@@ -45,16 +45,15 @@ jobs:
             const context=await browser.newContext({viewport:{width:852,height:393},deviceScaleFactor:1,isMobile:true,hasTouch:true,userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 26_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1'});
             const page=await context.newPage();
             const errors=[];page.on('pageerror',e=>errors.push('pageerror: '+e.message));page.on('console',m=>{if(m.type()==='error')errors.push('console: '+m.text())});
-            const tap=id=>page.evaluate(id=>{const b=document.getElementById(id);if(!b)return false;const o={bubbles:true,pointerId:7,pointerType:'touch',isPrimary:true};b.dispatchEvent(new PointerEvent('pointerdown',o));b.dispatchEvent(new PointerEvent('pointerup',o));return true},id);
             const shot=path=>execFileSync('import',['-window','root',path],{timeout:5000,stdio:'ignore'});
             await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});await page.waitForSelector('#start',{timeout:12000});await sleep(2200);
             const webgl=await page.evaluate(()=>{const c=document.getElementById('visual-scene');const gl=c&&(c.getContext('webgl2')||c.getContext('webgl'));return{canvas:!!c,renderer:gl?gl.getParameter(gl.RENDERER):null,width:c?.width||0,height:c?.height||0}});
-            shot('visual-audit/00-title.png');await tap('start');await sleep(1400);shot('visual-audit/01-fight-open.png');
+            shot('visual-audit/00-title.png');await page.evaluate(()=>document.getElementById('start')?.click());await sleep(1400);shot('visual-audit/01-fight-open.png');
             await page.keyboard.down('KeyW');await sleep(900);await page.keyboard.up('KeyW');await page.keyboard.down('KeyD');await sleep(420);await page.keyboard.up('KeyD');await sleep(180);shot('visual-audit/02-approach.png');
-            await tap('attack');await sleep(120);shot('visual-audit/03-attack-early.png');await sleep(220);shot('visual-audit/04-attack-late.png');
-            await sleep(420);await tap('attack');await sleep(140);shot('visual-audit/05-second-attack.png');
+            await page.keyboard.press('KeyJ');await sleep(120);shot('visual-audit/03-attack-early.png');await sleep(220);shot('visual-audit/04-attack-late.png');
+            await sleep(420);await page.keyboard.press('KeyJ');await sleep(140);shot('visual-audit/05-second-attack.png');
             await page.keyboard.down('KeyA');await sleep(650);await page.keyboard.up('KeyA');await sleep(160);shot('visual-audit/06-circle-left.png');
-            let parry=false;for(let i=0;i<110;i++){const s=await page.evaluate(()=>{const cue=document.getElementById('cue'),stats=document.getElementById('stats');return{opacity:+getComputedStyle(cue).opacity||0,text:cue.textContent||'',stats:stats.textContent||''}});if(s.opacity>.18||/PARRY|弾|危|!/i.test(s.text)){await tap('parry');await sleep(70);shot('visual-audit/07-parry.png');parry=true;break}await sleep(45)}
+            let parry=false;for(let i=0;i<110;i++){const s=await page.evaluate(()=>{const cue=document.getElementById('cue'),stats=document.getElementById('stats');return{opacity:+getComputedStyle(cue).opacity||0,text:cue.textContent||'',stats:stats.textContent||''}});if(s.opacity>.18||/PARRY|弾|危|!/i.test(s.text)){await page.keyboard.press('KeyK');await sleep(70);shot('visual-audit/07-parry.png');parry=true;break}await sleep(45)}
             const diag=await page.evaluate(webgl=>({stats:document.getElementById('stats')?.textContent||'',boss:document.getElementById('bossName')?.textContent||'',snapshot:window.parryDoll?.snapshot?.()||null,webgl}),webgl);
             fs.writeFileSync('visual-audit/audit.json',JSON.stringify({diag,errors,parry},null,2));console.log(JSON.stringify({diag,errors,parry},null,2));await browser.close();
           })().catch(e=>{console.error(e);process.exit(1)});
