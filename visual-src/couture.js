@@ -28,7 +28,7 @@ function panelGeometry({side=1,topY=.12,bottomY=-1.18,topX=.54,bottomX=.84,z=-.5
    p.push(cx+u*half*2,cy+edgeLift,cz+Math.abs(u)*.032+Math.sin(t*Math.PI)*.012);
   }
  }
- for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){const a=r*(cols+1)+c,b=a+1,d=(r+1)*(cols+1)+c,e=d+1;idx.push(a,d,b,b,d,e)}
+ for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){const a=r*(cols+1)+c,b=a+1,d=(r+1)*(cols+1)+c,e=d+1;idx.push(a,b,d,b,e,d)}
  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));g.setIndex(idx);g.computeVertexNormals();return g;
 }
 function addPanel(group,name,opts){

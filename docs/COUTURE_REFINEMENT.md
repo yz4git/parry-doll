@@ -18,3 +18,6 @@ A real WebGL gameplay capture showed that four hanging panels read as rigid blac
 
 ## High-cut waist finish
 The second WebGL pass removed the four-tab clutter but made the rear spears too subtle and left a strong horizontal waist ring. The final silhouette pass uses a sculpted high-cut yoke whose lower edge rises over the outer hips, a slimmer curved metal trim, and two slightly broader pale rear spears that remain clearly separated and strongly tapered. The result keeps the legs visually uninterrupted while preserving a readable piece of moving cloth behind the character.
+
+## Rear cloth surface correction
+Real WebGL close-up review exposed a winding error: the rear panels' bright outer surfaces faced forward, so the gameplay camera culled them and showed the dark lining instead. The panel winding is now reversed so the pale outer cloth faces the rear gameplay camera while the dark lining remains visible from the inner/front side. A normal-direction regression assertion prevents this silhouette bug from returning.

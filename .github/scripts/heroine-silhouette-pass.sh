@@ -32,7 +32,7 @@ function panelGeometry({side=1,topY=.12,bottomY=-1.18,topX=.54,bottomX=.84,z=-.5
    p.push(cx+u*half*2,cy+edgeLift,cz+Math.abs(u)*.032+Math.sin(t*Math.PI)*.012);
   }
  }
- for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){const a=r*(cols+1)+c,b=a+1,d=(r+1)*(cols+1)+c,e=d+1;idx.push(a,d,b,b,d,e)}
+ for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){const a=r*(cols+1)+c,b=a+1,d=(r+1)*(cols+1)+c,e=d+1;idx.push(a,b,d,b,e,d)}
  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));g.setIndex(idx);g.computeVertexNormals();return g;
 }
 function addPanel(group,name,opts){
@@ -81,7 +81,7 @@ new="""assert(actors[0].hair.length>=8,'Missing layered hair');assert(actors[0].
  const skirt=actors[0].skirt,yoke=skirt.children.find(m=>m.name==='high-waist-yoke'),left=skirt.children.find(m=>m.name==='rear-left'),right=skirt.children.find(m=>m.name==='rear-right'),trim=skirt.children.find(m=>m.name==='waist-trim');assert(yoke&&left&&right&&trim,'Missing streamlined split skirt');assert(!skirt.children.some(m=>m.name==='side-left'||m.name==='side-right'),'Legacy side tabs returned');
  assert.equal(skirt.name,'split-combat-skirt');yoke.geometry.computeBoundingBox();left.geometry.computeBoundingBox();right.geometry.computeBoundingBox();
  assert(yoke.geometry.boundingBox.max.y>.38&&yoke.geometry.boundingBox.min.y<.17,'High-cut yoke profile collapsed');assert(left.geometry.boundingBox.max.x<-.34&&right.geometry.boundingBox.min.x>.34,'Rear panels close the centre leg gap');assert(left.geometry.boundingBox.min.y<-1.1&&right.geometry.boundingBox.min.y<-1.1,'Rear panels too short to create vertical leg lines');
- for(const panel of [left,right]){const pos=panel.geometry.attributes.position,base=panel.userData.base,count=6;for(let i=0;i<pos.count;i++)assert(Number.isFinite(pos.getX(i)+pos.getY(i)+pos.getZ(i)),'Non-finite skirt panel');for(let i=0;i<count;i++)assert(Math.abs(pos.getY(i)-base[i*3+1])<.05,'Panel waist attachment drifted');const topXs=[],bottomXs=[];for(let i=0;i<count;i++){topXs.push(base[i*3]);const j=pos.count-count+i;bottomXs.push(base[j*3])}assert(Math.max(...bottomXs)-Math.min(...bottomXs)<Math.max(...topXs)-Math.min(...topXs)*.75+Math.min(...topXs)*-.75,'Rear panel does not taper strongly enough');}
+ for(const panel of [left,right]){const pos=panel.geometry.attributes.position,base=panel.userData.base,normal=panel.geometry.attributes.normal,count=6;const mid=Math.floor(pos.count*.5);assert(normal.getZ(mid)<-.25,'Rear panel outer face does not face the rear camera');for(let i=0;i<pos.count;i++)assert(Number.isFinite(pos.getX(i)+pos.getY(i)+pos.getZ(i)),'Non-finite skirt panel');for(let i=0;i<count;i++)assert(Math.abs(pos.getY(i)-base[i*3+1])<.05,'Panel waist attachment drifted');const topXs=[],bottomXs=[];for(let i=0;i<count;i++){topXs.push(base[i*3]);const j=pos.count-count+i;bottomXs.push(base[j*3])}assert(Math.max(...bottomXs)-Math.min(...bottomXs)<Math.max(...topXs)-Math.min(...topXs)*.75+Math.min(...topXs)*-.75,'Rear panel does not taper strongly enough');}
  actors.forEach(a=>a.dispose());"""
 p.write_text(s[:start]+new+s[end:])
 
