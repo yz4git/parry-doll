@@ -16,9 +16,14 @@ for(let l=0;l<4;l++){
   if(!actors)actors=[state.player,state.boss].map(d=>new Actor(d,scene,mats));
   actors.forEach((a,i)=>a.update(i?state.boss:state.player,state.poses[i],frame/60));env.update(frame/60);scene.updateMatrixWorld(true);
   assert.equal(JSON.stringify(state),before,'Render actor mutated its simulation input');
+  const hero=actors[0],rig=hero.rig;
+  if(rig){assert.equal(rig.skeleton.bones.length,17);for(const side of ['L','R']){const hand=state.player.nodes.find(n=>n.name===(side==='L'?'offhand':'hand'));assert(rig.world['hand'+side].distanceTo(new THREE.Vector3(hand.p.x,hand.p.y,hand.p.z))<1e-8,'Wrist endpoint changed');const foot=state.player.nodes.find(n=>n.name==='foot'&&Math.sign(n.rest.x)===(side==='L'?-1:1));assert(rig.world['foot'+side].distanceTo(new THREE.Vector3(foot.p.x,foot.p.y,foot.p.z))<1e-8,'Foot endpoint changed');}
+   const g=hero.body.geometry,point=new THREE.Vector3();for(let i=0;i<g.attributes.position.count;i+=53){hero.body.getVertexPosition(i,point);assert(point.toArray().every(Number.isFinite),'Non-finite skinned vertex');assert(point.distanceTo(rig.world.pelvis)<6,'Exploded skin binding');}
+   if(frame===0){const w=g.attributes.skinWeight;for(let i=0;i<w.count;i++)assert(Math.abs(w.getX(i)+w.getY(i)+w.getZ(i)+w.getW(i)-1)<1e-5,'Bad skin weights');assert(g.attributes.normal.getX(5*40)>.5,'Inward body surface');}
+  }
   scene.traverse(o=>{assert(o.matrixWorld.elements.every(Number.isFinite),'Non-finite model transform');if(frame===0&&o.geometry)assert(Array.from(o.geometry.attributes.position.array).every(Number.isFinite),'Non-finite geometry')});frames++;
  }
  assert(actors[0].hair.length>=8,'Missing layered hair');assert(actors[0].tails.length===2,'Missing split coat');actors.forEach(a=>a.dispose());
 }
 const html=fs.readFileSync(root+'dist/index.html','utf8');for(const [,path]of html.matchAll(/(?:src|href)\s*=\s*['"]\.\/([^?'"\s]+)[?'"]/g))assert(fs.existsSync(root+'dist/'+path),'Missing entry asset '+path);
-console.log(`PASS: ${frames} model frames, four enemy rigs, finite geometry and transforms, read-only simulation inputs, local entry assets`);
+console.log(`PASS: ${frames} model frames, four enemy rigs, finite geometry and transforms, read-only simulation inputs, skin binding/weights, wrist/ankle endpoints, outward surfaces, local entry assets`);

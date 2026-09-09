@@ -17,7 +17,7 @@ def add_rings(rings,sides):
    p.extend(round(float(v),5) for v in q);bones.extend(bi+[0]*(4-len(bi)));weights.extend(bw+[0]*(4-len(bw)));colors.extend(col(a))
  for i in range(len(rings)-1):
   for j in range(sides):
-   a=offset+i*sides+j;b=offset+i*sides+(j+1)%sides;c=b+sides;d=a+sides;indices.extend([a,b,d,b,c,d])
+   a=offset+i*sides+j;b=offset+i*sides+(j+1)%sides;c=b+sides;d=a+sides;indices.extend([a,d,b,b,d,c])
  # End caps prevent visible hollow tubes at extreme poses.
  for first,reverse in [(offset,True),(offset+(len(rings)-1)*sides,False)]:
   for j in range(1,sides-1):indices.extend([first,first+j+(0 if reverse else 1),first+j+(1 if reverse else 0)])
