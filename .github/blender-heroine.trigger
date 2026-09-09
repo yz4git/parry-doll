@@ -1,1 +1,1 @@
-2026-09-10 build Blender heroine v4.2 portrait depth irregular fringe offset rear ponytail
+2026-09-10 build Blender heroine v4.3 soft portrait blunt fringe true side-flow ponytail
