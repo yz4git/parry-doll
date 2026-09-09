@@ -21,8 +21,16 @@ BLACK=material('Suit Black',(0.014,0.018,0.027),.08,.30)
 BLACK_SOFT=material('Suit Soft',(0.030,0.035,0.048),.02,.44)
 WHITE=material('Porcelain White',(0.86,0.88,0.88),.18,.28)
 SILVER=material('Silver',(0.50,0.53,0.56),.78,.19)
-HAIR=material('Hair',(0.010,0.009,0.013),.02,.40)
-HAIR_HI=material('Hair Highlight',(0.040,0.030,0.040),.02,.34)
+HAIR=material('Hair',(0.007,0.006,0.010),0.0,.52)
+HAIR_HI=material('Hair Highlight',(0.026,0.020,0.030),0.0,.46)
+# Reduce Principled specular so dark hair does not blow out to a silver ribbon under bright sky lighting.
+for _hair_mat,_spec in ((HAIR,.14),(HAIR_HI,.18)):
+ _bsdf=_hair_mat.node_tree.nodes.get('Principled BSDF')
+ if _bsdf:
+  _ior=_bsdf.inputs.get('Specular IOR Level')
+  _old=_bsdf.inputs.get('Specular')
+  if _ior:_ior.default_value=_spec
+  elif _old:_old.default_value=_spec
 SCLERA=material('Sclera',(0.86,0.84,0.82),0,.42)
 IRIS=material('Iris',(0.18,0.24,0.25),.04,.24)
 PUPIL=material('Pupil',(0.004,0.005,0.006),0,.30)
@@ -116,29 +124,35 @@ TH_L=empty('BL_THIGH_L',ROOT);SH_L=empty('BL_SHIN_L',ROOT);FOOT_L=empty('BL_FOOT
 # REFERENCE_V25: larger portrait eyes and strand-separated ponytail mass.
 # REFERENCE_V26: strand-flow fringe, split pony cascade and couture micro-detail.
 # REFERENCE_V27: asymmetric fringe, clean forehead and layered-volume ponytail.
+# REFERENCE_V28: low-specular black hair and staggered fringe roots.
+# REFERENCE_V29: anatomy-first head, embedded eyes, eyelids, connected nose and continuous ribcage.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
 add_section_mesh(TORSO,'TorsoSuit',[
- (-.340,waist_w*.50,waist_d*.50,waist_d*.56,-.006),
- (-.255,waist_w*.46,waist_d*.48,waist_d*.57,-.002),
- (-.145,bust_w*.35,bust_d*.40,bust_d*.48,.006),
- (-.020,bust_w*.45,bust_d*.43,bust_d*.58,.017),
- (.095,bust_w*.51,bust_d*.45,bust_d*.70,.032),
- (.185,bust_w*.49,bust_d*.43,bust_d*.62,.025),
- (.260,bust_w*.43,bust_d*.39,bust_d*.50,.012),
- (.315,bust_w*.35,bust_d*.34,bust_d*.39,.002)
-],BLACK,44)
-# Front-biased contours define the bust from front/side while staying within the measured bust width.
+ (-.340,waist_w*.49,waist_d*.49,waist_d*.54,-.006),
+ (-.285,waist_w*.47,waist_d*.47,waist_d*.54,-.004),
+ (-.220,waist_w*.49,waist_d*.46,waist_d*.55,-.001),
+ (-.150,bust_w*.37,bust_d*.40,bust_d*.47,.004),
+ (-.075,bust_w*.43,bust_d*.41,bust_d*.54,.011),
+ (.000,bust_w*.48,bust_d*.42,bust_d*.62,.021),
+ (.075,bust_w*.515,bust_d*.44,bust_d*.675,.030),
+ (.135,bust_w*.505,bust_d*.44,bust_d*.655,.030),
+ (.195,bust_w*.465,bust_d*.42,bust_d*.57,.022),
+ (.255,bust_w*.405,bust_d*.39,bust_d*.48,.012),
+ (.315,bust_w*.340,bust_d*.34,bust_d*.385,.002)
+],BLACK,48)
+# Shallow soft-tissue support over a continuous ribcage. The outer envelope remains reference-locked.
 for side in(-1,1):
- add_sphere(TORSO,f'BustContour_{side}',(side*bust_w*.205,.115,bust_d*.390),(bust_w*.220,.100,bust_d*.285),BLACK,34,22)
-add_box(TORSO,'UnderBustLine',(0,.028,bust_d*.535),(bust_w*.74,.017,.011),SILVER,.004)
+ add_sphere(TORSO,f'BustSoft_{side}',(side*bust_w*.205,.105,bust_d*.330),(bust_w*.205,.082,bust_d*.180),BLACK,36,22)
+add_box(TORSO,'UnderBustLine',(0,.020,bust_d*.505),(bust_w*.70,.014,.009),SILVER,.003)
 for side in(-1,1):
- add_box(TORSO,f'WaistContour_{side}',(side*waist_w*.44,-.145,waist_d*.54),(.014,.190,.010),SILVER,.004,rot=(0,0,-side*.17))
-# Upper torso continuity: clavicle/shoulder bridge stays inside the measured shoulder envelope.
+ add_box(TORSO,f'WaistContour_{side}',(side*waist_w*.44,-.150,waist_d*.50),(.012,.175,.009),SILVER,.0035,rot=(0,0,-side*.15))
+# Anatomical clavicle/deltoid bridge inside the measured shoulder envelope.
 for side in(-1,1):
- add_sphere(TORSO,f'ClavicleBlend_{side}',(side*bust_w*.390,.245,.006),(bust_w*.145,.060,bust_d*.175),BLACK,28,18)
- add_panel(TORSO,f'ShoulderStrap_{side}',[(side*bust_w*.265,.285,bust_d*.30),(side*bust_w*.445,.245,bust_d*.18),(side*bust_w*.450,.185,bust_d*.24),(side*bust_w*.285,.205,bust_d*.36)],.018,BLACK)
+ add_sphere(TORSO,f'DeltoidBridge_{side}',(side*bust_w*.405,.238,.002),(bust_w*.125,.064,bust_d*.150),BLACK,30,20)
+ add_panel(TORSO,f'ClaviclePlane_{side}',[(side*bust_w*.080,.270,bust_d*.30),(side*bust_w*.285,.258,bust_d*.28),(side*bust_w*.430,.225,bust_d*.18),(side*bust_w*.275,.210,bust_d*.31)],.013,BLACK_SOFT)
+ add_box(TORSO,f'ClavicleTrim_{side}',(side*bust_w*.225,.247,bust_d*.325),(bust_w*.285,.010,.008),SILVER,.0025,rot=(0,0,-side*.11))
 # Reference-like harness: thin lines, no square robot chest plates.
 add_box(TORSO,'Sternum',(0,.085,bust_d*.43),(.020,.355,.016),SILVER,.006)
 add_box(TORSO,'Collar',(0,.305,.010),(W('neck')*1.15,.055,.105),BLACK,.014)
@@ -197,57 +211,89 @@ add_box(PELVIS,'WaistCenterGem',(0,.102,.184),(.026,.050,.018),SILVER,.005)
 # === HEAD / FACE ===
 # One continuous measured portrait shell instead of overlapping spheres.
 add_section_mesh(HEAD,'HeadShell',[
- (-.128,head_w*.155,head_d*.225,head_d*.300,.050),
- (-.105,head_w*.250,head_d*.285,head_d*.355,.042),
- (-.078,head_w*.340,head_d*.345,head_d*.410,.030),
- (-.038,head_w*.415,head_d*.390,head_d*.455,.016),
- (.012,head_w*.485,head_d*.435,head_d*.505,.002),
- (.060,head_w*.500,head_d*.465,head_d*.490,-.008),
- (.103,head_w*.455,head_d*.480,head_d*.430,-.018),
- (.135,head_w*.340,head_d*.445,head_d*.330,-.030)
-],SKIN,48)
+ (-.145,head_w*.120,head_d*.170,head_d*.235,.052),  # chin tip
+ (-.126,head_w*.235,head_d*.235,head_d*.305,.045),  # chin body
+ (-.105,head_w*.315,head_d*.300,head_d*.360,.036),  # jaw
+ (-.078,head_w*.385,head_d*.350,head_d*.410,.026),  # mouth / lower cheek
+ (-.045,head_w*.445,head_d*.390,head_d*.455,.015),  # cheek lower
+ (-.010,head_w*.490,head_d*.425,head_d*.500,.004),  # cheekbone / eye socket
+ (.025,head_w*.505,head_d*.450,head_d*.515,-.004),  # eye level
+ (.058,head_w*.490,head_d*.472,head_d*.490,-.010),  # brow / temple
+ (.092,head_w*.455,head_d*.482,head_d*.445,-.017),  # forehead
+ (.120,head_w*.395,head_d*.468,head_d*.385,-.024),  # upper forehead
+ (.145,head_w*.310,head_d*.435,head_d*.315,-.030)   # crown transition
+],SKIN,52)
 add_cylinder(HEAD,'Neck',(0,-.158,-.008),W('neck')*.33,.084,SKIN,26)
 add_cylinder(HEAD,'Choker',(0,-.139,-.006),W('neck')*.46,.034,BLACK,28)
 add_cylinder(HEAD,'ChokerTrim',(0,-.124,-.006),W('neck')*.47,.009,SILVER,28)
 for side in(-1,1):add_sphere(HEAD,f'Ear_{side}',(side*head_w*.485,-.018,-.014),(.010,.023,.009),SKIN,18,10)
-# Portrait feature plane is projected slightly beyond the continuous head shell.
-face_z=head_d*.585
+# Anatomy-first portrait: embedded eyeballs, eyelids and a connected central face form.
+face_z=head_d*.515
+eye_y=.018
+eye_z=face_z-.010
+eye_x=head_w*.160
+eye_rx=head_w*.090
+eye_ry=.028
+eye_rz=head_d*.100
 for side in(-1,1):
- ex=side*head_w*.158
- add_panel(HEAD,f'EyePlate_{side}',[(ex-head_w*.102,.033,face_z),(ex+head_w*.102,.033,face_z),(ex+head_w*.082,-.006,face_z),(ex-head_w*.082,-.006,face_z)],.0040,SCLERA)
- add_sphere(HEAD,f'Iris_{side}',(ex,.013,face_z+.0067),(head_w*.050,.0115,.0045),IRIS,24,14)
- add_sphere(HEAD,f'Pupil_{side}',(ex,.013,face_z+.0102),(head_w*.018,.0066,.0029),PUPIL,18,10)
- add_box(HEAD,f'UpperLash_{side}',(ex,.034,face_z+.0092),(head_w*.205,.0064,.0035),HAIR,.0012,rot=(0,0,-side*.080))
- add_box(HEAD,f'Brow_{side}',(ex,.073,face_z+.0040),(head_w*.170,.0048,.0030),HAIR,.0012,rot=(0,0,-side*.095))
- add_sphere(HEAD,f'EyeLight_{side}',(ex-side*head_w*.012,.020,face_z+.0138),(head_w*.011,.0040,.0018),SCLERA,12,8)
-add_sphere(HEAD,'NoseBridge',(0,.010,face_z+.001),(.0062,.029,.0053),SKIN,18,10)
-add_sphere(HEAD,'NoseTip',(0,-.028,face_z+.008),(.0080,.0115,.0068),SKIN,18,10)
-add_panel(HEAD,'UpperLip',[(-.030,-.068,face_z+.006),(.030,-.068,face_z+.006),(.021,-.075,face_z+.007),(-.021,-.075,face_z+.007)],.0024,LIP)
-add_panel(HEAD,'LowerLip',[(-.022,-.076,face_z+.006),(.022,-.076,face_z+.006),(.015,-.082,face_z+.005),(-.015,-.082,face_z+.005)],.0020,LIP)
+ ex=side*eye_x
+ # Eyeball first; the lids are built around its visible front surface.
+ add_sphere(HEAD,f'Eyeball_{side}',(ex,eye_y,eye_z),(eye_rx,eye_ry,eye_rz),SCLERA,32,20)
+ eye_front=eye_z+eye_rz*.96
+ add_sphere(HEAD,f'Iris_{side}',(ex,eye_y-.001,eye_front+.003),(head_w*.048,.012,.0046),IRIS,26,16)
+ add_sphere(HEAD,f'Pupil_{side}',(ex,eye_y-.001,eye_front+.0065),(head_w*.018,.0070,.0030),PUPIL,20,12)
+ add_sphere(HEAD,f'EyeLight_{side}',(ex-side*head_w*.012,eye_y+.008,eye_front+.0095),(head_w*.010,.0040,.0018),SCLERA,12,8)
+ # Upper and lower eyelid skin wraps the sphere rather than floating as a rectangular plate.
+ lid_outer=ex+side*eye_rx*.95
+ lid_inner=ex-side*eye_rx*.90
+ add_panel(HEAD,f'UpperLid_{side}',[(lid_inner,.030,eye_front+.001),(ex,.043,eye_front+.004),(lid_outer,.028,eye_front+.001),(lid_outer,.018,eye_front+.004),(ex,.028,eye_front+.008),(lid_inner,.019,eye_front+.004)],.0023,SKIN)
+ add_panel(HEAD,f'LowerLid_{side}',[(lid_inner,.008,eye_front+.003),(ex,-.004,eye_front+.004),(lid_outer,.009,eye_front+.003),(lid_outer,.015,eye_front+.005),(ex,.008,eye_front+.006),(lid_inner,.015,eye_front+.005)],.0020,SKIN)
+ # Lashes/brows follow the eye arc and retain the stylized key-art readability.
+ add_panel(HEAD,f'UpperLash_{side}',[(lid_inner,.032,eye_front+.008),(ex,.045,eye_front+.010),(lid_outer,.030,eye_front+.008),(lid_outer,.026,eye_front+.009),(ex,.040,eye_front+.011),(lid_inner,.027,eye_front+.009)],.0015,HAIR)
+ add_panel(HEAD,f'Brow_{side}',[(ex-side*eye_rx*.82,.078,face_z+.007),(ex,.086,face_z+.010),(ex+side*eye_rx*.96,.073,face_z+.007),(ex+side*eye_rx*.90,.067,face_z+.008),(ex,.079,face_z+.011),(ex-side*eye_rx*.78,.071,face_z+.008)],.0015,HAIR)
+
+# Nose bridge, tip and alar wings form one connected volume growing out of the face plane.
+add_section_mesh(HEAD,'NoseForm',[
+ (.073,.0045,.0035,.0050,face_z-.012),
+ (.045,.0055,.0038,.0075,face_z-.009),
+ (.015,.0070,.0040,.0105,face_z-.006),
+ (-.012,.0085,.0042,.0140,face_z-.003),
+ (-.034,.0110,.0045,.0180,face_z+.000),
+ (-.050,.0135,.0048,.0195,face_z+.002)
+],SKIN,24)
+for side in(-1,1):
+ add_sphere(HEAD,f'NoseWing_{side}',(side*.0125,-.050,face_z+.010),(.0085,.0080,.0060),SKIN,18,10)
+
+# Mouth stays embedded in the lower-face plane with a soft cupid bow and restrained projection.
+add_panel(HEAD,'UpperLip',[(-.029,-.076,face_z+.004),(-.014,-.071,face_z+.005),(0,-.075,face_z+.006),(.014,-.071,face_z+.005),(.029,-.076,face_z+.004),(.020,-.081,face_z+.005),(0,-.080,face_z+.006),(-.020,-.081,face_z+.005)],.0018,LIP)
+add_panel(HEAD,'LowerLip',[(-.024,-.082,face_z+.004),(0,-.087,face_z+.006),(.024,-.082,face_z+.004),(.017,-.091,face_z+.004),(0,-.094,face_z+.005),(-.017,-.091,face_z+.004)],.0017,LIP)
+# Tiny philtrum/chin cues improve front/profile readability without adding hard mechanical lines.
+add_box(HEAD,'Philtrum',(0,-.063,face_z+.002),(.006,.014,.003),SKIN,.001)
+add_sphere(HEAD,'ChinPlane',(0,-.118,face_z-.010),(head_w*.115,.020,head_d*.055),SKIN,24,14)
 # Rear scalp never crosses the forehead; frontal hair is entirely layered geometry.
 add_sphere(HEAD,'HairBack',(0,.022,-head_d*.370),(head_w*.515,.128,head_d*.450),HAIR,44,30)
 add_sphere(HEAD,'HairCrown',(0,.093,-head_d*.380),(head_w*.450,.047,head_d*.270),HAIR,40,24)
 for side in(-1,1):add_sphere(HEAD,f'HairTemple_{side}',(side*head_w*.414,.006,-.030),(head_w*.093,.080,head_d*.150),HAIR,28,18)
 add_sphere(HEAD,'HairTopCap',(0,.082,-head_d*.145),(head_w*.495,.069,head_d*.350),HAIR,42,24)
-# Asymmetric five-lock fringe: fewer, broader flows read as hair instead of comb teeth.
+# Asymmetric five-lock fringe with staggered roots; no continuous root band across the forehead.
 bang_z=face_z+.019
 fringe_data=[
- (-.118,-.100,-.095,.030,.058),
- (-.072,-.056,-.046,.050,.054),
- (-.020,-.010,-.006,-.010,.047),
- (.036,.046,.040,.040,.052),
- (.092,.102,.100,.052,.057)
+ (-.118,-.100,-.095,.030,.054,.132),
+ (-.072,-.056,-.046,.050,.050,.124),
+ (-.018,-.008,-.004,-.012,.043,.141),
+ (.036,.046,.040,.040,.048,.128),
+ (.092,.102,.100,.052,.053,.136)
 ]
-for i,(rootx,midx,tipx,tipy,w) in enumerate(fringe_data):
- add_ribbon(HEAD,f'FringeMajor_{i}',[(rootx,.136,head_d*.04),(midx,.120,head_d*.30),(tipx,.088,face_z*.76),(tipx*.98,tipy,bang_z)],[w*.66,w,w*.74,w*.18],.0040,HAIR_HI if i in(1,3) else HAIR)
-# Fine overlapping wisps break the lower edge and make the parting less geometric.
-for i,(sx,tx,ty) in enumerate(((-.096,-.082,.044),(-.050,-.032,.028),(.008,.014,.018),(.060,.074,.048),(.108,.118,.038))):
- add_ribbon(HEAD,f'FringeWisp_{i}',[(sx,.116,head_d*.34),((sx+tx)*.5,.090,face_z*.72),(tx,ty,bang_z+.002)],[.021,.015,.0038],.0028,HAIR_HI if i in(0,4) else HAIR)
-# Crown surface flows overlap the cap but stop before forming a forehead rim.
-for i,lane in enumerate((-.30,-.15,0,.16,.31)):
- add_ribbon(HEAD,f'CrownFlowV27_{i}',[(lane*head_w,.143,-head_d*.22),(lane*head_w*.96,.134,-head_d*.02),(lane*head_w*.90,.120,head_d*.18),(lane*head_w*.82,.108,face_z*.46)],[.024,.028,.024,.008],.0026,HAIR_HI if i in(1,3) else HAIR)
-add_ribbon(HEAD,'TempleWispV27L',[(-.120,.086,bang_z),(-.130,.048,bang_z+.001),(-.136,-.005,bang_z-.003)],[.018,.012,.004],.0027,HAIR)
-add_ribbon(HEAD,'TempleWispV27R',[(.120,.086,bang_z),(.130,.048,bang_z+.001),(.136,-.005,bang_z-.003)],[.018,.012,.004],.0027,HAIR)
+for i,(rootx,midx,tipx,tipy,w,rooty) in enumerate(fringe_data):
+ add_ribbon(HEAD,f'FringeMajorV28_{i}',[(rootx,rooty,head_d*.02),(midx,rooty-.016,head_d*.28),(tipx,.086,face_z*.75),(tipx*.98,tipy,bang_z)],[w*.48,w,w*.70,w*.16],.0038,HAIR_HI if i in(1,3) else HAIR)
+# Irregular wisps cross the major locks at different heights, producing a soft broken lower edge.
+for i,(sx,tx,ty,sy) in enumerate(((-.104,-.088,.042,.116),(-.058,-.038,.025,.108),(.004,.010,.012,.121),(.054,.070,.044,.110),(.110,.120,.034,.118))):
+ add_ribbon(HEAD,f'FringeWispV28_{i}',[(sx,sy,head_d*.30),((sx+tx)*.5,sy-.025,face_z*.70),(tx,ty,bang_z+.001)],[.018,.013,.0035],.0025,HAIR_HI if i in(0,4) else HAIR)
+# Narrow crown flows bridge scalp to the staggered roots without forming a visible rim.
+for i,(lane,sy) in enumerate(((-.28,.143),(-.13,.136),(.015,.146),(.16,.138),(.30,.142))):
+ add_ribbon(HEAD,f'CrownFlowV28_{i}',[(lane*head_w,sy,-head_d*.23),(lane*head_w*.95,sy-.009,-head_d*.04),(lane*head_w*.88,sy-.020,head_d*.15),(lane*head_w*.80,sy-.032,face_z*.42)],[.019,.023,.019,.0065],.0024,HAIR_HI if i in(1,3) else HAIR)
+add_ribbon(HEAD,'TempleWispV28L',[(-.120,.084,bang_z),(-.132,.046,bang_z),(-.138,-.010,bang_z-.004)],[.016,.010,.0035],.0025,HAIR)
+add_ribbon(HEAD,'TempleWispV28R',[(.120,.084,bang_z),(.132,.046,bang_z),(.138,-.010,bang_z-.004)],[.016,.010,.0035],.0025,HAIR)
 # Longer side fringe frames the jaw like the supplied sheet.
 for side in(-1,1):
  add_ribbon(HEAD,f'FaceFrame_{side}',[(side*head_w*.365,.070,-.006),(side*head_w*.445,-.012,head_d*.115),(side*head_w*.458,-.178,head_d*.044),(side*head_w*.395,-.415,-.020)],[.042,.038,.026,.010],.0052,HAIR)
@@ -270,7 +316,8 @@ pony_specs=[
 ]
 for i,(rx,mx,ex,endy,w,zoff) in enumerate(pony_specs):
  sway=(-1 if i%2==0 else 1)*.016
- add_ribbon(PONY,f'PonyBundleV27_{i}',[(rx,.146,-head_d*.50+zoff),(rx*.92,.020,-head_d*.78+zoff),(mx+sway,-.300,-.474+zoff),(mx-sway,-.665,-.350+zoff),(ex+sway,-1.035,-.240+zoff),(ex,-1.365,-.123+zoff),(ex*.94,-endy,-.038+zoff)],[w*.68,w,w*1.06,w*.98,w*.76,w*.44,.008],.0045,HAIR_HI if i in(2,6) else HAIR)
+ root_y=.146-(i%3)*.010
+ add_ribbon(PONY,f'PonyBundleV28_{i}',[(rx,root_y,-head_d*.50+zoff),(rx*.92,.020-(i%2)*.008,-head_d*.78+zoff),(mx+sway,-.300,-.474+zoff),(mx-sway,-.665,-.350+zoff),(ex+sway,-1.035,-.240+zoff),(ex,-1.365,-.123+zoff),(ex*.94,-endy,-.038+zoff)],[w*.68,w,w*1.06,w*.98,w*.76,w*.44,.008],.0045,HAIR_HI if i in(2,6) else HAIR)
 # Three recessed under-layers restore healthy hair mass while preserving clear gaps between the front bundles.
 for i,(lane,w) in enumerate(((-.060,.050),(0,.055),(.060,.050))):
  add_ribbon(PONY,f'PonyUnderV27_{i}',[(lane,.130,-head_d*.56),(lane*1.10,-.030,-head_d*.82),(lane*1.35,-.390,-.505),(lane*1.55,-.790,-.365),(lane*1.70,-1.180,-.215),(lane*1.78,-1.520,-.075)],[w*.72,w,w*.94,w*.82,w*.56,.010],.0040,HAIR)
