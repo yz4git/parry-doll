@@ -22,6 +22,12 @@ jobs:
           node-version: 22
       - name: Install capture stack
         run: |
+          # Playwright installs Ubuntu libraries with apt. The preinstalled Google Chrome
+          # repository is unrelated to this audit and can transiently publish mismatched indexes,
+          # so remove it before Playwright invokes apt-get.
+          sudo rm -f /etc/apt/sources.list.d/google-chrome.list /etc/apt/sources.list.d/google-chrome.sources || true
+          sudo apt-get clean
+          sudo rm -rf /var/lib/apt/lists/*
           npm init -y >/dev/null 2>&1
           npm install playwright@1.55.0
           npx playwright install --with-deps chromium
