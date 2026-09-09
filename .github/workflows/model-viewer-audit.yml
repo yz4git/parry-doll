@@ -1,0 +1,68 @@
+name: Model Viewer WebGL Audit
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/model-viewer-audit.trigger
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install capture stack
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install playwright@1.55.0
+          npx playwright install --with-deps chromium
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq imagemagick >/dev/null
+      - name: Serve game
+        run: |
+          python3 -m http.server 4173 --directory dist > /tmp/parry-http.log 2>&1 &
+          for i in {1..30}; do curl -fsS http://127.0.0.1:4173/ >/dev/null && exit 0; sleep 1; done
+          cat /tmp/parry-http.log; exit 1
+      - name: Open and inspect model viewer
+        run: |
+          mkdir -p model-viewer-audit
+          cat > model-viewer-audit.cjs <<'NODE'
+          const { chromium } = require('playwright');
+          const { execFileSync } = require('child_process');
+          const fs = require('fs');
+          const sleep = ms => new Promise(r => setTimeout(r, ms));
+          (async()=>{
+            const browser=await chromium.launch({headless:false,args:['--enable-webgl','--ignore-gpu-blocklist','--enable-unsafe-swiftshader','--use-gl=angle','--use-angle=swiftshader-webgl','--disable-dev-shm-usage','--window-position=0,0','--window-size=852,393','--disable-infobars']});
+            const context=await browser.newContext({viewport:{width:852,height:393},deviceScaleFactor:1,isMobile:true,hasTouch:true,userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 26_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1'});
+            const page=await context.newPage();const errors=[],badResponses=[];page.on('pageerror',e=>errors.push('pageerror: '+e.message));page.on('console',m=>{if(m.type()==='error')errors.push('console: '+m.text())});page.on('response',r=>{if(r.status()>=400)badResponses.push(r.status()+' '+r.url())});
+            const shot=path=>execFileSync('import',['-window','root',path],{timeout:5000,stdio:'ignore'});
+            await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});await page.waitForSelector('#modelViewerOpen',{timeout:15000});await page.waitForFunction(()=>window.ParryModelViewer?.isAvailable?.(),{timeout:15000});await sleep(500);shot('model-viewer-audit/00-title-entry.png');
+            await page.locator('#modelViewerOpen').click();await page.waitForSelector('#modelViewerUI.show',{timeout:5000});await sleep(700);shot('model-viewer-audit/01-full.png');
+            const gesture=page.locator('#modelViewerGesture'),box=await gesture.boundingBox();if(box){await page.touchscreen.tap(box.x+box.width*.52,box.y+box.height*.48);await page.evaluate(()=>window.ParryModelViewer.rotate(-.85,.06));}await sleep(350);shot('model-viewer-audit/02-rotated.png');
+            await page.locator('[data-preset="upper"]').click();await sleep(350);shot('model-viewer-audit/03-upper.png');
+            await page.locator('[data-preset="face"]').click();await sleep(350);shot('model-viewer-audit/04-face.png');
+            const beforeWeapon=await page.evaluate(()=>window.ParryModelViewer.state());await page.locator('#mvWeapon').click();await sleep(250);const afterWeapon=await page.evaluate(()=>window.ParryModelViewer.state());shot('model-viewer-audit/05-face-no-weapon.png');
+            const activeDiag=await page.evaluate(()=>({viewer:window.ParryModelViewer?.diagnostics?.(),visual:window.parryVisualDiagnostics?.(),ui:window.parryModelViewerUI?.isOpen?.(),overlay:document.getElementById('overlay')?.style.display||'',webgl:!!document.getElementById('visual-scene')}));
+            await page.locator('#mvClose').click();await sleep(250);const closedDiag=await page.evaluate(()=>({viewer:window.ParryModelViewer?.diagnostics?.(),ui:window.parryModelViewerUI?.isOpen?.(),overlay:document.getElementById('overlay')?.style.display||''}));shot('model-viewer-audit/06-return-title.png');
+            const pass=activeDiag.viewer?.active===true&&activeDiag.ui===true&&beforeWeapon.weapon===true&&afterWeapon.weapon===false&&closedDiag.viewer?.active===false&&closedDiag.ui===false&&errors.length===0&&badResponses.length===0;
+            fs.writeFileSync('model-viewer-audit/audit.json',JSON.stringify({pass,activeDiag,closedDiag,beforeWeapon,afterWeapon,errors,badResponses},null,2));console.log(JSON.stringify({pass,activeDiag,closedDiag,beforeWeapon,afterWeapon,errors,badResponses},null,2));await browser.close();if(!pass)process.exitCode=2;
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+          xvfb-run -a --server-args='-screen 0 852x393x24' node model-viewer-audit.cjs
+      - name: Upload model viewer frames
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: parry-doll-model-viewer-audit
+          path: model-viewer-audit/
+          if-no-files-found: error
+          retention-days: 3
