@@ -112,6 +112,7 @@ TH_L=empty('BL_THIGH_L',ROOT);SH_L=empty('BL_SHIN_L',ROOT);FOOT_L=empty('BL_FOOT
 # REFERENCE_V21: solid scalp coverage and panel-based fringe.
 # REFERENCE_V22: eye-clear tapered fringe proportions.
 # REFERENCE_V23: projected portrait features for reliable front/profile readability.
+# REFERENCE_V24: eyebrow-height fringe with open eye line.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
@@ -219,16 +220,16 @@ add_sphere(HEAD,'HairCrown',(0,.093,-head_d*.380),(head_w*.450,.047,head_d*.270)
 for side in(-1,1):add_sphere(HEAD,f'HairTemple_{side}',(side*head_w*.414,.006,-.030),(head_w*.093,.080,head_d*.150),HAIR,28,18)
 add_sphere(HEAD,'HairTopCap',(0,.078,-head_d*.105),(head_w*.500,.071,head_d*.405),HAIR,42,24)
 add_sphere(HEAD,'HairFrontCrown',(0,.082,head_d*.105),(head_w*.455,.046,head_d*.235),HAIR,38,22)
-# Five overlapping panel bangs stay above/around the eyes; the center lock is only slightly longer.
+# Broad fringe now terminates above the eye line; only the narrow center lock drops between the eyes.
 bang_z=face_z+.018
-add_panel(HEAD,'BangOuterL',[(-.138,.096,bang_z),(-.078,.108,bang_z),(-.084,.032,bang_z),(-.126,.012,bang_z)],.0056,HAIR)
-add_panel(HEAD,'BangInnerL',[(-.096,.108,bang_z),(-.026,.116,bang_z),(-.036,.016,bang_z),(-.070,-.002,bang_z)],.0058,HAIR_HI)
-add_panel(HEAD,'BangCenter',[(-.038,.118,bang_z),(.028,.116,bang_z),(.016,-.014,bang_z),(-.014,-.026,bang_z)],.0060,HAIR)
-add_panel(HEAD,'BangInnerR',[(.022,.116,bang_z),(.094,.106,bang_z),(.068,-.002,bang_z),(.034,.016,bang_z)],.0058,HAIR_HI)
-add_panel(HEAD,'BangOuterR',[(.076,.108,bang_z),(.138,.094,bang_z),(.126,.010,bang_z),(.084,.032,bang_z)],.0056,HAIR)
-# Two fine tapered center-side locks break the silhouette without masking the eyes.
-add_ribbon(HEAD,'BangTipL',[(-.057,.050,bang_z+.003),(-.050,.020,bang_z+.004),(-.046,-.010,bang_z+.002)],[.016,.011,.004],.0032,HAIR)
-add_ribbon(HEAD,'BangTipR',[(.057,.050,bang_z+.003),(.050,.020,bang_z+.004),(.046,-.008,bang_z+.002)],[.016,.011,.004],.0032,HAIR)
+add_panel(HEAD,'BangOuterL',[(-.138,.100,bang_z),(-.078,.112,bang_z),(-.082,.058,bang_z),(-.128,.046,bang_z)],.0056,HAIR)
+add_panel(HEAD,'BangInnerL',[(-.096,.112,bang_z),(-.028,.120,bang_z),(-.036,.057,bang_z),(-.072,.050,bang_z)],.0058,HAIR_HI)
+add_panel(HEAD,'BangCenter',[(-.028,.121,bang_z),(.024,.120,bang_z),(.014,.012,bang_z),(-.010,-.004,bang_z)],.0060,HAIR)
+add_panel(HEAD,'BangInnerR',[(.026,.120,bang_z),(.096,.110,bang_z),(.072,.050,bang_z),(.036,.057,bang_z)],.0058,HAIR_HI)
+add_panel(HEAD,'BangOuterR',[(.078,.112,bang_z),(.138,.098,bang_z),(.128,.046,bang_z),(.082,.058,bang_z)],.0056,HAIR)
+# Fine temple tips sit outside the eye centers and stop at the upper lash line.
+add_ribbon(HEAD,'BangTipL',[(-.094,.072,bang_z+.003),(-.088,.052,bang_z+.004),(-.082,.038,bang_z+.002)],[.014,.009,.0035],.0032,HAIR)
+add_ribbon(HEAD,'BangTipR',[(.094,.072,bang_z+.003),(.088,.052,bang_z+.004),(.082,.038,bang_z+.002)],[.014,.009,.0035],.0032,HAIR)
 # Longer side fringe frames the jaw like the supplied sheet.
 for side in(-1,1):
  add_ribbon(HEAD,f'FaceFrame_{side}',[(side*head_w*.365,.070,-.006),(side*head_w*.445,-.012,head_d*.115),(side*head_w*.458,-.178,head_d*.044),(side*head_w*.395,-.415,-.020)],[.042,.038,.026,.010],.0052,HAIR)
