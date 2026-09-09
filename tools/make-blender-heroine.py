@@ -16,7 +16,7 @@ def bpos(v):x,y,z=v;return(x,-z,y)
 def bscale(v):x,y,z=v;return(x,z,y)
 def material(name,color,metallic=0.0,roughness=.45):
  m=bpy.data.materials.new(name);m.use_nodes=True;b=m.node_tree.nodes.get('Principled BSDF');b.inputs['Base Color'].default_value=(*color,1);b.inputs['Metallic'].default_value=metallic;b.inputs['Roughness'].default_value=roughness;return m
-SKIN=material('Skin',(0.68,0.48,0.45),0,.54)
+SKIN=material('Skin',(0.60,0.41,0.39),0,.56)
 BLACK=material('Suit Black',(0.014,0.018,0.027),.08,.30)
 BLACK_SOFT=material('Suit Soft',(0.030,0.035,0.048),.02,.44)
 WHITE=material('Porcelain White',(0.86,0.88,0.88),.18,.28)
@@ -31,10 +31,10 @@ for _hair_mat,_spec in ((HAIR,.14),(HAIR_HI,.18)):
   _old=_bsdf.inputs.get('Specular')
   if _ior:_ior.default_value=_spec
   elif _old:_old.default_value=_spec
-SCLERA=material('Sclera',(0.86,0.84,0.82),0,.42)
-IRIS=material('Iris',(0.12,0.085,0.070),.02,.34)
+SCLERA=material('Sclera',(0.76,0.72,0.69),0,.46)
+IRIS=material('Iris',(0.10,0.067,0.055),.02,.30)
 PUPIL=material('Pupil',(0.004,0.005,0.006),0,.30)
-LIP=material('Lip',(0.38,0.22,0.22),0,.60)
+LIP=material('Lip',(0.34,0.16,0.17),0,.56)
 FACE_DARK=material('Face Detail',(0.20,0.075,0.070),0,.68)
 GLOW=material('Cyan Accent',(0.20,0.56,0.61),.38,.18)
 
@@ -291,6 +291,7 @@ TH_L=empty('BL_THIGH_L',ROOT);SH_L=empty('BL_SHIN_L',ROOT);FOOT_L=empty('BL_FOOT
 # REFERENCE_V42: portrait depth pass with volumetric lips, softer orbital detail and an offset rear ponytail.
 # REFERENCE_V43: softer adult portrait, blunt side-swept fringe and a true side-flow ponytail.
 # REFERENCE_V44: rebuilt portrait head topology, larger inset eyes and sheet-like swept bangs.
+# REFERENCE_V45: safe layered lock fringe, warmer portrait materials and stronger eyes/lips.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
@@ -411,7 +412,7 @@ for side in(-1,1):
  ex=side*eye_x
  add_sphere(HEAD,f'EyeballHiddenV44_{side}',(ex,eye_y,head_d*.420),(head_w*.083,.0175,head_d*.062),SCLERA,40,24)
  add_almond_surface(HEAD,f'EyeOpeningV44_{side}',ex,eye_y,face_front,eye_rx,eye_ry,.0026,SCLERA,44,side,eye_tilt)
- add_sphere(HEAD,f'IrisV44_{side}',(ex,eye_y+.0003,face_front+.0059),(head_w*.0435,.0104,.0030),IRIS,34,20)
+ add_sphere(HEAD,f'IrisV44_{side}',(ex,eye_y+.0003,face_front+.0059),(head_w*.0480,.0108,.0030),IRIS,34,20)
  add_sphere(HEAD,f'PupilV44_{side}',(ex,eye_y+.0002,face_front+.0086),(head_w*.0142,.0051,.0019),PUPIL,24,14)
  add_sphere(HEAD,f'EyeLightV44_{side}',(ex-side*head_w*.0092,eye_y+.0052,face_front+.0106),(head_w*.0052,.0023,.0011),SCLERA,12,8)
  inner=ex-side*eye_rx*.95;outer=ex+side*eye_rx*1.02
@@ -429,32 +430,48 @@ for side in(-1,1):
  add_sphere(HEAD,f'NostrilV44_{side}',(side*.0072,-.0526,head_d*.550),(.00145,.0010,.00085),FACE_DARK,12,8)
 
 # Two continuous almond surfaces give the soft, slightly parted key-art mouth without red point artifacts.
-add_almond_surface(HEAD,'UpperLipV44',0,-.0810,head_d*.550,.0300,.0045,.0018,LIP,40,1,0.0)
-add_almond_surface(HEAD,'LowerLipV44',0,-.0890,head_d*.549,.0275,.0054,.0021,LIP,40,1,0.0)
-add_strand(HEAD,'MouthSeamV44',[(-.0255,-.0850,head_d*.552),(0,-.0863,head_d*.553),(.0255,-.0850,head_d*.552)],.00034,FACE_DARK)
+add_almond_surface(HEAD,'UpperLipV45',0,-.0810,head_d*.550,.0340,.0052,.0020,LIP,44,1,0.0)
+add_almond_surface(HEAD,'LowerLipV45',0,-.0893,head_d*.549,.0315,.0060,.0023,LIP,44,1,0.0)
+add_strand(HEAD,'MouthSeamV45',[(-.0290,-.0852,head_d*.552),(0,-.0864,head_d*.553),(.0290,-.0852,head_d*.552)],.00036,FACE_DARK)
 
-# Hair v4.4: overlapping sheet-like side-swept fringe and soft face framing.
-add_sphere(HEAD,'HairBackV44',(0,.032,-head_d*.366),(head_w*.510,.130,head_d*.456),HAIR,56,36)
-add_sphere(HEAD,'HairCrownV44',(-.020,.120,-head_d*.205),(head_w*.472,.061,head_d*.324),HAIR,52,32)
+# Hair v4.5: overlapping curved lock fringe using the proven local-space lock helper.
+add_sphere(HEAD,'HairBackV45',(0,.032,-head_d*.366),(head_w*.510,.130,head_d*.456),HAIR,56,36)
+add_sphere(HEAD,'HairCrownV45',(-.020,.120,-head_d*.205),(head_w*.474,.061,head_d*.325),HAIR,52,32)
 for side in(-1,1):
- add_sphere(HEAD,f'HairTempleV44_{side}',(side*head_w*.407,.021,-.030),(head_w*.080,.074,head_d*.132),HAIR,32,22)
+ add_sphere(HEAD,f'HairTempleV45_{side}',(side*head_w*.407,.021,-.030),(head_w*.080,.074,head_d*.132),HAIR,32,22)
 
-# Broad flat ribbons sweep left-to-right and terminate with blunt tapered edges near the brows.
+# Six broad, overlapping masses form one continuous side-swept fringe. The final width deliberately
+# remains 25-35% of the root width so no strand ends as a spike.
 fringe=[
- ([(-.122,.153,-head_d*.005),(-.092,.132,head_d*.220),(-.060,.105,head_d*.430),(-.035,.064,head_d*.520)],[.070,.072,.054,.018]),
- ([(-.080,.158,-head_d*.010),(-.038,.135,head_d*.238),(.010,.108,head_d*.442),(.040,.078,head_d*.520)],[.074,.076,.056,.020]),
- ([(-.030,.158,-head_d*.012),(.018,.134,head_d*.230),(.070,.102,head_d*.438),(.103,.055,head_d*.516)],[.072,.074,.054,.019]),
+ (-.123,-.105,-.072,-.048,.058,.154,.052,.017),
+ (-.098,-.074,-.038,-.008,.071,.160,.054,.017),
+ (-.068,-.038,.000,.034,.083,.165,.053,.016),
+ (-.034,.000,.042,.074,.079,.164,.052,.016),
+ (.004,.040,.080,.105,.066,.159,.050,.015),
+ (.044,.078,.112,.130,.048,.151,.046,.014),
 ]
-for i,(pts,widths) in enumerate(fringe):
- add_flow_ribbon(HEAD,f'FringeSheetV44_{i}',pts,widths,.0068,HAIR_HI if i==2 else HAIR)
+for i,(rx,mx,cx,tx,ty,ry,w,tipw) in enumerate(fringe):
+ pts=[
+  (rx,ry,-head_d*.016),
+  (mx,ry-.020,head_d*.165),
+  (cx,.112,head_d*.355),
+  (tx,ty,head_d*.516),
+ ]
+ add_lock_mesh(HEAD,f'ForeheadLockV45_{i}',pts,[w*.62,w,w*.70,tipw],[.0085,.0100,.0075,.0038],HAIR_HI if i in(0,5) else HAIR,10)
 
-# A small crossing sheet hides gaps around the part while leaving one clean forehead opening.
-add_flow_ribbon(HEAD,'FringeCrossV44',[(-.104,.148,head_d*.010),(-.055,.128,head_d*.285),(.010,.102,head_d*.455),(.068,.071,head_d*.518)],[.030,.032,.024,.009],.0048,HAIR_HI)
+# Three shallower crossing locks hide root gaps and establish the diagonal part without forming bars.
+for i,(rx,mx,tx,ty) in enumerate(((-.112,-.072,-.020,.077),(-.068,-.018,.048,.082),(-.012,.045,.112,.056))):
+ pts=[(rx,.148,head_d*.008),(mx,.126,head_d*.265),((mx+tx)*.5,.101,head_d*.430),(tx,ty,head_d*.518)]
+ add_lock_mesh(HEAD,f'FringeLayerV45_{i}',pts,[.026,.030,.021,.009],[.0058,.0064,.0048,.0028],HAIR_HI if i==2 else HAIR,8)
+
+# Fine edge wisps are sparse and follow the same sweep.
+for i,(rx,tx,ty) in enumerate(((-.104,-.056,.066),(-.050,.018,.081),(.018,.094,.058))):
+ add_strand(HEAD,f'BangWispV45_{i}',[(rx,.141,head_d*.014),((rx+tx)*.5,.112,head_d*.320),(tx,ty,head_d*.523)],.00048,HAIR_HI if i!=1 else HAIR)
 
 for side in(-1,1):
  pts=[(side*head_w*.350,.087,-.010),(side*head_w*.397,.018,head_d*.068),(side*head_w*.410,-.130,head_d*.005),(side*head_w*.372,-.310,-.030)]
- add_lock_mesh(HEAD,f'FaceLockV44_{side}',pts,[.020,.023,.014,.0045],[.0050,.0054,.0040,.0022],HAIR,8)
- add_strand(HEAD,f'FaceWispV44_{side}',[(side*head_w*.382,.074,-.006),(side*head_w*.425,-.030,head_d*.035),(side*head_w*.414,-.205,-.006),(side*head_w*.394,-.405,-.030)],.00050,HAIR_HI)
+ add_lock_mesh(HEAD,f'FaceLockV45_{side}',pts,[.020,.023,.014,.0045],[.0050,.0054,.0040,.0022],HAIR,8)
+ add_strand(HEAD,f'FaceWispV45_{side}',[(side*head_w*.382,.074,-.006),(side*head_w*.425,-.030,head_d*.035),(side*head_w*.414,-.205,-.006),(side*head_w*.394,-.405,-.030)],.00050,HAIR_HI)
 
 # True side-flow ponytail v4.3: seven broad locks bend right while staying behind the body.
 add_sphere(HEAD,'PonyRootV43',(.036,.152,-head_d*.425),(.082,.064,.069),HAIR,34,24)
