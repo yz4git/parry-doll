@@ -32,25 +32,19 @@ function ribbon(points,width,material,color,{rows=30,cols=6,taper=.56,flare=.08}
   const m=new THREE.Mesh(g,material);m.castShadow=true;return m;
 }
 
-// Hair v3.1: split scalp coverage into a closed top cap and a rear shell.
-// The previous single shell sat inside the anatomical forehead at some view
-// angles, exposing a skin-coloured crown.  The top cap is deliberately outside
-// the sculpt only above the hairline; the rear shell fills occipital/side gaps
-// without becoming a helmet over the face.
+// Hair v3.2: closed top coverage plus layered opaque fringe mass.
 function scalp(material){
   const group=new THREE.Group();group.name='hair-v3-scalp-coverage';
   const top=new THREE.SphereGeometry(1,64,26,0,Math.PI*2,0,.94);
   top.scale(.725,1.035,.755);top.translate(0,.018,-.005);top.computeVertexNormals();
-  const topMesh=new THREE.Mesh(paint(top,'#2b232c'),material);topMesh.name='hair-v3-top-cap';topMesh.castShadow=true;group.add(topMesh);
+  const topMesh=new THREE.Mesh(paint(top,'#29222b'),material);topMesh.name='hair-v3-top-cap';topMesh.castShadow=true;group.add(topMesh);
   const back=new THREE.SphereGeometry(1,56,22,Math.PI,Math.PI,.56,1.02);
   back.scale(.715,1.01,.735);back.translate(0,.005,-.035);back.computeVertexNormals();
-  const backMesh=new THREE.Mesh(paint(back,'#282129'),material);backMesh.name='hair-v3-rear-shell';backMesh.castShadow=true;group.add(backMesh);
+  const backMesh=new THREE.Mesh(paint(back,'#251f27'),material);backMesh.name='hair-v3-rear-shell';backMesh.castShadow=true;group.add(backMesh);
   return group;
 }
 
 function addCrown(root,mats){
-  // Opaque under-locks bridge crown -> temples/back so no skin gap can appear
-  // between the shell and the translucent strand cards.
   for(let i=0;i<11;i++){
     const lane=(i-5)/5,x=lane*.46;
     const lock=ribbon([
@@ -68,8 +62,20 @@ function addCrown(root,mats){
 }
 
 function addFringe(root,mats){
-  // Side-swept fringe with overlapping roots. Roots begin high enough to hide
-  // the cap edge, then split toward the brow and temples.
+  // Opaque primary locks give the forehead a believable mass/hairline.  Fine
+  // alpha-card strands are layered above these rather than carrying coverage.
+  const primary=[
+    [[-.34,.95,.16],[-.30,.80,.42],[-.38,.54,.58],[-.48,.22,.57]],
+    [[-.20,.985,.14],[-.17,.82,.44],[-.23,.56,.60],[-.31,.17,.59]],
+    [[-.06,1.00,.13],[-.02,.83,.44],[-.03,.58,.61],[-.08,.23,.60]],
+    [[.09,.995,.13],[.14,.83,.43],[.18,.59,.61],[.19,.29,.60]],
+    [[.23,.97,.15],[.28,.81,.42],[.34,.59,.58],[.39,.32,.56]],
+    [[.35,.92,.19],[.41,.77,.42],[.48,.55,.54],[.52,.36,.51]]
+  ];
+  primary.forEach((points,i)=>{
+    const lock=ribbon(points,.20+(i%2)*.018,mats.hair,i%3?'#302631':'#3b2e38',{rows:25,cols:6,taper:.58,flare:.05});
+    lock.name='hair-v3-primary-fringe';root.add(lock);
+  });
   for(let i=0;i<17;i++){
     const lane=(i-8)/8,rootX=-.16+lane*.45,tipX=-.42+lane*.60;
     const lock=ribbon([
@@ -82,6 +88,10 @@ function addFringe(root,mats){
   }
   for(const side of [-1,1])for(let i=0;i<6;i++){
     const x=side*(.44+i*.024),tip=side*(.55+i*.035);
+    if(i<2){
+      const under=ribbon([[side*.38,.82,.29],[side*.51,.60,.48],[side*.57,.24,.49],[side*.56,-.18,.39]],.18,mats.hair,'#2b232c',{rows:23,cols:5,taper:.52});
+      under.name='hair-v3-temple-underlay';root.add(under);
+    }
     const lock=ribbon([[x,.74,.39],[side*.58,.39,.51],[tip,-.08,.44],[side*(.59+i*.038),-.78-i*.105,.27]],.15,mats.hairCard,'#342a32',{rows:27,cols:5,taper:.57});
     lock.name='hair-v3-face-lock';root.add(lock);
   }
