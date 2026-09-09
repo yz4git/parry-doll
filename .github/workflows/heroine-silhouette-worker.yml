@@ -1,0 +1,22 @@
+name: Heroine Silhouette Worker
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/heroine-silhouette.trigger
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Apply heroine silhouette pass
+        run: bash .github/scripts/heroine-silhouette-pass.sh
