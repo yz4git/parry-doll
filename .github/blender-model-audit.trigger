@@ -1,1 +1,1 @@
-2026-09-10 Blender heroine v4.4 retry WebGL audit after Playwright apt hardening
+2026-09-10 Blender heroine v4.5 safe layered fringe warmer portrait WebGL audit
