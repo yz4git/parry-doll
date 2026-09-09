@@ -1,1 +1,1 @@
-2026-09-09 build Blender heroine v2.4 open-eye fringe
+2026-09-09 build Blender heroine v2.5 portrait eye and ponytail separation
