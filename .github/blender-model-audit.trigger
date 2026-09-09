@@ -1,1 +1,1 @@
-2026-09-09 fixed four-view Blender heroine v3.2 volumetric hair face audit
+2026-09-10 fixed four-view Blender heroine v3.3 portrait and blade-hair audit
