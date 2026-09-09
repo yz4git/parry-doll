@@ -38,11 +38,25 @@ jobs:
           blender --version | head -n 2
       - name: Build Blender heroine and integrate runtime
         run: |
-          for v in $(seq 14 27); do
+          latest=$(python - <<'PY'
+          from pathlib import Path
+          import re
+          versions=[]
+          for p in Path('tools').glob('refine-blender-reference-v*.py'):
+              m=re.search(r'v(\d+)\.py$', p.name)
+              if m: versions.append(int(m.group(1)))
+          if not versions:
+              raise SystemExit('no Blender refinement scripts found')
+          print(max(versions))
+          PY
+          )
+          echo "Applying Blender refinement chain through v${latest}"
+          for v in $(seq 14 "$latest"); do
             script="tools/refine-blender-reference-v${v}.py"
             test -f "$script"
             python "$script"
           done
+          grep -q "REFERENCE_V${latest}" tools/make-blender-heroine.py
           python -m py_compile tools/make-blender-heroine.py tools/refine-blender-reference-v*.py tools/enable-blender-heroine.py
           python - <<'PY'
           import json
@@ -70,12 +84,22 @@ jobs:
           git diff --check
       - name: Commit Blender heroine variant
         run: |
+          latest=$(python - <<'PY'
+          from pathlib import Path
+          import re
+          versions=[]
+          for p in Path('tools').glob('refine-blender-reference-v*.py'):
+              m=re.search(r'v(\d+)\.py$', p.name)
+              if m: versions.append(int(m.group(1)))
+          print(max(versions))
+          PY
+          )
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add visual-src/engine.js visual-src/blender-heroine.js dist/visual-engine.js dist/visual-engine.js.LEGAL.txt dist/model-viewer.js dist/style.css dist/assets/models/heroine-blender.glb tools/make-blender-heroine.py tools/enable-blender-heroine.py tools/refine-blender-reference-v*.py tools/heroine-reference-proportions.json
+          git add visual-src/engine.js visual-src/blender-heroine.js dist/visual-engine.js dist/visual-engine.js.LEGAL.txt dist/model-viewer.js dist/style.css dist/assets/models/heroine-blender.glb tools/make-blender-heroine.py tools/enable-blender-heroine.py tools/refine-blender-reference-v*.py tools/heroine-reference-proportions.json docs/BLENDER_CHARACTER_RESEARCH.md
           if git diff --cached --quiet; then
             echo "Blender heroine already current"
             exit 0
           fi
-          git commit -m "feat: refine Blender heroine from measured reference v2.7"
+          git commit -m "feat: refine Blender heroine from measured reference v${latest}"
           git push origin main
