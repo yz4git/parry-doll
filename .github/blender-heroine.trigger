@@ -1,1 +1,1 @@
-2026-09-09 build Blender heroine v2.3 projected portrait readability
+2026-09-09 build Blender heroine v2.4 open-eye fringe
