@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {HeroineRig} from './heroine-rig.js';
 import {bodyData} from './heroine-mesh-data.js';
 import {makeSkirt,updateSkirt} from './couture.js';
+import {heroineMaterials} from './heroine-materials.js';
 // All coordinates belong to the render rig. The simulation dolls are read-only.
 const Y=new THREE.Vector3(0,1,0);
 function taper(points,radius){const curve=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p)));const g=new THREE.TubeGeometry(curve,18,radius,6,false),p=g.attributes.position;for(let i=0;i<p.count;i++){const t=Math.floor(i/7)/18,center=curve.getPointAt(t),f=Math.pow(1-t,.55)*.94+.035;p.setXYZ(i,center.x+(p.getX(i)-center.x)*f,center.y+(p.getY(i)-center.y)*f,center.z+(p.getZ(i)-center.z)*f)}g.computeVertexNormals();return g}
@@ -19,10 +20,10 @@ function sculptFace(){
 }
 export class Heroine {
  constructor(d,scene,mats,{Assembly,frame}){
-  this.frame=frame;this.root=new THREE.Group();scene.add(this.root);this.rig=new HeroineRig(this.root);this.links=[];this.nodes=[];this.hair=[];this.tails=[];
+  this.surfaces=heroineMaterials(mats);mats=this.surfaces.mats;this.frame=frame;this.root=new THREE.Group();scene.add(this.root);this.rig=new HeroineRig(this.root);this.links=[];this.nodes=[];this.hair=[];this.tails=[];
   const white='#ece9e3',black='#151923',silver='#b9c4cf',skin='#edc1ab',hair='#2a252c';
-  const bodyGeometry=new THREE.BufferGeometry();bodyGeometry.setAttribute('position',new THREE.Float32BufferAttribute(bodyData.positions,3));bodyGeometry.setAttribute('color',new THREE.Float32BufferAttribute(bodyData.colors,3));bodyGeometry.setAttribute('skinIndex',new THREE.Uint16BufferAttribute(bodyData.skinIndices,4));bodyGeometry.setAttribute('skinWeight',new THREE.Float32BufferAttribute(bodyData.skinWeights,4));bodyGeometry.setIndex(bodyData.indices);bodyGeometry.computeVertexNormals();
-  this.body=new THREE.SkinnedMesh(bodyGeometry,mats.porcelain);this.body.castShadow=true;this.body.receiveShadow=true;this.body.frustumCulled=false;this.root.add(this.body);this.body.bind(this.rig.skeleton);this.body.normalizeSkinWeights();
+  const bodyGeometry=new THREE.BufferGeometry();bodyGeometry.setAttribute('position',new THREE.Float32BufferAttribute(bodyData.positions,3));bodyGeometry.setAttribute('color',new THREE.Float32BufferAttribute(bodyData.colors,3));bodyGeometry.setAttribute('skinIndex',new THREE.Uint16BufferAttribute(bodyData.skinIndices,4));bodyGeometry.setAttribute('skinWeight',new THREE.Float32BufferAttribute(bodyData.skinWeights,4));bodyGeometry.setIndex(bodyData.indices);bodyGeometry.computeVertexNormals();bodyGeometry.setAttribute('uv',new THREE.Float32BufferAttribute(bodyData.uvs,2));let groupStart=0;for(let i=1;i<=bodyData.faceMaterials.length;i++){if(i===bodyData.faceMaterials.length||bodyData.faceMaterials[i]!==bodyData.faceMaterials[groupStart]){bodyGeometry.addGroup(groupStart*3,(i-groupStart)*3,bodyData.faceMaterials[groupStart]);groupStart=i;}}
+  this.body=new THREE.SkinnedMesh(bodyGeometry,[mats.leather,mats.cloth,mats.skin]);this.body.castShadow=true;this.body.receiveShadow=true;this.body.frustumCulled=false;this.root.add(this.body);this.body.bind(this.rig.skeleton);this.body.normalizeSkinWeights();
   const add=a=>{const p=a.build();this.root.add(p);return p};
   for(const l of d.links){const a=new Assembly(mats),names=[d.nodes[l.a].name,d.nodes[l.b].name],torso=l.a===0&&l.b===1,neck=names.includes('head'),leg=names.includes('knee')||names.includes('foot');
    if(torso){
@@ -36,7 +37,7 @@ export class Heroine {
     // Smooth limb surface is skinned across the elbow/knee, with separate armor accents.
     if(names.includes('elbow')&&!names.includes('shoulder')){a.add('plate',white,[0,-.02,.49],[.52,.58,.21],[0,0,0],'porcelain');a.add('plate',black,[0,.13,.575],[.35,.34,.085]);a.add('box',silver,[0,.08,.615],[.06,.48,.04]);}
     if(names.includes('foot')){a.add('plate',white,[0,.10,.55],[.43,.65,.13],[0,0,0],'porcelain');a.add('box',silver,[0,.11,.65],[.07,.52,.06]);}
-    if(names.includes('shoulder')){a.add('cylinder',silver,[0,.25,0],[width*.82,.04,width*.78]);a.add('plate',white,[0,.07,.45],[.35,.31,.11],[.045,0,0],'porcelain');}if(names.includes('knee')&&names.includes('hip')){a.add('plate',white,[0,.06,.48],[.34,.50,.11],[0,0,0],'porcelain');a.add('box',silver,[0,.12,.57],[.055,.46,.03]);}
+    if(names.includes('shoulder')){a.add('cylinder',silver,[0,.25,0],[width*.82,.04,width*.78]);a.add('plate',white,[0,.07,.45],[.35,.31,.11],[.045,0,0],'porcelain');}
    }
    this.links.push({l,p:add(a)});
   }
@@ -76,5 +77,5 @@ export class Heroine {
   updateSkirt(this.skirt,clock,this.flow,motion);
   const hand=d.nodes.find(n=>n.name==='hand'),v=vec(pose),length=v.length();v.applyAxisAngle(Y,d.face);this.weapon.position.copy(vec(hand.p));this.weapon.quaternion.setFromUnitVectors(Y,v.normalize());this.weapon.scale.set(d.spec.scale,d.spec.scale*length/1.51,d.spec.scale);
  }
- dispose(){this.rig.dispose();this.root.traverse(o=>{if(o.isMesh)o.geometry.dispose()});this.root.removeFromParent()}
+ dispose(){this.surfaces.dispose();this.rig.dispose();this.root.traverse(o=>{if(o.isMesh)o.geometry.dispose()});this.root.removeFromParent()}
 }

@@ -3,46 +3,55 @@ Python/NumPy mesh authoring; rerun to edit silhouette without a DCC installation
 """
 from pathlib import Path
 import json,math,numpy as np
+import importlib.util
+_spec=importlib.util.spec_from_file_location("anatomy",Path(__file__).with_name("sculpt-heroine-body.py"));anatomy=importlib.util.module_from_spec(_spec);_spec.loader.exec_module(anatomy)
 names=['pelvis','spine','chest','neck','head','shoulderL','elbowL','handL','shoulderR','elbowR','handR','hipL','kneeL','footL','hipR','kneeR','footR']
-p=[];indices=[];weights=[];bones=[];colors=[]
+p=[];indices=[];weights=[];bones=[];colors=[];uvs=[];faceMaterials=[]
 def srgb(v):
  v=v/255;return v/12.92 if v<=.04045 else ((v+.055)/1.055)**2.4
 def color(rgb):return [round(srgb(v),5) for v in rgb]
-white=color([224,223,217]);black=color([25,29,40]);seam=color([112,124,139])
-def add_rings(rings,sides,cap_start=True,cap_end=True):
+skin=color([224,181,164]);white=color([224,223,217]);black=color([25,29,40]);seam=color([112,124,139])
+def add_rings(rings,sides,cap_start=True,cap_end=True,kind="torso"):
+ def mat(i):
+  t=i/(len(rings)-1)
+  if kind=="arm":return 2 if t<.38 and not .18<t<.26 else 0
+  if kind=="leg":return 2 if .045<t<.26 and not .14<t<.18 else 0
+  return 1
  offset=len(p)//3
- for center,right,forward,rx,rz,bi,bw,col in rings:
+ for ri,(center,right,forward,rx,rz,bi,bw,col) in enumerate(rings):
   for j in range(sides):
    a=j/sides*math.tau;q=center+right*(math.cos(a)*rx)+forward*(math.sin(a)*rz)
-   p.extend(round(float(v),5) for v in q);bones.extend(bi+[0]*(4-len(bi)));weights.extend(bw+[0]*(4-len(bw)));colors.extend(col(a))
+   if kind=="torso":q=anatomy.sculpt_torso(*q)
+   p.extend(round(float(v),5) for v in q);bones.extend(bi+[0]*(4-len(bi)));weights.extend(bw+[0]*(4-len(bw)));colors.extend(skin if mat(ri)==2 else col(a));uvs.extend([round(j/sides,5),round(ri/(len(rings)-1),5)])
  for i in range(len(rings)-1):
   for j in range(sides):
-   a=offset+i*sides+j;b=offset+i*sides+(j+1)%sides;c=b+sides;d=a+sides;indices.extend([a,d,b,b,d,c])
+   a=offset+i*sides+j;b=offset+i*sides+(j+1)%sides;c=b+sides;d=a+sides;indices.extend([a,d,b,b,d,c]);faceMaterials.extend([mat(i),mat(i)])
  # Caps are optional where a limb deliberately overlaps another continuous surface.
  cap_specs=[]
  if cap_start:cap_specs.append((offset,True))
  if cap_end:cap_specs.append((offset+(len(rings)-1)*sides,False))
  for first,reverse in cap_specs:
-  for j in range(1,sides-1):indices.extend([first,first+j+(0 if reverse else 1),first+j+(1 if reverse else 0)])
+  for j in range(1,sides-1):
+   indices.extend([first,first+j+(0 if reverse else 1),first+j+(1 if reverse else 0)]);faceMaterials.append(mat(0 if reverse else len(rings)-1))
 rings=[]
-for i in range(29):
- t=i/28;y=1.30+t*.69
- rx=np.interp(y,[1.30,1.4,1.57,1.73,1.86,1.99],[.238,.232,.169,.198,.252,.218]);rz=np.interp(y,[1.30,1.48,1.67,1.85,1.99],[.137,.118,.130,.154,.116])
+for i in range(45):
+ t=i/44;y=1.30+t*.69
+ rx=float(anatomy.body_x(y));rz=float(anatomy.body_z(y))
  k=0 if y<1.64 else 1;a,b=(1.38,1.64) if k==0 else (1.64,1.94);w=max(0,min(1,(y-a)/(b-a)))
  def col(angle,y=y):
-  side=abs(math.cos(angle));return black if side>.77 or (math.sin(angle)<0 and abs(math.cos(angle))<.1) or y<1.42 else white
+  side=abs(math.cos(angle));return black if side>.77 or (math.sin(angle)<0 and abs(math.cos(angle))<.1) or y<1.42 or (math.sin(angle)>.5 and y>1.76) else white
  rings.append((np.array([0,y,0]),np.array([1,0,0]),np.array([0,0,1]),rx,rz,[k,k+1],[round(1-w,5),round(w,5)],col))
-add_rings(rings,40)
+add_rings(rings,48)
 for side,suffix in [(-1,'L'),(1,'R')]:
  for kind in ['arm','leg']:
   if kind=='arm':points=[np.array([side*.255,1.96,0]),np.array([side*.44,1.48,.07]),np.array([side*.7,1,.2])];boneNames=['shoulder'+suffix,'elbow'+suffix];radii=[.077,.071,.060,.072,.045]
-  else:points=[np.array([side*.158,1.415,-.005]),np.array([side*.214,.78,.045]),np.array([side*.272,.16,.22])];boneNames=['hip'+suffix,'knee'+suffix];radii=[.100,.107,.082,.087,.054]
+  else:points=[np.array([side*.158,1.415,-.005]),np.array([side*.214,.78,.045]),np.array([side*.272,.16,.22])];boneNames=['hip'+suffix,'knee'+suffix];radii=[.103,.119,.071,.088,.052]
   rings=[]
-  for i in range(33):
-   t=i/32;k=0 if t<=.5 else 1;u=t*2-k;center=points[k]*(1-u)+points[k+1]*u;tangent=points[k+1]-points[k];tangent/=np.linalg.norm(tangent);right=np.cross(tangent,[0,0,1]);right/=np.linalg.norm(right);forward=np.cross(right,tangent);radius=float(np.interp(t,[0,.24,.5,.73,1],radii));w=max(0,min(1,(t-.43)/.14))
-   depth=.70 if kind=='leg' else .86
+  for i in range(49):
+   t=i/48;k=0 if t<=.5 else 1;u=t*2-k;center=points[k]*(1-u)+points[k+1]*u;tangent=points[k+1]-points[k];tangent/=np.linalg.norm(tangent);right=np.cross(tangent,[0,0,1]);right/=np.linalg.norm(right);forward=np.cross(right,tangent);radius=float(anatomy.leg_r(t) if kind=="leg" else anatomy.arm_r(t));w=max(0,min(1,(t-.43)/.14))
+   depth=.84 if kind=='leg' else .90
    rings.append((center,right,forward,radius,radius*depth,[names.index(n) for n in boneNames],[round(1-w,5),round(w,5)],lambda angle:black))
-  add_rings(rings,28,cap_start=(kind!='leg'))
-data={'positions':p,'indices':indices,'skinIndices':bones,'skinWeights':weights,'colors':colors}
+  add_rings(rings,32,cap_start=(kind!='leg'),kind=kind)
+data={'positions':p,'indices':indices,'skinIndices':bones,'skinWeights':weights,'colors':colors,'uvs':uvs,'faceMaterials':faceMaterials}
 out=Path(__file__).resolve().parents[1]/'visual-src/heroine-mesh-data.js';out.write_text('// Generated by tools/make-heroine-mesh.py\nexport const bodyData='+json.dumps(data,separators=(',',':'))+';\n')
 print('Baked costume:',len(p)//3,'vertices,',len(indices)//3,'triangles')
