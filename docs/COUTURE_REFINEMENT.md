@@ -12,3 +12,6 @@ Post-integration checks: 1,200 model frames across four enemy rigs passed, inclu
 
 ## Split combat-skirt silhouette pass
 The continuous rear wrap was replaced by a high-waist rigid yoke with four independently animated panels. Two narrow rear panels sweep outward and leave a deliberate centre gap, preventing the old paired-lobe silhouette while extending vertical lines down the legs. Two short lateral panels frame the upper thigh without covering the front stride. Only the panel lengths receive secondary motion; the waist remains fixed to the pelvis.
+
+## WebGL silhouette review pass
+A real WebGL gameplay capture showed that four hanging panels read as rigid black tabs around the hips. The design was simplified to a thinner raised yoke and two narrow, outward-swept spear panels with tapered tips. This keeps the centre line and upper thighs open, improves the long-leg read, and removes the X-shaped rear cluster. Secondary motion was reduced so the panels trail cleanly instead of behaving like loose armor.
