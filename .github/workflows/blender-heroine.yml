@@ -38,20 +38,12 @@ jobs:
           blender --version | head -n 2
       - name: Build Blender heroine and integrate runtime
         run: |
-          python tools/refine-blender-reference-v14.py
-          python tools/refine-blender-reference-v15.py
-          python tools/refine-blender-reference-v16.py
-          python tools/refine-blender-reference-v17.py
-          python tools/refine-blender-reference-v18.py
-          python tools/refine-blender-reference-v19.py
-          python tools/refine-blender-reference-v20.py
-          python tools/refine-blender-reference-v21.py
-          python tools/refine-blender-reference-v22.py
-          python tools/refine-blender-reference-v23.py
-          python tools/refine-blender-reference-v24.py
-          python tools/refine-blender-reference-v25.py
-          python tools/refine-blender-reference-v26.py
-          python -m py_compile tools/make-blender-heroine.py tools/refine-blender-reference-v14.py tools/refine-blender-reference-v15.py tools/refine-blender-reference-v16.py tools/refine-blender-reference-v17.py tools/refine-blender-reference-v18.py tools/refine-blender-reference-v19.py tools/refine-blender-reference-v20.py tools/refine-blender-reference-v21.py tools/refine-blender-reference-v22.py tools/refine-blender-reference-v23.py tools/refine-blender-reference-v24.py tools/refine-blender-reference-v25.py tools/refine-blender-reference-v26.py tools/enable-blender-heroine.py
+          for v in $(seq 14 27); do
+            script="tools/refine-blender-reference-v${v}.py"
+            test -f "$script"
+            python "$script"
+          done
+          python -m py_compile tools/make-blender-heroine.py tools/refine-blender-reference-v*.py tools/enable-blender-heroine.py
           python - <<'PY'
           import json
           from pathlib import Path
@@ -80,10 +72,10 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add visual-src/engine.js visual-src/blender-heroine.js dist/visual-engine.js dist/visual-engine.js.LEGAL.txt dist/model-viewer.js dist/style.css dist/assets/models/heroine-blender.glb tools/make-blender-heroine.py tools/enable-blender-heroine.py tools/refine-blender-reference-v14.py tools/refine-blender-reference-v15.py tools/refine-blender-reference-v16.py tools/refine-blender-reference-v17.py tools/refine-blender-reference-v18.py tools/refine-blender-reference-v19.py tools/refine-blender-reference-v20.py tools/refine-blender-reference-v21.py tools/refine-blender-reference-v22.py tools/refine-blender-reference-v23.py tools/refine-blender-reference-v24.py tools/refine-blender-reference-v25.py tools/refine-blender-reference-v26.py tools/heroine-reference-proportions.json
+          git add visual-src/engine.js visual-src/blender-heroine.js dist/visual-engine.js dist/visual-engine.js.LEGAL.txt dist/model-viewer.js dist/style.css dist/assets/models/heroine-blender.glb tools/make-blender-heroine.py tools/enable-blender-heroine.py tools/refine-blender-reference-v*.py tools/heroine-reference-proportions.json
           if git diff --cached --quiet; then
             echo "Blender heroine already current"
             exit 0
           fi
-          git commit -m "feat: refine Blender heroine from measured reference v2.6"
+          git commit -m "feat: refine Blender heroine from measured reference v2.7"
           git push origin main
