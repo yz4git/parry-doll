@@ -11,10 +11,14 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: parry-doll-visual-audit
+  cancel-in-progress: true
+
 jobs:
   audit:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -42,87 +46,34 @@ jobs:
           const fs = require('fs');
           const sleep = ms => new Promise(r => setTimeout(r, ms));
           (async()=>{
-            const browser = await chromium.launch({
-              headless: true,
-              args: [
-                '--enable-webgl',
-                '--ignore-gpu-blocklist',
-                '--enable-unsafe-swiftshader',
-                '--use-gl=angle',
-                '--use-angle=swiftshader-webgl',
-                '--disable-dev-shm-usage'
-              ]
-            });
-            const context = await browser.newContext({
-              viewport: { width: 852, height: 393 },
-              deviceScaleFactor: 2,
-              isMobile: true,
-              hasTouch: true,
-              userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 26_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1'
-            });
+            const browser = await chromium.launch({headless:true,args:['--enable-webgl','--ignore-gpu-blocklist','--enable-unsafe-swiftshader','--use-gl=angle','--use-angle=swiftshader-webgl','--disable-dev-shm-usage']});
+            const context = await browser.newContext({viewport:{width:852,height:393},deviceScaleFactor:2,isMobile:true,hasTouch:true,userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 26_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1'});
             const page = await context.newPage();
+            page.setDefaultTimeout(3000);
             const errors=[]; page.on('pageerror',e=>errors.push('pageerror: '+e.message)); page.on('console',m=>{if(m.type()==='error')errors.push('console: '+m.text())});
-            await page.goto('http://127.0.0.1:4173/', { waitUntil:'networkidle' });
-            await page.waitForSelector('#start', { timeout:15000 });
-            await sleep(1800);
-            const webgl = await page.evaluate(() => {
-              const c=document.getElementById('visual-scene');
-              if(!c)return {canvas:false,renderer:null};
-              const gl=c.getContext('webgl2')||c.getContext('webgl');
-              return {canvas:true,renderer:gl?gl.getParameter(gl.RENDERER):null,width:c.width,height:c.height};
-            });
+            const tap=async id=>page.evaluate(id=>{const b=document.getElementById(id);if(!b)return false;const o={bubbles:true,pointerId:7,pointerType:'touch',isPrimary:true};b.dispatchEvent(new PointerEvent('pointerdown',o));b.dispatchEvent(new PointerEvent('pointerup',o));b.click?.();return true},id);
+            await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});
+            await page.waitForSelector('#start',{timeout:12000});
+            await sleep(2200);
+            const webgl=await page.evaluate(()=>{const c=document.getElementById('visual-scene');if(!c)return{canvas:false,renderer:null};const gl=c.getContext('webgl2')||c.getContext('webgl');return{canvas:true,renderer:gl?gl.getParameter(gl.RENDERER):null,width:c.width,height:c.height}});
             await page.screenshot({path:'visual-audit/01-title.png'});
-            await page.locator('#start').click();
-            await sleep(1600);
+            await tap('start'); await sleep(1400);
             await page.screenshot({path:'visual-audit/02-fight-open.png'});
-            await page.keyboard.down('KeyW'); await sleep(1150); await page.keyboard.up('KeyW');
-            await page.keyboard.down('KeyD'); await sleep(480); await page.keyboard.up('KeyD');
-            await sleep(180);
+            await page.keyboard.down('KeyW'); await sleep(1050); await page.keyboard.up('KeyW');
+            await page.keyboard.down('KeyD'); await sleep(420); await page.keyboard.up('KeyD'); await sleep(160);
             await page.screenshot({path:'visual-audit/03-approach.png'});
-            const attack=page.locator('#attack');
-            for(let i=0;i<3;i++){
-              await attack.click();
-              await sleep(i===0?115:145);
-              await page.screenshot({path:`visual-audit/04-attack-${i+1}.png`});
-              await sleep(i===2?520:330);
+            for(let i=0;i<3;i++){await tap('attack');await sleep(i===0?110:145);await page.screenshot({path:`visual-audit/04-attack-${i+1}.png`});await sleep(i===2?420:300)}
+            let parryCaptured=false,success=false;
+            for(let i=0;i<220;i++){
+              const s=await page.evaluate(()=>{const cue=document.getElementById('cue'),stats=document.getElementById('stats');return{opacity:+getComputedStyle(cue).opacity||0,text:cue.textContent||'',stats:stats.textContent||''}});
+              if(s.opacity>.18||/PARRY|弾|危|!/i.test(s.text)){await tap('parry');if(!parryCaptured){await sleep(70);await page.screenshot({path:'visual-audit/05-parry-attempt.png'});parryCaptured=true}}
+              if(/PARRY\s+[1-9]/i.test(s.stats)){success=true;await sleep(70);await page.screenshot({path:'visual-audit/06-parry-success.png'});await tap('attack');await sleep(120);await page.screenshot({path:'visual-audit/07-counter.png'});break}
+              await sleep(45);
             }
-            const parry=page.locator('#parry');
-            let parryShot=false;
-            for(let i=0;i<500;i++){
-              const state=await page.evaluate(()=>{
-                const cue=document.getElementById('cue'),stats=document.getElementById('stats');
-                return {opacity:+getComputedStyle(cue).opacity||0,text:cue.textContent||'',stats:stats.textContent||''};
-              });
-              if(state.opacity>.18 || /PARRY|弾|危|!/i.test(state.text)){
-                await parry.click().catch(()=>{});
-                await sleep(90);
-                if(!parryShot){await page.screenshot({path:'visual-audit/05-parry-attempt.png'});parryShot=true;}
-              }
-              if(/PARRY\s+[1-9]/i.test(state.stats)){
-                await sleep(80);
-                await page.screenshot({path:'visual-audit/06-parry-success.png'});
-                await attack.click().catch(()=>{});
-                await sleep(120);
-                await page.screenshot({path:'visual-audit/07-counter.png'});
-                break;
-              }
-              await sleep(35);
-            }
-            await sleep(500);
-            await page.screenshot({path:'visual-audit/08-late-fight.png'});
-            const diag=await page.evaluate(()=>({
-              title:document.title,
-              stats:document.getElementById('stats')?.textContent||'',
-              boss:document.getElementById('bossName')?.textContent||'',
-              phase:window.parryPhaseBreakDiagnostics?.()||null,
-              phaseV2:window.parryPhaseBreakV2Diagnostics?.()||null,
-              phaseV3:window.parryPhaseBreakV3Diagnostics?.()||null,
-              director:window.parryCombatDirectorV2Diagnostics?.()||null,
-              snapshot:window.parryDoll?.snapshot?.()||null,
-              webgl
-            }));
-            fs.writeFileSync('visual-audit/audit.json',JSON.stringify({diag,errors},null,2));
-            console.log(JSON.stringify({diag,errors},null,2));
+            await sleep(350); await page.screenshot({path:'visual-audit/08-late-fight.png'});
+            const diag=await page.evaluate(webgl=>({title:document.title,stats:document.getElementById('stats')?.textContent||'',boss:document.getElementById('bossName')?.textContent||'',phase:window.parryPhaseBreakDiagnostics?.()||null,phaseV2:window.parryPhaseBreakV2Diagnostics?.()||null,phaseV3:window.parryPhaseBreakV3Diagnostics?.()||null,director:window.parryCombatDirectorV2Diagnostics?.()||null,snapshot:window.parryDoll?.snapshot?.()||null,webgl}),webgl);
+            fs.writeFileSync('visual-audit/audit.json',JSON.stringify({diag,errors,success},null,2));
+            console.log(JSON.stringify({diag,errors,success},null,2));
             await browser.close();
             if(!webgl.renderer)process.exitCode=2;
           })().catch(e=>{console.error(e);process.exit(1)});
