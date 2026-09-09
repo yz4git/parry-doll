@@ -83,6 +83,46 @@ def add_section_mesh(p,name,sections,mat,segments=36):
  faces.append(tuple(range(segments-1,-1,-1)));last=(len(sections)-1)*segments;faces.append(tuple(last+i for i in range(segments)))
  mesh=bpy.data.meshes.new(name+'Mesh');mesh.from_pydata(verts,[],faces);mesh.update();o=bpy.data.objects.new(name,mesh);bpy.context.scene.collection.objects.link(o);o.data.materials.append(mat);smooth(o);return parent(o,p)
 
+def add_anatomical_head(p,name,sections,mat,segments=64):
+ verts=[]
+ for yy,w,back,front,zoff in sections:
+  for i in range(segments):
+   ang=2*math.pi*i/segments
+   cs=math.cos(ang);sn=math.sin(ang)
+   depth=front if sn>=0 else back
+   x=cs*w
+   z=zoff+sn*depth
+   if sn>0:
+    fm=sn**1.75
+    # Broad cheekbone support.
+    for side in(-1,1):
+     cheek_x=side*head_w*.205
+     z+=fm*.0080*math.exp(-((x-cheek_x)/(head_w*.120))**2-((yy+.008)/.050)**2)
+     # Eye sockets recede into the skull instead of sitting on a flat face plate.
+     eye_x=side*head_w*.160
+     z-=fm*.0088*math.exp(-((x-eye_x)/(head_w*.105))**2-((yy-.024)/.029)**2)
+     # Brow/temple transition catches light above each socket.
+     z+=fm*.0038*math.exp(-((x-eye_x)/(head_w*.125))**2-((yy-.070)/.028)**2)
+    # Continuous nose bridge and tip.
+    z+=fm*.0065*math.exp(-(x/(head_w*.060))**2-((yy-.025)/.075)**2)
+    z+=fm*.0165*math.exp(-(x/(head_w*.075))**2-((yy+.041)/.024)**2)
+    # Philtrum, mouth cushion and chin are subtle surface changes, not decals.
+    z-=fm*.0018*math.exp(-(x/(head_w*.055))**2-((yy+.064)/.018)**2)
+    z+=fm*.0032*math.exp(-(x/(head_w*.180))**2-((yy+.083)/.028)**2)
+    z+=fm*.0030*math.exp(-(x/(head_w*.145))**2-((yy+.116)/.023)**2)
+   verts.append(bpos((x,yy,z)))
+ faces=[]
+ for r in range(len(sections)-1):
+  base=r*segments;nxt=(r+1)*segments
+  for i in range(segments):
+   j=(i+1)%segments
+   faces.append((base+i,base+j,nxt+j,nxt+i))
+ faces.append(tuple(range(segments-1,-1,-1)))
+ last=(len(sections)-1)*segments
+ faces.append(tuple(last+i for i in range(segments)))
+ mesh=bpy.data.meshes.new(name+'Mesh');mesh.from_pydata(verts,[],faces);mesh.update()
+ o=bpy.data.objects.new(name,mesh);bpy.context.scene.collection.objects.link(o);o.data.materials.append(mat);smooth(o);return parent(o,p)
+
 def add_ribbon(p,name,pts,widths,thickness,mat):
  verts=[]
  for (x,y,z),w in zip(pts,widths):
@@ -142,6 +182,7 @@ TH_L=empty('BL_THIGH_L',ROOT);SH_L=empty('BL_SHIN_L',ROOT);FOOT_L=empty('BL_FOOT
 # REFERENCE_V28: low-specular black hair and staggered fringe roots.
 # REFERENCE_V29: anatomy-first head, embedded eyes, eyelids, connected nose and continuous ribcage.
 # REFERENCE_V30: continuous facial surface and tangent-oriented hair ribbons.
+# REFERENCE_V31: sculpted single-shell face and curve-based hair masses.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
@@ -226,124 +267,110 @@ add_box(PELVIS,'WaistCenterGem',(0,.102,.184),(.026,.050,.018),SILVER,.005)
 
 # === HEAD / FACE ===
 # One continuous measured portrait shell instead of overlapping spheres.
-add_section_mesh(HEAD,'HeadShell',[
- (-.132,head_w*.120,head_d*.175,head_d*.230,.048),
- (-.116,head_w*.235,head_d*.240,head_d*.300,.041),
- (-.096,head_w*.325,head_d*.305,head_d*.355,.033),
- (-.070,head_w*.395,head_d*.350,head_d*.405,.024),
- (-.040,head_w*.455,head_d*.390,head_d*.450,.014),
- (-.006,head_w*.495,head_d*.425,head_d*.492,.003),
- (.026,head_w*.505,head_d*.450,head_d*.505,-.004),
- (.058,head_w*.490,head_d*.472,head_d*.482,-.010),
- (.090,head_w*.455,head_d*.482,head_d*.440,-.017),
- (.118,head_w*.400,head_d*.468,head_d*.382,-.024),
- (.145,head_w*.315,head_d*.435,head_d*.310,-.030)
-],SKIN,52)
+add_anatomical_head(HEAD,'HeadShellV31',[
+ (-.136,head_w*.105,head_d*.160,head_d*.215,.050),
+ (-.124,head_w*.215,head_d*.225,head_d*.285,.044),
+ (-.108,head_w*.300,head_d*.285,head_d*.345,.036),
+ (-.090,head_w*.350,head_d*.325,head_d*.385,.030),
+ (-.068,head_w*.405,head_d*.355,head_d*.420,.023),
+ (-.044,head_w*.452,head_d*.390,head_d*.455,.014),
+ (-.018,head_w*.485,head_d*.420,head_d*.485,.006),
+ (.010,head_w*.502,head_d*.442,head_d*.500,-.001),
+ (.036,head_w*.500,head_d*.460,head_d*.492,-.006),
+ (.062,head_w*.485,head_d*.476,head_d*.470,-.011),
+ (.086,head_w*.458,head_d*.480,head_d*.440,-.016),
+ (.108,head_w*.420,head_d*.472,head_d*.402,-.021),
+ (.128,head_w*.368,head_d*.455,head_d*.355,-.026),
+ (.145,head_w*.300,head_d*.425,head_d*.295,-.030)
+],SKIN,64)
 add_cylinder(HEAD,'Neck',(0,-.158,-.008),W('neck')*.33,.084,SKIN,26)
 add_cylinder(HEAD,'Choker',(0,-.139,-.006),W('neck')*.46,.034,BLACK,28)
 add_cylinder(HEAD,'ChokerTrim',(0,-.124,-.006),W('neck')*.47,.009,SILVER,28)
 for side in(-1,1):add_sphere(HEAD,f'Ear_{side}',(side*head_w*.485,-.018,-.014),(.010,.023,.009),SKIN,18,10)
-# Continuous facial surface: broad planes first, features second.
-face_z=head_d*.505
-xmax=head_w*.430
-ymin,ymax=-.114,.108
-nx,ny=17,17
-verts=[]
-for j in range(ny):
- y=ymin+(ymax-ymin)*j/(ny-1)
- for i in range(nx):
-  x=-xmax+2*xmax*i/(nx-1)
-  xn=x/max(xmax,1e-6)
-  # Base curvature follows the front of the head while rolling away at the cheeks/jaw edges.
-  z=face_z-.026*(xn*xn)-.007*((y-.004)/.125)**2
-  # Zygomatic / cheek volume.
-  for side in(-1,1):
-   cx=side*head_w*.205
-   z+=.0075*math.exp(-((x-cx)/(head_w*.115))**2-((y+.006)/.052)**2)
-   # Eye socket sits behind the cheek/brow plane.
-   ex=side*head_w*.160
-   z-=.0065*math.exp(-((x-ex)/(head_w*.105))**2-((y-.025)/.030)**2)
-  # Nose grows continuously out of the brow and mid-face.
-  z+=.0075*math.exp(-(x/(head_w*.065))**2-((y-.020)/.078)**2)
-  z+=.0125*math.exp(-(x/(head_w*.085))**2-((y+.035)/.026)**2)
-  # Muzzle / mouth cushion and a subtle chin plane.
-  z+=.0030*math.exp(-(x/(head_w*.190))**2-((y+.077)/.030)**2)
-  z+=.0025*math.exp(-(x/(head_w*.150))**2-((y+.108)/.025)**2)
-  verts.append(bpos((x,y,z)))
-faces=[]
-for j in range(ny-1):
- for i in range(nx-1):
-  a0=j*nx+i;b0=a0+1;c0=a0+nx+1;d0=a0+nx;faces.append((a0,b0,c0,d0))
-mesh=bpy.data.meshes.new('FaceSurfaceMesh');mesh.from_pydata(verts,[],faces);mesh.update();face_obj=bpy.data.objects.new('FaceSurface',mesh);bpy.context.scene.collection.objects.link(face_obj);face_obj.data.materials.append(SKIN);smooth(face_obj);parent(face_obj,HEAD)
-
-# Eyeballs are established first and the eyelids hug their visible surface.
+# Anatomy v3.1: the HeadShellV31 itself carries cheek, socket, nose, muzzle and chin form.
+face_z=head_d*.492
 eye_y=.022
 eye_x=head_w*.160
-eye_z=face_z-.010
-eye_rx=head_w*.092
-eye_ry=.027
-eye_rz=head_d*.088
+eye_z=head_d*.432
+eye_rx=head_w*.098
+eye_ry=.0255
+eye_rz=head_d*.075
 for side in(-1,1):
  ex=side*eye_x
- add_sphere(HEAD,f'EyeballV30_{side}',(ex,eye_y,eye_z),(eye_rx,eye_ry,eye_rz),SCLERA,34,22)
- front=eye_z+eye_rz*.98
- add_sphere(HEAD,f'IrisV30_{side}',(ex,eye_y-.001,front+.003),(head_w*.051,.0125,.0045),IRIS,26,16)
- add_sphere(HEAD,f'PupilV30_{side}',(ex,eye_y-.001,front+.0062),(head_w*.019,.0072,.0028),PUPIL,20,12)
- add_sphere(HEAD,f'EyeLightV30_{side}',(ex-side*head_w*.012,eye_y+.008,front+.009),(head_w*.010,.004,.0017),SCLERA,12,8)
- inner=ex-side*eye_rx*.92;outer=ex+side*eye_rx*.98
- add_flow_ribbon(HEAD,f'UpperLidV30_{side}',[(inner,.026,front+.003),(ex,.040,front+.006),(outer,.027,front+.003)],[.010,.012,.009],.0023,SKIN)
- add_flow_ribbon(HEAD,f'LowerLidV30_{side}',[(inner,.011,front+.003),(ex,.000,front+.004),(outer,.012,front+.003)],[.007,.009,.007],.0020,SKIN)
- add_flow_ribbon(HEAD,f'UpperLashV30_{side}',[(inner,.030,front+.008),(ex,.043,front+.010),(outer,.030,front+.008)],[.0035,.0042,.0032],.0014,HAIR)
- add_flow_ribbon(HEAD,f'BrowV30_{side}',[(ex-side*eye_rx*.80,.075,face_z+.005),(ex,.084,face_z+.008),(ex+side*eye_rx*.98,.071,face_z+.005)],[.006,.007,.005],.0014,HAIR)
-
-# The nose tip/wings only add secondary volume; the bridge is already in FaceSurface.
+ add_sphere(HEAD,f'EyeballV31_{side}',(ex,eye_y,eye_z),(eye_rx,eye_ry,eye_rz),SCLERA,36,24)
+ front=eye_z+eye_rz*.985
+ add_sphere(HEAD,f'IrisV31_{side}',(ex,eye_y-.001,front+.0025),(head_w*.052,.0118,.0042),IRIS,28,18)
+ add_sphere(HEAD,f'PupilV31_{side}',(ex,eye_y-.001,front+.0055),(head_w*.019,.0066,.0026),PUPIL,20,12)
+ add_sphere(HEAD,f'EyeLightV31_{side}',(ex-side*head_w*.013,eye_y+.007,front+.0082),(head_w*.010,.0038,.0015),SCLERA,12,8)
+ inner=ex-side*eye_rx*.84;outer=ex+side*eye_rx*.92
+ # Skin-coloured lid ridges follow the eyeball arc and stay very thin.
+ add_strand(HEAD,f'UpperLidV31_{side}',[(inner,.024,front-.001),(ex,.038,front+.0015),(outer,.025,front-.001)],.0021,SKIN)
+ add_strand(HEAD,f'LowerLidV31_{side}',[(inner,.010,front-.001),(ex,.001,front+.0005),(outer,.011,front-.001)],.00145,SKIN)
+ add_strand(HEAD,f'UpperLashV31_{side}',[(inner,.028,front+.005),(ex,.041,front+.0065),(outer,.028,front+.005)],.00155,HAIR)
+ add_strand(HEAD,f'BrowV31_{side}',[(ex-side*eye_rx*.78,.072,face_z+.002),(ex,.082,face_z+.004),(ex+side*eye_rx*.96,.070,face_z+.002)],.0017,HAIR)
+# Small alar cues only; the bridge and nose tip are part of the head mesh.
 for side in(-1,1):
- add_sphere(HEAD,f'NoseWingV30_{side}',(side*.012,-.047,face_z+.010),(.0075,.0070,.0050),SKIN,18,10)
-# Soft lips follow the mouth arc rather than rectangular decal plates.
-add_flow_ribbon(HEAD,'UpperLipV30',[(-.028,-.077,face_z+.004),(0,-.073,face_z+.006),(.028,-.077,face_z+.004)],[.007,.009,.007],.0017,LIP)
-add_flow_ribbon(HEAD,'LowerLipV30',[(-.024,-.084,face_z+.004),(0,-.089,face_z+.006),(.024,-.084,face_z+.004)],[.006,.009,.006],.0016,LIP)
-# Hair v3.0: scalp mass, directional locks, then secondary strands.
-add_sphere(HEAD,'HairBackV30',(0,.024,-head_d*.365),(head_w*.515,.130,head_d*.455),HAIR,44,30)
-add_sphere(HEAD,'HairTopV30',(0,.103,-head_d*.205),(head_w*.475,.065,head_d*.330),HAIR,42,26)
-for side in(-1,1):
- add_sphere(HEAD,f'HairTempleV30_{side}',(side*head_w*.420,.012,-.030),(head_w*.090,.085,head_d*.145),HAIR,28,18)
+ add_sphere(HEAD,f'NoseWingV31_{side}',(side*.0115,-.047,head_d*.505),(.0063,.0062,.0042),SKIN,16,10)
+# Curved lips sit almost flush with the muzzle.
+add_strand(HEAD,'UpperLipV31',[(-.027,-.078,head_d*.505),(-.013,-.073,head_d*.508),(0,-.077,head_d*.510),(.013,-.073,head_d*.508),(.027,-.078,head_d*.505)],.00165,LIP)
+add_strand(HEAD,'LowerLipV31',[(-.023,-.084,head_d*.504),(0,-.090,head_d*.508),(.023,-.084,head_d*.504)],.00155,LIP)
 
-# Seven major fringe locks start at different crown positions and sweep around the eyes.
-fringe=[
- (-.120,-.104,-.092,.036,.050,.136),
- (-.082,-.068,-.056,.048,.047,.128),
- (-.045,-.034,-.026,.038,.043,.140),
- (-.012,-.004,.000,-.004,.038,.146),
- (.030,.040,.032,.030,.043,.132),
- (.068,.080,.070,.047,.047,.141),
- (.108,.118,.108,.034,.050,.134),
+# Hair v3.1: solid scalp mass plus rounded curve locks; no face-sized cards or ribbon triangles.
+add_sphere(HEAD,'HairBackV31',(0,.025,-head_d*.365),(head_w*.520,.132,head_d*.455),HAIR,46,32)
+add_sphere(HEAD,'HairCrownV31',(0,.105,-head_d*.205),(head_w*.480,.066,head_d*.335),HAIR,44,28)
+add_sphere(HEAD,'HairFrontCapV31',(0,.104,head_d*.020),(head_w*.445,.044,head_d*.205),HAIR,40,24)
+for side in(-1,1):
+ add_sphere(HEAD,f'HairTempleV31_{side}',(side*head_w*.420,.012,-.025),(head_w*.095,.086,head_d*.150),HAIR,30,20)
+
+# Major bangs are bundles of 3 rounded curves, giving volume without a flat plate.
+bang_specs=[
+ (-.112,-.098,-.086,.030,.137),
+ (-.078,-.064,-.052,.043,.130),
+ (-.047,-.036,-.026,.032,.141),
+ (-.015,-.006,.000,-.004,.147),
+ (.028,.038,.032,.028,.134),
+ (.062,.074,.068,.042,.143),
+ (.098,.110,.104,.028,.136),
 ]
-for i,(rx,mx,tx,ty,w,ry) in enumerate(fringe):
- add_flow_ribbon(HEAD,f'FringeV30_{i}',[(rx,ry,-head_d*.035),(mx,ry-.022,head_d*.18),(tx,.092,face_z*.76),(tx*.98,ty,face_z+.018)],[w*.58,w,w*.72,w*.14],.0034,HAIR_HI if i in(1,5) else HAIR)
-# Fine crossover locks break symmetry and hide the scalp/lock seam.
-for i,(rx,tx,ty) in enumerate(((-.102,-.078,.025),(-.058,-.038,.018),(.014,.020,.012),(.057,.074,.035),(.100,.118,.020))):
- add_flow_ribbon(HEAD,f'FringeFineV30_{i}',[(rx,.126,-head_d*.015),((rx+tx)*.5,.105,head_d*.30),(tx,ty,face_z+.019)],[.019,.014,.0035],.0023,HAIR_HI if i in(0,4) else HAIR)
-# Face-framing locks are long but narrow, like the supplied four-view reference.
+for i,(rx,mx,tx,ty,ry) in enumerate(bang_specs):
+ for j,off in enumerate((-.0055,0,.0055)):
+  mat=HAIR_HI if (j==0 and i in(1,5)) else HAIR
+  add_strand(HEAD,f'BangV31_{i}_{j}',[(rx+off,ry,-head_d*.015),(mx+off*.7,ry-.020,head_d*.155),(tx+off*.35,.090,head_d*.405),(tx+off*.15,ty,head_d*.505)],.00315 if j==1 else .00255,mat)
+# Fine crossover hairs make the hairline irregular rather than ruler-straight.
+for i,(rx,tx,ty) in enumerate(((-.105,-.083,.020),(-.066,-.045,.013),(-.028,-.010,.005),(.018,.030,.014),(.058,.078,.030),(.100,.115,.017))):
+ add_strand(HEAD,f'BangFineV31_{i}',[(rx,.127,head_d*.020),((rx+tx)*.5,.105,head_d*.260),(tx,ty,head_d*.510)],.00165,HAIR_HI if i in(0,5) else HAIR)
+# Long side framing locks use multiple parallel curves to create a tapered lock mass.
 for side in(-1,1):
- for j,(off,end_y) in enumerate(((0.00,-.34),(.030,-.46))):
-  add_flow_ribbon(HEAD,f'FaceFrameV30_{side}_{j}',[(side*(head_w*.365+off),.074,-.010),(side*(head_w*.435+off),-.010,head_d*.10),(side*(head_w*.450+off),-.155,head_d*.035),(side*(head_w*.390+off),end_y,-.020)],[.040-j*.012,.035-j*.010,.022-j*.006,.007-j*.002],.0037 if j==0 else .0027,HAIR_HI if j else HAIR)
+ for k in range(5):
+  off=(k-2)*.0048
+  add_strand(HEAD,f'FaceFrameV31_{side}_{k}',[(side*(head_w*.355+off),.073,-.008),(side*(head_w*.425+off),-.010,head_d*.085),(side*(head_w*.445+off),-.165,head_d*.025),(side*(head_w*.392+off),-.405,-.025)],.00245-(abs(k-2)*.00022),HAIR_HI if k==1 else HAIR)
 
-# High ponytail: overlapping broad flow ribbons, no opaque cape core.
-add_sphere(HEAD,'PonyRootV30',(0,.150,-head_d*.420),(.076,.060,.062),HAIR,32,22)
-add_box(HEAD,'HairTieV30',(0,.145,-head_d*.475),(.088,.022,.032),SILVER,.006)
+# High ponytail root and tie.
+add_sphere(HEAD,'PonyRootV31',(0,.151,-head_d*.420),(.078,.061,.064),HAIR,34,24)
+add_box(HEAD,'HairTieV31',(0,.146,-head_d*.478),(.090,.023,.033),SILVER,.006)
 PONY=empty('BL_PONY_DYNAMIC',HEAD)
-for i in range(13):
- lane=(i-6)/6
- sway=(-1 if i%2==0 else 1)*(.014+.004*(abs(lane)))
- zoff=-.020*abs(lane)+(.008 if i%3==0 else 0)
- endx=lane*.245+sway
- add_flow_ribbon(PONY,f'PonyFlowV30_{i}',[(lane*.050,.145,-head_d*.50+zoff),(lane*.075,.030,-head_d*.74+zoff),(lane*.105+sway,-.250,-.485),(lane*.155-sway,-.610,-.360),(lane*.205+sway,-1.000,-.235),(endx,-1.390,-.120),(endx*.96,-1.690-(i%3)*.025,-.035)],[.032,.048,.060,.058,.047,.028,.0065],.0038,HAIR_HI if i in(2,6,10) else HAIR)
-# Dark under-layer keeps rear density without returning to one solid sheet.
-for i,lane in enumerate((-.50,-.25,0,.25,.50)):
- add_flow_ribbon(PONY,f'PonyUnderV30_{i}',[(lane*.040,.136,-head_d*.54),(lane*.075,-.010,-head_d*.80),(lane*.120,-.420,-.455),(lane*.170,-.900,-.275),(lane*.215,-1.420,-.090)],[.035,.050,.060,.045,.010],.0032,HAIR)
-for i in range(16):
- lane=(i-7.5)/7.5;sgn=-1 if i%2==0 else 1
- add_strand(PONY,f'PonyFlyV30_{i}',[(lane*.045,.142,-head_d*.52),(lane*.080+sgn*.008,-.060,-head_d*.78),(lane*.135-sgn*.012,-.440,-.445),(lane*.200+sgn*.015,-.920,-.270),(lane*.265-sgn*.010,-1.330,-.130),(lane*.300,-1.690-(i%4)*.020,-.025)],.0018+(i%3)*.00028,HAIR_HI if i%5==0 else HAIR)
+# Dense central cascade: 27 curved locks with varying root depth and end sway.
+for i in range(27):
+ lane=(i-13)/13
+ ring=(i%3)-1
+ sway=(-1 if i%2==0 else 1)*(.010+.007*abs(lane))
+ zoff=ring*.012-.014*abs(lane)
+ endx=lane*.235+sway
+ radius=.0036-.0009*abs(lane)+(.00035 if i%5==0 else 0)
+ pts=[
+  (lane*.052,.148,-head_d*.505+zoff),
+  (lane*.072,.035,-head_d*.745+zoff),
+  (lane*.105+sway,-.245,-.485+zoff*.5),
+  (lane*.150-sway,-.605,-.355),
+  (lane*.195+sway,-.995,-.230),
+  (endx,-1.385,-.115),
+  (endx*.96,-1.675-(i%4)*.018,-.030),
+ ]
+ add_strand(PONY,f'PonyLockV31_{i}',pts,max(radius,.0019),HAIR_HI if i in(4,13,22) else HAIR)
+# Secondary flyaways keep the outer contour light and reference-like.
+for i in range(18):
+ lane=(i-8.5)/8.5;sgn=-1 if i%2==0 else 1
+ add_strand(PONY,f'PonyFlyV31_{i}',[(lane*.044,.145,-head_d*.515),(lane*.078+sgn*.008,-.055,-head_d*.780),(lane*.132-sgn*.014,-.435,-.440),(lane*.205+sgn*.016,-.915,-.265),(lane*.274-sgn*.012,-1.320,-.125),(lane*.305,-1.675-(i%4)*.026,-.022)],.00155+(i%3)*.00025,HAIR_HI if i%6==0 else HAIR)
 
 # === LIMBS ===
 # Diameters come directly from the front sheet; side depth comes from the side view.
