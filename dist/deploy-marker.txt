@@ -1,0 +1,5 @@
+Parry Doll GitHub Pages release
+Heroine silhouette WebGL review complete.
+Visual source commit: fba5829094791ae7b6484213ade7725daa693014
+Final audit trigger: 15e2963c1f975e9412e9ab48e17ec5894586af5a
+Published: 2026-09-09
