@@ -1,0 +1,60 @@
+name: Heroine Thigh Silhouette Correction
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/heroine-thigh-silhouette.trigger
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Refine pelvis-to-thigh silhouette
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('tools/make-heroine-mesh.py')
+          s=p.read_text()
+          s=s.replace('def add_rings(rings,sides):','def add_rings(rings,sides,cap_start=True,cap_end=True):')
+          old=""" # End caps prevent visible hollow tubes at extreme poses.\n for first,reverse in [(offset,True),(offset+(len(rings)-1)*sides,False)]:\n  for j in range(1,sides-1):indices.extend([first,first+j+(0 if reverse else 1),first+j+(1 if reverse else 0)])"""
+          new=""" # Caps are optional where a limb deliberately overlaps another continuous surface.\n cap_specs=[]\n if cap_start:cap_specs.append((offset,True))\n if cap_end:cap_specs.append((offset+(len(rings)-1)*sides,False))\n for first,reverse in cap_specs:\n  for j in range(1,sides-1):indices.extend([first,first+j+(0 if reverse else 1),first+j+(1 if reverse else 0)])"""
+          if old not in s: raise SystemExit('cap block not found')
+          s=s.replace(old,new)
+          old="""  else:points=[np.array([side*.18,1.36,0]),np.array([side*.23,.75,.06]),np.array([side*.28,.16,.22])];boneNames=['hip'+suffix,'knee'+suffix];radii=[.12,.127,.067,.09,.055]"""
+          new="""  else:points=[np.array([side*.165,1.40,-.005]),np.array([side*.22,.78,.045]),np.array([side*.275,.16,.22])];boneNames=['hip'+suffix,'knee'+suffix];radii=[.105,.112,.086,.088,.055]"""
+          if old not in s: raise SystemExit('leg profile block not found')
+          s=s.replace(old,new)
+          old="""   rings.append((center,right,forward,radius,radius*.86,[names.index(n) for n in boneNames],[round(1-w,5),round(w,5)],lambda angle:black))\n  add_rings(rings,28)"""
+          new="""   depth=.70 if kind=='leg' else .86\n   rings.append((center,right,forward,radius,radius*depth,[names.index(n) for n in boneNames],[round(1-w,5),round(w,5)],lambda angle:black))\n  add_rings(rings,28,cap_start=(kind!='leg'))"""
+          if old not in s: raise SystemExit('limb ring block not found')
+          s=s.replace(old,new)
+          p.write_text(s)
+          PY
+          python3 tools/make-heroine-mesh.py
+      - name: Build visual bundle
+        working-directory: visual-src
+        run: |
+          npm ci
+          npm run build
+      - name: Model regression test
+        run: node tests/reference-models.mjs
+      - name: Commit correction
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add tools/make-heroine-mesh.py visual-src/heroine-mesh-data.js dist/visual-engine.js
+          git diff --cached --quiet && exit 0
+          git commit -m 'fix: smooth heroine pelvis-to-thigh silhouette'
+          git push origin HEAD:main
