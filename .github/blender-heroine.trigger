@@ -1,1 +1,1 @@
-2026-09-10 build Blender heroine v4.9 skull hair vertical pony warm irises stronger profile
+2026-09-10 build Blender heroine v5.0 open rear hair shell readable eyes softer profile connected shoulders
