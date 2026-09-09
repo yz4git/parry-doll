@@ -3,21 +3,10 @@ import {HeroineRig} from './heroine-rig.js';
 import {bodyData} from './heroine-mesh-data.js';
 import {makeSkirt,updateSkirt} from './couture.js';
 import {heroineMaterials} from './heroine-materials.js';
+import {makePortrait} from './portrait.js';
+import {makeHair} from './hair.js';
 // All coordinates belong to the render rig. The simulation dolls are read-only.
 const Y=new THREE.Vector3(0,1,0);
-function taper(points,radius){const curve=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p)));const g=new THREE.TubeGeometry(curve,18,radius,6,false),p=g.attributes.position;for(let i=0;i<p.count;i++){const t=Math.floor(i/7)/18,center=curve.getPointAt(t),f=Math.pow(1-t,.55)*.94+.035;p.setXYZ(i,center.x+(p.getX(i)-center.x)*f,center.y+(p.getY(i)-center.y)*f,center.z+(p.getZ(i)-center.z)*f)}g.computeVertexNormals();return g}
-function profile(points){return new THREE.LatheGeometry(points.map(p=>new THREE.Vector2(...p)),24)}
-function sculptFace(){
- const rows=28,cols=40,positions=[],indices=[];
- for(let i=0;i<=rows;i++){const t=i/rows,phi=.001+(Math.PI-.002)*t,y=Math.cos(phi)*.88,r=Math.sin(phi),jaw=1-.25*Math.max(0,-y)/.88;
-  for(let j=0;j<=cols;j++){const a=j/cols*Math.PI*2,x=Math.cos(a)*r*.69*jaw;let z=Math.sin(a)*r*.65;
-   if(z>0){const front=Math.pow(Math.max(0,Math.sin(a)),5),nose=Math.exp(-x*x/ .009-Math.pow((y+.1)/.27,2))*.1,cheek=Math.exp(-Math.pow((Math.abs(x)-.36)/.19,2)-Math.pow((y+.19)/.24,2))*.035,eyes=Math.exp(-Math.pow((Math.abs(x)-.28)/.17,2)-Math.pow((y-.09)/.12,2))*.035;z+=front*(nose+cheek-eyes);}
-   positions.push(x,y,z+.035);
-  }
- }
- for(let i=0;i<rows;i++)for(let j=0;j<cols;j++){const a=i*(cols+1)+j,b=a+1,c=a+cols+1,d=c+1;indices.push(a,b,c,b,d,c)}
- const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));g.setIndex(indices);g.computeVertexNormals();return g;
-}
 export class Heroine {
  constructor(d,scene,mats,{Assembly,frame}){
   this.surfaces=heroineMaterials(mats);mats=this.surfaces.mats;this.frame=frame;this.root=new THREE.Group();scene.add(this.root);this.rig=new HeroineRig(this.root);this.links=[];this.nodes=[];this.hair=[];this.tails=[];
@@ -43,15 +32,7 @@ export class Heroine {
   }
   d.nodes.forEach(n=>{const a=new Assembly(mats);
    if(n.name==='head'){
-    // Smaller adult head, sculpted jaw, lids, irises, nose and layered fringe.
-    const face=sculptFace();a.add(face,skin,[0,0,0],[1,1,1],[0,0,0],'skin');face.dispose();
-    a.add('sphere',skin,[0,-.15,.68],[.071,.12,.065],[0,0,0],'skin');
-    for(const s of [-1,1]){a.add('sphere','#ede9e6',[s*.29,.08,.613],[.19,.087,.04],[0,s*.15,s*-.08],'skin');a.add('sphere','#777b86',[s*.285,.08,.65],[.065,.077,.022],[0,0,0],'skin');a.add('sphere','#171725',[s*.285,.08,.668],[.031,.048,.01],[0,0,0],'skin');a.add('sphere','#ffffff',[s*.27,.105,.677],[.015,.017,.009],[0,0,0],'glow');a.add('box',hair,[s*.29,.17,.63],[.34,.022,.035],[0,s*.14,s*.13],'hair');a.add('sphere',skin,[s*.68,-.1,.02],[.12,.23,.14],[0,0,0],'skin');a.add('gem',silver,[s*.72,-.28,.1],[.055,.13,.06]);}
-    a.add('sphere','#ae7475',[0,-.42,.59],[.16,.028,.023],[0,0,0],'skin');
-    a.add('sphere',hair,[0,.37,-.17],[.75,.62,.68],[0,0,0],'hair');a.add('sphere',hair,[0,.07,-.37],[.70,.83,.48],[0,0,0],'hair');
-    for(let i=0;i<11;i++){const x=-.68+i*.13;const g=taper([[x,.73,.07],[x+.18,.6,.48],[x+.07,.30,.66],[x-.18,-.03+Math.abs(x)*.12,.65]],.14);a.add(g,i%3?'#292731':'#45404a',[0,0,0],[1,1,1],[0,0,0],'hair');g.dispose();}
-    for(const s of [-1,1])for(let i=0;i<3;i++){const g=taper([[s*.62,.47,0],[s*(.76+i*.03),-.08,.06],[s*.70,-.83,.19],[s*.80,-1.48-i*.15,-.02]],.13);a.add(g,hair,[0,0,0],[1,1,1],[0,0,0],'hair');g.dispose();}
-    a.add('ring',silver,[0,.51,-.70],[.29,.28,.29],[Math.PI/2,0,0]);
+    // Dedicated sculpt and layered hair are attached after the accessory nodes.
    }else if(n.name==='hip'){
     a.add('cylinder',black,[0,.2,0],[1.0,.22,.75],[0,0,0],'cloth');a.add('box',silver,[.32,.2,.72],[.25,.17,.06]);
     for(const s of [-1,1]){a.add('box',silver,[s*.97,.19,.04],[.09,.20,.29]);a.add('box',black,[s*.63,.19,-.61],[.11,.32,.06],[0,0,0],'cloth');}
@@ -62,7 +43,7 @@ export class Heroine {
    else if(n.name==='hand'||n.name==='offhand'){a.add('box',black,[0,-.1,0],[.72,.9,.42],[0,0,0],'cloth');for(let j=0;j<4;j++){a.add('sphere',black,[(j-1.5)*.18,-.53,.13],[.12,.32,.13],[.18,0,0],'cloth');a.add('box',silver,[(j-1.5)*.18,-.12,.25],[.12,.22,.045]);}}else{a.add('plate',silver,[0,.02,.54],[.33,.27,.09]);}
    const p=add(a);this.nodes.push(p);
   });
-  for(let i=0;i<17;i++){const a=new Assembly(mats),x=(i-8)*.058,fan=(i-8)*.018,g=taper([[x,.54,-.66],[x*.82+.10,.16,-1.15],[x+fan,-1.18,-1.19],[x*.72-.12,-2.95,-.92],[x+fan*2+.22,-4.85-(i%4)*.18,-.63]],.145);a.add(g,i%4?'#29262f':'#403943',[0,0,0],[1,1,.70],[0,0,0],'hair');g.dispose();const p=a.build();this.nodes[2].add(p);this.hair.push(p);}
+  this.portrait=makePortrait(mats);this.nodes[2].add(this.portrait);const hairModel=makeHair(mats);this.nodes[2].add(hairModel.root);this.hair=hairModel.flowing;
   this.skirt=makeSkirt(mats);this.nodes[0].add(this.skirt);this.tails.push(this.skirt);
   const blade=new Assembly(mats);blade.add('blade','#dbe4ec',[0,.06,0],[1,1,1]);blade.add('blade','#87cddd',[.013,.09,.023],[.23,.9,.2]);blade.add('box',silver,[0,.015,0],[.33,.055,.14]);blade.add('cylinder',black,[0,-.13,0],[.036,.24,.036],[0,0,0],'cloth');for(let i=0;i<6;i++)blade.add('cylinder',silver,[0,-.22+i*.034,0],[.038,.008,.038]);this.weapon=add(blade);
  }
