@@ -50,27 +50,34 @@ jobs:
             const context = await browser.newContext({viewport:{width:852,height:393},deviceScaleFactor:2,isMobile:true,hasTouch:true,userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 26_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1'});
             const page = await context.newPage();
             page.setDefaultTimeout(8000);
+            const cdp = await context.newCDPSession(page);
+            await cdp.send('Page.enable');
+            const shot=async path=>{
+              await cdp.send('Page.bringToFront');
+              const {data}=await cdp.send('Page.captureScreenshot',{format:'png',fromSurface:true,captureBeyondViewport:false});
+              fs.writeFileSync(path,Buffer.from(data,'base64'));
+            };
             const errors=[]; page.on('pageerror',e=>errors.push('pageerror: '+e.message)); page.on('console',m=>{if(m.type()==='error')errors.push('console: '+m.text())});
             const tap=async id=>page.evaluate(id=>{const b=document.getElementById(id);if(!b)return false;const o={bubbles:true,pointerId:7,pointerType:'touch',isPrimary:true};b.dispatchEvent(new PointerEvent('pointerdown',o));b.dispatchEvent(new PointerEvent('pointerup',o));b.click?.();return true},id);
             await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});
             await page.waitForSelector('#start',{timeout:12000});
             await sleep(2200);
             const webgl=await page.evaluate(()=>{const c=document.getElementById('visual-scene');if(!c)return{canvas:false,renderer:null};const gl=c.getContext('webgl2')||c.getContext('webgl');return{canvas:true,renderer:gl?gl.getParameter(gl.RENDERER):null,width:c.width,height:c.height}});
-            await page.screenshot({path:'visual-audit/01-title.png'});
+            await shot('visual-audit/01-title.png');
             await tap('start'); await sleep(1400);
-            await page.screenshot({path:'visual-audit/02-fight-open.png'});
+            await shot('visual-audit/02-fight-open.png');
             await page.keyboard.down('KeyW'); await sleep(1050); await page.keyboard.up('KeyW');
             await page.keyboard.down('KeyD'); await sleep(420); await page.keyboard.up('KeyD'); await sleep(160);
-            await page.screenshot({path:'visual-audit/03-approach.png'});
-            for(let i=0;i<3;i++){await tap('attack');await sleep(i===0?110:145);await page.screenshot({path:`visual-audit/04-attack-${i+1}.png`});await sleep(i===2?420:300)}
+            await shot('visual-audit/03-approach.png');
+            for(let i=0;i<3;i++){await tap('attack');await sleep(i===0?110:145);await shot(`visual-audit/04-attack-${i+1}.png`);await sleep(i===2?420:300)}
             let parryCaptured=false,success=false;
             for(let i=0;i<220;i++){
               const s=await page.evaluate(()=>{const cue=document.getElementById('cue'),stats=document.getElementById('stats');return{opacity:+getComputedStyle(cue).opacity||0,text:cue.textContent||'',stats:stats.textContent||''}});
-              if(s.opacity>.18||/PARRY|弾|危|!/i.test(s.text)){await tap('parry');if(!parryCaptured){await sleep(70);await page.screenshot({path:'visual-audit/05-parry-attempt.png'});parryCaptured=true}}
-              if(/PARRY\s+[1-9]/i.test(s.stats)){success=true;await sleep(70);await page.screenshot({path:'visual-audit/06-parry-success.png'});await tap('attack');await sleep(120);await page.screenshot({path:'visual-audit/07-counter.png'});break}
+              if(s.opacity>.18||/PARRY|弾|危|!/i.test(s.text)){await tap('parry');if(!parryCaptured){await sleep(70);await shot('visual-audit/05-parry-attempt.png');parryCaptured=true}}
+              if(/PARRY\s+[1-9]/i.test(s.stats)){success=true;await sleep(70);await shot('visual-audit/06-parry-success.png');await tap('attack');await sleep(120);await shot('visual-audit/07-counter.png');break}
               await sleep(45);
             }
-            await sleep(350); await page.screenshot({path:'visual-audit/08-late-fight.png'});
+            await sleep(350); await shot('visual-audit/08-late-fight.png');
             const diag=await page.evaluate(webgl=>({title:document.title,stats:document.getElementById('stats')?.textContent||'',boss:document.getElementById('bossName')?.textContent||'',phase:window.parryPhaseBreakDiagnostics?.()||null,phaseV2:window.parryPhaseBreakV2Diagnostics?.()||null,phaseV3:window.parryPhaseBreakV3Diagnostics?.()||null,director:window.parryCombatDirectorV2Diagnostics?.()||null,snapshot:window.parryDoll?.snapshot?.()||null,webgl}),webgl);
             fs.writeFileSync('visual-audit/audit.json',JSON.stringify({diag,errors,success},null,2));
             console.log(JSON.stringify({diag,errors,success},null,2));
@@ -78,7 +85,7 @@ jobs:
             if(!webgl.renderer)process.exitCode=2;
           })().catch(e=>{console.error(e);process.exit(1)});
           NODE
-          PW_TEST_SCREENSHOT_NO_FONTS_READY=1 node audit.cjs
+          node audit.cjs
       - name: Upload audit frames
         if: always()
         uses: actions/upload-artifact@v4
