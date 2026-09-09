@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {HeroineRig} from './heroine-rig.js';
 import {bodyData} from './heroine-mesh-data.js';
+import {makeSkirt,updateSkirt} from './couture.js';
 // All coordinates belong to the render rig. The simulation dolls are read-only.
 const Y=new THREE.Vector3(0,1,0);
 function taper(points,radius){const curve=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p)));const g=new THREE.TubeGeometry(curve,18,radius,6,false),p=g.attributes.position;for(let i=0;i<p.count;i++){const t=Math.floor(i/7)/18,center=curve.getPointAt(t),f=Math.pow(1-t,.55)*.94+.035;p.setXYZ(i,center.x+(p.getX(i)-center.x)*f,center.y+(p.getY(i)-center.y)*f,center.z+(p.getZ(i)-center.z)*f)}g.computeVertexNormals();return g}
@@ -28,7 +29,7 @@ export class Heroine {
     // Continuous, weighted torso is supplied by the offline-authored body mesh.
     a.add('box',black,[0,-.05,-.53],[.22,.83,.08],[0,0,0],'cloth');
     for(const s of [-1,1]){a.add('box',black,[s*.59,.05,-.43],[.11,.83,.09],[0,0,-s*.14],'cloth');a.add('box',silver,[s*.61,.08,-.49],[.055,.3,.04]);a.add('plate',black,[s*.57,.32,.4],[.38,.3,.23],[0,s*.3,0],'cloth');a.add('box',silver,[s*.62,.19,.57],[.045,.4,.04],[0,0,-s*.22]);}
-    a.add('ring',silver,[0,.05,-.59],[.21,.15,.21]);
+    a.add('box',silver,[0,.18,-.59],[.065,.34,.025]);a.add('box',black,[0,.39,-.57],[1.2,.065,.035],[0,0,0],'cloth');
    }else if(neck){a.add('cylinder',skin,[0,.02,0],[.45,.85,.45],[0,0,0],'skin');a.add('cylinder',black,[0,-.29,0],[.59,.3,.55],[0,0,0],'cloth');}
    else{
     const width=leg?.57:.49;
@@ -52,15 +53,16 @@ export class Heroine {
     a.add('ring',silver,[0,.51,-.70],[.29,.28,.29],[Math.PI/2,0,0]);
    }else if(n.name==='hip'){
     a.add('cylinder',black,[0,.2,0],[1.0,.22,.75],[0,0,0],'cloth');a.add('box',silver,[.32,.2,.72],[.25,.17,.06]);
-    for(const s of [-1,1]){a.add('plate',white,[s*.72,-.27,.1],[.47,.68,.37],[0,s*.22,s*.15],'porcelain');a.add('box',silver,[s*.72,-.2,.37],[.07,.62,.05],[0,0,s*.15]);}
+    for(const s of [-1,1]){a.add('box',silver,[s*.97,.19,.04],[.09,.20,.29]);a.add('box',black,[s*.63,.19,-.61],[.11,.32,.06],[0,0,0],'cloth');}
+    a.add('box',silver,[0,.20,-.77],[.30,.13,.035]);a.add('box',black,[0,.20,-.795],[.22,.065,.012],[0,0,0],'cloth');
    }else if(n.name==='chest'){a.add('sphere',black,[0,0,0],[.68,.33,.49],[0,0,0],'cloth');a.add('ring',silver,[0,.26,0],[.37,.37,.37],[Math.PI/2,0,0]);}
    else if(n.name==='shoulder'){a.add('plate',white,[0,.25,-.05],[.65,.45,.55],[.25,0,0],'porcelain');a.add('plate',silver,[0,.24,.33],[.39,.24,.1]);}
    else if(n.name==='foot'){a.add('sphere',black,[0,-.15,.18],[.65,.53,.99],[0,0,0],'cloth');a.add('box',black,[0,-.45,.17],[1.03,.17,1.5],[0,0,0],'cloth');a.add('box',silver,[0,-.33,.76],[.7,.13,.09]);}
    else if(n.name==='hand'||n.name==='offhand'){a.add('box',black,[0,-.1,0],[.72,.9,.42],[0,0,0],'cloth');for(let j=0;j<4;j++){a.add('sphere',black,[(j-1.5)*.18,-.53,.13],[.12,.32,.13],[.18,0,0],'cloth');a.add('box',silver,[(j-1.5)*.18,-.12,.25],[.12,.22,.045]);}}else{a.add('plate',silver,[0,.02,.54],[.33,.27,.09]);}
    const p=add(a);this.nodes.push(p);
   });
-  for(let i=0;i<9;i++){const a=new Assembly(mats),x=(i-4)*.10,g=taper([[x,.52,-.66],[x+.12,.24,-1.14],[x+.20,-1.1,-1.2],[x-.12,-2.7,-.95],[x+.28,-4.35-(i%3)*.24,-.7]],.24);a.add(g,i%3?'#27252e':'#393540',[0,0,0],[1,1,.67],[0,0,0],'hair');g.dispose();const p=a.build();this.nodes[2].add(p);this.hair.push(p);}
-  for(const s of [-1,1]){const a=new Assembly(mats);a.add('plate',white,[s*.55,-1.35,-.55],[.63,1.65,.16],[0,s*.12,s*.13],'porcelain');a.add('box',black,[s*.64,-1.31,-.39],[.09,1.75,.035],[0,0,s*.13],'cloth');a.add('plate',silver,[s*.68,-2.1,-.42],[.30,.26,.07]);const p=a.build();this.nodes[0].add(p);p.traverse(m=>{if(m.isMesh)m.userData.base=Float32Array.from(m.geometry.attributes.position.array)});this.tails.push(p);}
+  for(let i=0;i<13;i++){const a=new Assembly(mats),x=(i-6)*.071,g=taper([[x,.52,-.66],[x+.12,.24,-1.14],[x+.20,-1.1,-1.2],[x-.12,-2.7,-.95],[x+.28,-4.35-(i%3)*.24,-.7]],.17);a.add(g,i%3?'#27252e':'#393540',[0,0,0],[1,1,.67],[0,0,0],'hair');g.dispose();const p=a.build();this.nodes[2].add(p);this.hair.push(p);}
+  this.skirt=makeSkirt(mats);this.nodes[0].add(this.skirt);this.tails.push(this.skirt);
   const blade=new Assembly(mats);blade.add('blade','#dbe4ec',[0,.06,0],[1,1,1]);blade.add('blade','#87cddd',[.013,.09,.023],[.23,.9,.2]);blade.add('box',silver,[0,.015,0],[.33,.055,.14]);blade.add('cylinder',black,[0,-.13,0],[.036,.24,.036],[0,0,0],'cloth');for(let i=0;i<6;i++)blade.add('cylinder',silver,[0,-.22+i*.034,0],[.038,.008,.038]);this.weapon=add(blade);
  }
  update(d,pose,clock=0){const vec=p=>new THREE.Vector3(p.x,p.y,p.z),torso=vec(d.nodes[1].p).sub(vec(d.nodes[0].p)),rot=this.frame(torso,d.face);
@@ -71,7 +73,7 @@ export class Heroine {
   const wrap=a=>Math.atan2(Math.sin(a),Math.cos(a)),turn=this.previousFace===undefined?0:wrap(d.face-this.previousFace);this.previousFace=d.face;
   const motion=Math.min(.36,Math.hypot(d.vel?.x||0,d.vel?.z||0)*.04),targetSide=Math.max(-.35,Math.min(.35,-turn*4));this.flow=this.flow||{x:0,z:0};const damping=1-Math.exp(-dt*9);this.flow.x+=(-motion-this.flow.x)*damping;this.flow.z+=(targetSide-this.flow.z)*damping;
   this.hair.forEach((p,i)=>{p.rotation.x=this.flow.x+Math.sin(clock*2.5+i*.5)*.035;p.rotation.z=this.flow.z+Math.sin(clock*2+i*.7)*.035});
-  this.tails.forEach((p,k)=>{p.traverse(m=>{if(!m.isMesh)return;const a=m.geometry.attributes.position,b=m.userData.base;for(let i=0;i<a.count;i++){const x=b[i*3],y=b[i*3+1],z=b[i*3+2],weight=Math.pow(Math.max(0,-y)/3.3,1.6);a.setXYZ(i,x+this.flow.z*weight*.7,y,z+(motion*.6+Math.sin(clock*2.2-y*1.2+k)*.06)*weight)}a.needsUpdate=true;m.geometry.computeVertexNormals()})});
+  updateSkirt(this.skirt,clock,this.flow,motion);
   const hand=d.nodes.find(n=>n.name==='hand'),v=vec(pose),length=v.length();v.applyAxisAngle(Y,d.face);this.weapon.position.copy(vec(hand.p));this.weapon.quaternion.setFromUnitVectors(Y,v.normalize());this.weapon.scale.set(d.spec.scale,d.spec.scale*length/1.51,d.spec.scale);
  }
  dispose(){this.rig.dispose();this.root.traverse(o=>{if(o.isMesh)o.geometry.dispose()});this.root.removeFromParent()}
