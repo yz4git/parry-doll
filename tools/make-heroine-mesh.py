@@ -35,7 +35,7 @@ for i in range(29):
 add_rings(rings,40)
 for side,suffix in [(-1,'L'),(1,'R')]:
  for kind in ['arm','leg']:
-  if kind=='arm':points=[np.array([side*.32,1.96,0]),np.array([side*.48,1.48,.07]),np.array([side*.7,1,.2])];boneNames=['shoulder'+suffix,'elbow'+suffix];radii=[.09,.08,.063,.075,.047]
+  if kind=='arm':points=[np.array([side*.275,1.96,0]),np.array([side*.455,1.48,.07]),np.array([side*.7,1,.2])];boneNames=['shoulder'+suffix,'elbow'+suffix];radii=[.082,.075,.061,.073,.046]
   else:points=[np.array([side*.158,1.415,-.005]),np.array([side*.214,.78,.045]),np.array([side*.272,.16,.22])];boneNames=['hip'+suffix,'knee'+suffix];radii=[.100,.107,.082,.087,.054]
   rings=[]
   for i in range(33):
