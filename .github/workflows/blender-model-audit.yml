@@ -1,0 +1,91 @@
+name: Blender Heroine WebGL Audit
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/blender-model-audit.trigger
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install capture stack
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Serve game
+        run: |
+          python3 -m http.server 4173 --directory dist > /tmp/parry-http.log 2>&1 &
+          for i in {1..30}; do curl -fsS http://127.0.0.1:4173/ >/dev/null && exit 0; sleep 1; done
+          cat /tmp/parry-http.log
+          exit 1
+      - name: Compare CLASSIC and BLENDER in model viewer
+        run: |
+          mkdir -p blender-model-audit
+          cat > blender-model-audit.cjs <<'NODE'
+          const { chromium } = require('playwright');
+          const fs = require('fs');
+          const sleep = ms => new Promise(r=>setTimeout(r,ms));
+          (async()=>{
+            const browser=await chromium.launch({headless:true,args:['--enable-webgl','--ignore-gpu-blocklist','--enable-unsafe-swiftshader','--use-gl=angle','--use-angle=swiftshader-webgl','--disable-dev-shm-usage']});
+            const context=await browser.newContext({viewport:{width:852,height:393},deviceScaleFactor:1,isMobile:true,hasTouch:true,userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 26_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1'});
+            const page=await context.newPage();
+            const errors=[],badResponses=[],modelResponses=[];
+            page.on('pageerror',e=>errors.push('pageerror: '+e.message));
+            page.on('console',m=>{if(m.type()==='error')errors.push('console: '+m.text())});
+            page.on('response',r=>{if(r.url().includes('heroine-blender.glb'))modelResponses.push({status:r.status(),url:r.url()});if(r.status()>=400)badResponses.push(r.status()+' '+r.url())});
+            await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});
+            await page.waitForFunction(()=>window.ParryModelViewer?.isAvailable?.()&&window.ParryHeroineAppearance?.state,{timeout:20000});
+            await page.evaluate(()=>window.ParryHeroineAppearance.set('classic'));
+            await page.waitForSelector('#modelViewerOpen',{timeout:10000});
+            await page.screenshot({path:'blender-model-audit/00-title-classic.png'});
+            await page.locator('#modelViewerOpen').click();
+            await page.waitForSelector('#modelViewerUI.show',{timeout:5000});
+            await sleep(700);
+            const classic=await page.evaluate(()=>({appearance:window.ParryHeroineAppearance.state(),viewer:window.ParryModelViewer.state()}));
+            await page.screenshot({path:'blender-model-audit/01-classic-full.png'});
+            await page.locator('#mvModel').click();
+            await page.waitForFunction(()=>{const s=window.ParryHeroineAppearance?.state?.();return s?.selected==='blender'&&s?.blenderReady===true&&s?.active==='blender'},null,{timeout:20000});
+            await sleep(650);
+            const blender=await page.evaluate(()=>({appearance:window.ParryHeroineAppearance.state(),viewer:window.ParryModelViewer.state(),visual:window.parryVisualDiagnostics?.()}));
+            await page.screenshot({path:'blender-model-audit/02-blender-full.png'});
+            await page.evaluate(()=>window.ParryModelViewer.rotate(-.82,.035));await sleep(350);
+            await page.screenshot({path:'blender-model-audit/03-blender-rotated.png'});
+            await page.locator('[data-preset="upper"]').click();await sleep(350);
+            await page.screenshot({path:'blender-model-audit/04-blender-upper.png'});
+            await page.locator('[data-preset="face"]').click();await sleep(350);
+            await page.screenshot({path:'blender-model-audit/05-blender-face.png'});
+            await page.locator('#mvModel').click();
+            await page.waitForFunction(()=>window.ParryHeroineAppearance?.state?.().active==='classic',{timeout:5000});await sleep(300);
+            const backClassic=await page.evaluate(()=>window.ParryHeroineAppearance.state());
+            await page.screenshot({path:'blender-model-audit/06-classic-back.png'});
+            const fatalErrors=errors.filter(e=>!e.includes('Failed to load resource'));
+            const fatalResponses=badResponses.filter(e=>!e.includes('/version.json')&&!e.includes('/favicon.ico'));
+            const pass=classic.appearance.active==='classic'&&blender.appearance.active==='blender'&&blender.appearance.blenderReady===true&&backClassic.active==='classic'&&modelResponses.some(r=>r.status===200)&&fatalErrors.length===0&&fatalResponses.length===0;
+            const audit={pass,classic,blender,backClassic,modelResponses,errors,badResponses,fatalErrors,fatalResponses};
+            fs.writeFileSync('blender-model-audit/audit.json',JSON.stringify(audit,null,2));
+            console.log(JSON.stringify(audit,null,2));
+            await browser.close();if(!pass)process.exitCode=2;
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+          node blender-model-audit.cjs
+      - name: Upload comparison frames
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: parry-doll-blender-model-audit
+          path: blender-model-audit/
+          if-no-files-found: error
+          retention-days: 3
