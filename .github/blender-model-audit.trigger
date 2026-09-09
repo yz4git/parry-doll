@@ -1,1 +1,1 @@
-2026-09-09 refined Blender heroine CLASSIC vs BLENDER audit v2
+2026-09-09 measured-reference Blender heroine CLASSIC vs BLENDER audit v3
