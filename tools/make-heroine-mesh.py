@@ -27,7 +27,7 @@ def add_rings(rings,sides,cap_start=True,cap_end=True):
 rings=[]
 for i in range(29):
  t=i/28;y=1.30+t*.69
- rx=np.interp(y,[1.30,1.4,1.57,1.73,1.86,1.99],[.245,.245,.183,.21,.26,.225]);rz=np.interp(y,[1.30,1.48,1.67,1.85,1.99],[.145,.123,.135,.158,.12])
+ rx=np.interp(y,[1.30,1.4,1.57,1.73,1.86,1.99],[.238,.232,.169,.198,.252,.218]);rz=np.interp(y,[1.30,1.48,1.67,1.85,1.99],[.137,.118,.130,.154,.116])
  k=0 if y<1.64 else 1;a,b=(1.38,1.64) if k==0 else (1.64,1.94);w=max(0,min(1,(y-a)/(b-a)))
  def col(angle,y=y):
   side=abs(math.cos(angle));return black if side>.77 or (math.sin(angle)<0 and abs(math.cos(angle))<.1) or y<1.42 else white
@@ -36,7 +36,7 @@ add_rings(rings,40)
 for side,suffix in [(-1,'L'),(1,'R')]:
  for kind in ['arm','leg']:
   if kind=='arm':points=[np.array([side*.32,1.96,0]),np.array([side*.48,1.48,.07]),np.array([side*.7,1,.2])];boneNames=['shoulder'+suffix,'elbow'+suffix];radii=[.09,.08,.063,.075,.047]
-  else:points=[np.array([side*.165,1.40,-.005]),np.array([side*.22,.78,.045]),np.array([side*.275,.16,.22])];boneNames=['hip'+suffix,'knee'+suffix];radii=[.105,.112,.086,.088,.055]
+  else:points=[np.array([side*.158,1.415,-.005]),np.array([side*.214,.78,.045]),np.array([side*.272,.16,.22])];boneNames=['hip'+suffix,'knee'+suffix];radii=[.100,.107,.082,.087,.054]
   rings=[]
   for i in range(33):
    t=i/32;k=0 if t<=.5 else 1;u=t*2-k;center=points[k]*(1-u)+points[k+1]*u;tangent=points[k+1]-points[k];tangent/=np.linalg.norm(tangent);right=np.cross(tangent,[0,0,1]);right/=np.linalg.norm(right);forward=np.cross(right,tangent);radius=float(np.interp(t,[0,.24,.5,.73,1],radii));w=max(0,min(1,(t-.43)/.14))

@@ -20,7 +20,7 @@ function sculptFace(){
 export class Heroine {
  constructor(d,scene,mats,{Assembly,frame}){
   this.frame=frame;this.root=new THREE.Group();scene.add(this.root);this.rig=new HeroineRig(this.root);this.links=[];this.nodes=[];this.hair=[];this.tails=[];
-  const white='#e8e5df',black='#171b27',silver='#aeb9c5',skin='#edc1ab',hair='#25232c';
+  const white='#ece9e3',black='#151923',silver='#b9c4cf',skin='#edc1ab',hair='#2a252c';
   const bodyGeometry=new THREE.BufferGeometry();bodyGeometry.setAttribute('position',new THREE.Float32BufferAttribute(bodyData.positions,3));bodyGeometry.setAttribute('color',new THREE.Float32BufferAttribute(bodyData.colors,3));bodyGeometry.setAttribute('skinIndex',new THREE.Uint16BufferAttribute(bodyData.skinIndices,4));bodyGeometry.setAttribute('skinWeight',new THREE.Float32BufferAttribute(bodyData.skinWeights,4));bodyGeometry.setIndex(bodyData.indices);bodyGeometry.computeVertexNormals();
   this.body=new THREE.SkinnedMesh(bodyGeometry,mats.porcelain);this.body.castShadow=true;this.body.receiveShadow=true;this.body.frustumCulled=false;this.root.add(this.body);this.body.bind(this.rig.skeleton);this.body.normalizeSkinWeights();
   const add=a=>{const p=a.build();this.root.add(p);return p};
@@ -29,14 +29,14 @@ export class Heroine {
     // Continuous, weighted torso is supplied by the offline-authored body mesh.
     a.add('box',black,[0,-.05,-.53],[.22,.83,.08],[0,0,0],'cloth');
     for(const s of [-1,1]){a.add('box',black,[s*.59,.05,-.43],[.11,.83,.09],[0,0,-s*.14],'cloth');a.add('box',silver,[s*.61,.08,-.49],[.055,.3,.04]);a.add('plate',black,[s*.57,.32,.4],[.38,.3,.23],[0,s*.3,0],'cloth');a.add('box',silver,[s*.62,.19,.57],[.045,.4,.04],[0,0,-s*.22]);}
-    a.add('box',silver,[0,.18,-.59],[.065,.34,.025]);a.add('box',black,[0,.39,-.57],[1.2,.065,.035],[0,0,0],'cloth');
+    a.add('box',silver,[0,.18,-.59],[.065,.34,.025]);a.add('box',black,[0,.39,-.57],[1.2,.065,.035],[0,0,0],'cloth');a.add('plate',white,[0,.18,-.585],[.72,.24,.045],[0,0,0],'porcelain');a.add('plate',white,[0,-.12,-.56],[.56,.18,.04],[0,0,0],'porcelain');a.add('box',silver,[0,.02,-.625],[.055,.62,.025]);
    }else if(neck){a.add('cylinder',skin,[0,.02,0],[.45,.85,.45],[0,0,0],'skin');a.add('cylinder',black,[0,-.29,0],[.59,.3,.55],[0,0,0],'cloth');}
    else{
     const width=leg?.57:.49;
     // Smooth limb surface is skinned across the elbow/knee, with separate armor accents.
-    if(names.includes('elbow')&&!names.includes('shoulder')){a.add('plate',silver,[0,-.01,.48],[.48,.55,.2]);a.add('plate',black,[0,.13,.57],[.39,.38,.1]);}
+    if(names.includes('elbow')&&!names.includes('shoulder')){a.add('plate',white,[0,-.02,.49],[.52,.58,.21],[0,0,0],'porcelain');a.add('plate',black,[0,.13,.575],[.35,.34,.085]);a.add('box',silver,[0,.08,.615],[.06,.48,.04]);}
     if(names.includes('foot')){a.add('plate',white,[0,.10,.55],[.43,.65,.13],[0,0,0],'porcelain');a.add('box',silver,[0,.11,.65],[.07,.52,.06]);}
-    if(names.includes('shoulder'))a.add('cylinder',silver,[0,.25,0],[width*1.06,.045,width*.94]);
+    if(names.includes('shoulder')){a.add('cylinder',silver,[0,.25,0],[width*1.04,.04,width*.92]);a.add('plate',white,[0,.08,.46],[.48,.38,.13],[.05,0,0],'porcelain');}if(names.includes('knee')&&names.includes('hip')){a.add('plate',white,[0,.06,.48],[.34,.50,.11],[0,0,0],'porcelain');a.add('box',silver,[0,.12,.57],[.055,.46,.03]);}
    }
    this.links.push({l,p:add(a)});
   }
@@ -61,14 +61,14 @@ export class Heroine {
    else if(n.name==='hand'||n.name==='offhand'){a.add('box',black,[0,-.1,0],[.72,.9,.42],[0,0,0],'cloth');for(let j=0;j<4;j++){a.add('sphere',black,[(j-1.5)*.18,-.53,.13],[.12,.32,.13],[.18,0,0],'cloth');a.add('box',silver,[(j-1.5)*.18,-.12,.25],[.12,.22,.045]);}}else{a.add('plate',silver,[0,.02,.54],[.33,.27,.09]);}
    const p=add(a);this.nodes.push(p);
   });
-  for(let i=0;i<13;i++){const a=new Assembly(mats),x=(i-6)*.071,g=taper([[x,.52,-.66],[x+.12,.24,-1.14],[x+.20,-1.1,-1.2],[x-.12,-2.7,-.95],[x+.28,-4.35-(i%3)*.24,-.7]],.17);a.add(g,i%3?'#27252e':'#393540',[0,0,0],[1,1,.67],[0,0,0],'hair');g.dispose();const p=a.build();this.nodes[2].add(p);this.hair.push(p);}
+  for(let i=0;i<17;i++){const a=new Assembly(mats),x=(i-8)*.058,fan=(i-8)*.018,g=taper([[x,.54,-.66],[x*.82+.10,.16,-1.15],[x+fan,-1.18,-1.19],[x*.72-.12,-2.95,-.92],[x+fan*2+.22,-4.85-(i%4)*.18,-.63]],.145);a.add(g,i%4?'#29262f':'#403943',[0,0,0],[1,1,.70],[0,0,0],'hair');g.dispose();const p=a.build();this.nodes[2].add(p);this.hair.push(p);}
   this.skirt=makeSkirt(mats);this.nodes[0].add(this.skirt);this.tails.push(this.skirt);
   const blade=new Assembly(mats);blade.add('blade','#dbe4ec',[0,.06,0],[1,1,1]);blade.add('blade','#87cddd',[.013,.09,.023],[.23,.9,.2]);blade.add('box',silver,[0,.015,0],[.33,.055,.14]);blade.add('cylinder',black,[0,-.13,0],[.036,.24,.036],[0,0,0],'cloth');for(let i=0;i<6;i++)blade.add('cylinder',silver,[0,-.22+i*.034,0],[.038,.008,.038]);this.weapon=add(blade);
  }
  update(d,pose,clock=0){const vec=p=>new THREE.Vector3(p.x,p.y,p.z),torso=vec(d.nodes[1].p).sub(vec(d.nodes[0].p)),rot=this.frame(torso,d.face);
   const points=this.rig.update(d);
   for(const {l,p} of this.links){const [a,b]=this.rig.segment(d,l),delta=b.clone().sub(a);p.position.copy(a).lerp(b,.5);p.quaternion.copy(this.frame(delta,d.face));p.scale.set(l.r,delta.length(),l.r);}
-  this.nodes.forEach((p,i)=>{const n=d.nodes[i];p.position.copy(points[this.rig.nodeName(n)]);p.quaternion.copy(rot);p.scale.setScalar(n.r*(i===2?.90:n.name==='shoulder'?.78:n.name==='elbow'||n.name==='knee'?.75:1))});
+  this.nodes.forEach((p,i)=>{const n=d.nodes[i];p.position.copy(points[this.rig.nodeName(n)]);p.quaternion.copy(rot);p.scale.setScalar(n.r*(n.name==='head'?.84:n.name==='shoulder'?.74:n.name==='elbow'||n.name==='knee'?.72:1))});
   const dt=this.previousClock===undefined?0:Math.max(0,Math.min(.05,clock-this.previousClock));this.previousClock=clock;
   const wrap=a=>Math.atan2(Math.sin(a),Math.cos(a)),turn=this.previousFace===undefined?0:wrap(d.face-this.previousFace);this.previousFace=d.face;
   const motion=Math.min(.36,Math.hypot(d.vel?.x||0,d.vel?.z||0)*.04),targetSide=Math.max(-.35,Math.min(.35,-turn*4));this.flow=this.flow||{x:0,z:0};const damping=1-Math.exp(-dt*9);this.flow.x+=(-motion-this.flow.x)*damping;this.flow.z+=(targetSide-this.flow.z)*damping;

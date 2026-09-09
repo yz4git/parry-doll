@@ -21,3 +21,6 @@ The second WebGL pass removed the four-tab clutter but made the rear spears too 
 
 ## Rear cloth surface correction
 Real WebGL close-up review exposed a winding error: the rear panels' bright outer surfaces faced forward, so the gameplay camera culled them and showed the dark lining instead. The panel winding is now reversed so the pale outer cloth faces the rear gameplay camera while the dark lining remains visible from the inner/front side. A normal-direction regression assertion prevents this silhouette bug from returning.
+
+## Key-art heroine and parry pass
+The combat silhouette now uses a slightly higher visual pelvis, shorter upper-body spacing, a smaller head, tighter waist and upper-thigh profile, longer multi-strand ponytail, and layered white/silver armor accents on the back, forearms, shoulders and thighs. Gameplay endpoints and hitboxes are unchanged. Perfect parries receive a dedicated screen-space cinematic layer with large diagonal clash streaks, dense sparks, a double shock ring, brief exposure lift, edge darkening, stronger hit-stop and a small camera push.
