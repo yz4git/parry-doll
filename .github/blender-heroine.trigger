@@ -1,1 +1,1 @@
-2026-09-10 build Blender heroine v3.5 asymmetric fringe portrait couture
+2026-09-10 build Blender heroine v3.6 portrait anatomy dark fringe
