@@ -33,6 +33,11 @@ jobs:
           node-version: 22
       - name: Install Blender
         run: |
+          # Blender comes from Ubuntu. A transient mismatch in the preinstalled Google Chrome
+          # repository must not block character builds that do not depend on Chrome.
+          sudo rm -f /etc/apt/sources.list.d/google-chrome.list /etc/apt/sources.list.d/google-chrome.sources || true
+          sudo apt-get clean
+          sudo rm -rf /var/lib/apt/lists/*
           sudo apt-get update -qq
           sudo apt-get install -y -qq blender
           blender --version | head -n 2
