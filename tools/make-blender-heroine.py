@@ -1,4 +1,4 @@
-import bpy, json, os
+import bpy, json, os, math
 
 ROOT_DIR=os.path.abspath(os.path.join(os.path.dirname(__file__),'..'))
 OUT=os.path.join(ROOT_DIR,'dist','assets','models','heroine-blender.glb')
@@ -48,10 +48,45 @@ def add_box(p,name,loc,scale,mat,bevel=.020,rot=(0,0,0)):
 def add_cylinder(p,name,loc,radius,length,mat,vertices=28):
  bpy.ops.mesh.primitive_cylinder_add(vertices=vertices,radius=radius,depth=length,location=bpos(loc));o=bpy.context.object;o.name=name;o.data.materials.append(mat);smooth(o);return parent(o,p)
 def add_taper(p,name,r1,r2,depth1,depth2,mat):
- # Elliptical tapered segment. The reference sheet supplies front width and side depth separately.
- bpy.ops.mesh.primitive_cone_add(vertices=32,radius1=1,radius2=1,depth=1,location=(0,0,0));o=bpy.context.object;o.name=name+'_core';o.scale=(r1,depth1,1);bpy.ops.object.transform_apply(location=False,rotation=False,scale=True);o.data.materials.append(mat);smooth(o);parent(o,p)
- # Narrow overlap caps remove the old ball-joint silhouette without creating visible gaps.
- add_sphere(p,name+'_jointA',(0,-.485,0),(r1*.72,r1*.76,depth1*.72),mat,22,14);add_sphere(p,name+'_jointB',(0,.485,0),(r2*.72,r2*.76,depth2*.72),mat,22,14)
+ # Four elliptical rings use both end widths/depths; this removes the old tube + ball-joint look.
+ rings=[(-.50,r1,depth1),(-.18,r1*.97,depth1*.96),(.18,(r1+r2)*.51,(depth1+depth2)*.50),(.50,r2,depth2)]
+ verts=[];seg=32
+ for yy,w,d in rings:
+  for i in range(seg):
+   ang=2*math.pi*i/seg;verts.append(bpos((math.cos(ang)*w,yy,math.sin(ang)*d)))
+ faces=[]
+ for r in range(len(rings)-1):
+  base=r*seg;nxt=(r+1)*seg
+  for i in range(seg):j=(i+1)%seg;faces.append((base+i,base+j,nxt+j,nxt+i))
+ faces.append(tuple(range(seg-1,-1,-1)));last=(len(rings)-1)*seg;faces.append(tuple(last+i for i in range(seg)))
+ mesh=bpy.data.meshes.new(name+'Mesh');mesh.from_pydata(verts,[],faces);mesh.update();o=bpy.data.objects.new(name+'_core',mesh);bpy.context.scene.collection.objects.link(o);o.data.materials.append(mat);smooth(o);return parent(o,p)
+
+def add_section_mesh(p,name,sections,mat,segments=36):
+ # sections: (logical_y, half_width, back_depth, front_depth, z_offset)
+ verts=[]
+ for yy,w,back,front,zoff in sections:
+  for i in range(segments):
+   ang=2*math.pi*i/segments;sn=math.sin(ang);depth=front if sn>=0 else back
+   verts.append(bpos((math.cos(ang)*w,yy,zoff+sn*depth)))
+ faces=[]
+ for r in range(len(sections)-1):
+  base=r*segments;nxt=(r+1)*segments
+  for i in range(segments):j=(i+1)%segments;faces.append((base+i,base+j,nxt+j,nxt+i))
+ faces.append(tuple(range(segments-1,-1,-1)));last=(len(sections)-1)*segments;faces.append(tuple(last+i for i in range(segments)))
+ mesh=bpy.data.meshes.new(name+'Mesh');mesh.from_pydata(verts,[],faces);mesh.update();o=bpy.data.objects.new(name,mesh);bpy.context.scene.collection.objects.link(o);o.data.materials.append(mat);smooth(o);return parent(o,p)
+
+def add_ribbon(p,name,pts,widths,thickness,mat):
+ verts=[]
+ for (x,y,z),w in zip(pts,widths):
+  h=w*.5;t=thickness*.5
+  verts.extend([bpos((x-h,y,z+t)),bpos((x+h,y,z+t)),bpos((x-h,y,z-t)),bpos((x+h,y,z-t))])
+ faces=[]
+ for i in range(len(pts)-1):
+  a=i*4;b=(i+1)*4
+  faces.extend([(a,a+1,b+1,b),(a+2,b+2,b+3,a+3),(a,a+2,a+3,a+1),(b,b+1,b+3,b+2)])
+ faces.extend([(0,2,3,1),((len(pts)-1)*4,(len(pts)-1)*4+1,(len(pts)-1)*4+3,(len(pts)-1)*4+2)])
+ mesh=bpy.data.meshes.new(name+'Mesh');mesh.from_pydata(verts,[],faces);mesh.update();o=bpy.data.objects.new(name,mesh);bpy.context.scene.collection.objects.link(o);o.data.materials.append(mat);smooth(o);return parent(o,p)
+
 def add_panel(p,name,points,depth,mat):
  front=[(x,y,z+depth*.5) for x,y,z in points];back=[(x,y,z-depth*.5) for x,y,z in points];verts=[bpos(v) for v in front+back];n=len(points);faces=[tuple(range(n)),tuple(range(2*n-1,n-1,-1))]
  for i in range(n):j=(i+1)%n;faces.append((i,j,n+j,n+i))
@@ -66,14 +101,22 @@ UA_L=empty('BL_UPPER_ARM_L',ROOT);FA_L=empty('BL_FOREARM_L',ROOT);HAND_L=empty('
 TH_L=empty('BL_THIGH_L',ROOT);SH_L=empty('BL_SHIN_L',ROOT);FOOT_L=empty('BL_FOOT_L',ROOT);TH_R=empty('BL_THIGH_R',ROOT);SH_R=empty('BL_SHIN_R',ROOT);FOOT_R=empty('BL_FOOT_R',ROOT);SWORD=empty('BL_SWORD',ROOT)
 
 # === REFERENCE-LOCKED BODY ENVELOPE ===
-# Source sheet measured at H=920 px and normalized in heroine-reference-proportions.json.
+# Source sheet measured at H=961 px and normalized in heroine-reference-proportions.json.
+# REFERENCE_V14: direct silhouette-driven Blender authoring pass.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
-# Torso follows the measured hourglass envelope instead of the previous armor-block proportions.
-add_sphere(TORSO,'TorsoCore',(0,.00,0),(bust_w*.43,.305,bust_d*.38),BLACK_SOFT,36,24)
-add_sphere(TORSO,'RibCage',(0,.145,.015),(bust_w*.50,.185,bust_d*.46),BLACK,36,24)
-add_sphere(TORSO,'Waist',(0,-.225,0),(waist_w*.50,.145,waist_d*.50),BLACK,32,20)
-# Subtle bust shaping is front-biased but does not widen the measured front silhouette.
-for side in(-1,1):add_sphere(TORSO,f'Bust_{side}',(side*bust_w*.205,.135,bust_d*.27),(bust_w*.26,.115,bust_d*.29),BLACK,30,18)
+# Torso follows the measured hourglass envelope as a single continuous surface.
+add_section_mesh(TORSO,'TorsoSuit',[
+ (-.340,waist_w*.54,waist_d*.48,waist_d*.52,0.000),
+ (-.245,waist_w*.50,waist_d*.48,waist_d*.54,0.004),
+ (-.120,bust_w*.40,bust_d*.39,bust_d*.45,0.010),
+ (.020,bust_w*.47,bust_d*.42,bust_d*.51,0.014),
+ (.145,bust_w*.50,bust_d*.43,bust_d*.55,0.016),
+ (.255,bust_w*.45,bust_d*.39,bust_d*.45,0.008),
+ (.330,bust_w*.37,bust_d*.34,bust_d*.37,0.000)
+],BLACK_SOFT,40)
+# Small front-biased bust volumes blend into the suit rather than becoming two spherical armor pods.
+for side in(-1,1):
+ add_sphere(TORSO,f'BustContour_{side}',(side*bust_w*.205,.135,bust_d*.235),(bust_w*.185,.078,bust_d*.205),BLACK,28,18)
 # Reference-like harness: thin lines, no square robot chest plates.
 add_box(TORSO,'Sternum',(0,.085,bust_d*.43),(.020,.355,.016),SILVER,.006)
 add_box(TORSO,'Collar',(0,.305,.010),(W('neck')*1.15,.055,.105),BLACK,.014)
@@ -84,51 +127,67 @@ for side in(-1,1):
  add_panel(TORSO,f'WhiteSidePanel_{side}',[(side*waist_w*.53,-.23,.02),(side*bust_w*.48,.05,.01),(side*bust_w*.43,.24,.00),(side*waist_w*.56,-.08,.02)],.025,WHITE)
 
 # Compact pelvis and high waist: measured 0.123H width and 0.089H depth.
-add_sphere(PELVIS,'PelvisSuit',(0,0,0),(pelvis_w*.50,.135,pelvis_d*.50),BLACK,34,22)
+add_section_mesh(PELVIS,'PelvisSuit',[
+ (-.170,pelvis_w*.43,pelvis_d*.43,pelvis_d*.47,0.000),
+ (-.070,pelvis_w*.50,pelvis_d*.48,pelvis_d*.52,0.004),
+ (.055,pelvis_w*.49,pelvis_d*.47,pelvis_d*.50,0.004),
+ (.155,waist_w*.57,waist_d*.54,waist_d*.58,0.000)
+],BLACK,36)
 add_box(PELVIS,'HighWaist',(0,.105,.012),(pelvis_w*.96,.070,pelvis_d*.88),BLACK,.018)
 add_box(PELVIS,'HipBelt',(0,.145,.018),(pelvis_w*1.08,.028,pelvis_d*.94),SILVER,.008)
-# Layered pointed skirt measured from the reference silhouette. Avoid long rectangular slabs.
-add_panel(PELVIS,'FrontPanelL',[(-.150,.115,.118),(-.026,.105,.126),(-.052,-.42,.142),(-.112,-.60,.132),(-.222,-.40,.082)],.022,WHITE)
-add_panel(PELVIS,'FrontPanelR',[(.026,.105,.126),(.150,.115,.118),(.222,-.40,.082),(.112,-.60,.132),(.052,-.42,.142)],.022,WHITE)
-add_panel(PELVIS,'FrontBladeL',[(-.180,.090,.095),(-.120,.075,.110),(-.170,-.49,.108),(-.258,-.66,.055),(-.246,-.29,.050)],.018,BLACK)
-add_panel(PELVIS,'FrontBladeR',[(.120,.075,.110),(.180,.090,.095),(.246,-.29,.050),(.258,-.66,.055),(.170,-.49,.108)],.018,BLACK)
-add_panel(PELVIS,'SidePanelL',[(-.175,.105,.022),(-.232,.070,-.005),(-.315,-.37,-.035),(-.286,-.76,.010),(-.220,-.53,.040)],.018,WHITE)
-add_panel(PELVIS,'SidePanelR',[(.175,.105,.022),(.232,.070,-.005),(.220,-.53,.040),(.286,-.76,.010),(.315,-.37,-.035)],.018,WHITE)
-add_panel(PELVIS,'SideBladeL',[(-.214,.080,-.035),(-.267,.045,-.060),(-.338,-.44,-.082),(-.285,-.68,-.045)],.015,BLACK)
-add_panel(PELVIS,'SideBladeR',[(.214,.080,-.035),(.285,-.68,-.045),(.338,-.44,-.082),(.267,.045,-.060)],.015,BLACK)
-add_panel(PELVIS,'RearPanelL',[(-.155,.095,-.105),(-.025,.090,-.120),(-.060,-.50,-.150),(-.138,-.80,-.128),(-.252,-.52,-.080)],.018,WHITE)
-add_panel(PELVIS,'RearPanelR',[(.025,.090,-.120),(.155,.095,-.105),(.252,-.52,-.080),(.138,-.80,-.128),(.060,-.50,-.150)],.018,WHITE)
+# Layered pointed skirt measured from the reference silhouette.
+# Short front petals expose the long-leg line; long movement tails live at the sides/back.
+add_panel(PELVIS,'FrontPanelL',[(-.142,.118,.125),(-.018,.108,.132),(-.035,-.205,.145),(-.092,-.305,.132),(-.185,-.205,.090)],.020,WHITE)
+add_panel(PELVIS,'FrontPanelR',[(.018,.108,.132),(.142,.118,.125),(.185,-.205,.090),(.092,-.305,.132),(.035,-.205,.145)],.020,WHITE)
+add_panel(PELVIS,'FrontBladeL',[(-.176,.098,.095),(-.112,.082,.112),(-.145,-.245,.118),(-.224,-.375,.070),(-.245,-.185,.052)],.016,BLACK)
+add_panel(PELVIS,'FrontBladeR',[(.112,.082,.112),(.176,.098,.095),(.245,-.185,.052),(.224,-.375,.070),(.145,-.245,.118)],.016,BLACK)
+add_panel(PELVIS,'SideWhiteL',[(-.172,.106,.030),(-.228,.068,-.002),(-.286,-.350,-.026),(-.258,-.650,.008),(-.215,-.470,.038)],.017,WHITE)
+add_panel(PELVIS,'SideWhiteR',[(.172,.106,.030),(.228,.068,-.002),(.215,-.470,.038),(.258,-.650,.008),(.286,-.350,-.026)],.017,WHITE)
+add_panel(PELVIS,'SideBladeL',[(-.215,.082,-.030),(-.262,.046,-.058),(-.320,-.405,-.078),(-.282,-.735,-.040),(-.244,-.500,-.020)],.014,BLACK)
+add_panel(PELVIS,'SideBladeR',[(.215,.082,-.030),(.244,-.500,-.020),(.282,-.735,-.040),(.320,-.405,-.078),(.262,.046,-.058)],.014,BLACK)
+add_panel(PELVIS,'RearWhiteL',[(-.150,.095,-.105),(-.020,.090,-.120),(-.046,-.430,-.148),(-.115,-.760,-.132),(-.238,-.505,-.082)],.017,WHITE)
+add_panel(PELVIS,'RearWhiteR',[(.020,.090,-.120),(.150,.095,-.105),(.238,-.505,-.082),(.115,-.760,-.132),(.046,-.430,-.148)],.017,WHITE)
+add_panel(PELVIS,'RearBladeL',[(-.205,.075,-.112),(-.142,.070,-.130),(-.176,-.500,-.165),(-.232,-.840,-.110),(-.276,-.470,-.086)],.013,BLACK)
+add_panel(PELVIS,'RearBladeR',[(.142,.070,-.130),(.205,.075,-.112),(.276,-.470,-.086),(.232,-.840,-.110),(.176,-.500,-.165)],.013,BLACK)
 
 # === HEAD / FACE ===
-# 0.128H front width, 0.114H side depth. Vertical envelope is reduced to the sheet's ~0.15H head region.
-add_sphere(HEAD,'Cranium',(0,.018,-.020),(head_w*.485,.145,head_d*.455),SKIN,36,24)
-add_sphere(HEAD,'Jaw',(0,-.066,.030),(head_w*.390,.092,head_d*.390),SKIN,34,22)
-add_cylinder(HEAD,'Neck',(0,-.190,-.006),W('neck')*.36,.110,SKIN,22)
-# Project features beyond the facial surface; v1.2 placed them behind the jaw and they disappeared.
-face_z=.154
+# v1.4 uses the remeasured 0.118H head width and 0.086H side depth.
+add_sphere(HEAD,'Cranium',(0,.020,-.018),(head_w*.490,.142,head_d*.485),SKIN,40,28)
+add_sphere(HEAD,'Jaw',(0,-.067,.026),(head_w*.405,.088,head_d*.405),SKIN,38,24)
+add_sphere(HEAD,'Chin',(0,-.128,.055),(head_w*.245,.040,head_d*.255),SKIN,28,18)
+add_cylinder(HEAD,'Neck',(0,-.188,-.004),W('neck')*.37,.108,SKIN,24)
+face_z=head_d*.505
 for side in(-1,1):
- add_sphere(HEAD,f'EyeWhite_{side}',(side*head_w*.178,.020,face_z),(head_w*.102,.018,.009),SCLERA,20,12)
- add_sphere(HEAD,f'Iris_{side}',(side*head_w*.178,.020,face_z+.011),(head_w*.036,.014,.005),IRIS,16,10)
- add_sphere(HEAD,f'Pupil_{side}',(side*head_w*.178,.020,face_z+.016),(head_w*.014,.008,.003),PUPIL,12,8)
- add_box(HEAD,f'Eyeliner_{side}',(side*head_w*.178,.040,face_z+.014),(head_w*.116,.008,.004),HAIR,.002,rot=(0,0,-side*.06))
- add_box(HEAD,f'Brow_{side}',(side*head_w*.178,.070,face_z+.005),(head_w*.130,.008,.005),HAIR,.002,rot=(0,0,-side*.08))
-add_sphere(HEAD,'Nose',(0,-.015,face_z+.010),(.012,.027,.011),SKIN,16,10)
-add_box(HEAD,'Mouth',(0,-.075,face_z+.004),(.050,.007,.004),LIP,.0015)
-# Hair shell stays compact around the skull. Bangs leave the eye line visible.
-add_sphere(HEAD,'HairBack',(0,.035,-head_d*.18),(head_w*.535,.165,head_d*.515),HAIR,34,22)
-add_sphere(HEAD,'HairCrown',(0,.108,-.018),(head_w*.525,.095,head_d*.490),HAIR,34,22)
-for i in range(11):
- lane=(i-5)/5
- end_y=.018-.058*abs(lane);end_x=lane*head_w*.42
- add_strand(HEAD,f'Fringe_{i}',[(lane*head_w*.33,.142,head_d*.18),(lane*head_w*.30,.098,head_d*.40),(lane*head_w*.33,.060,face_z-.003),(end_x,end_y,face_z+.002)],.0068+(i%2)*.0010,HAIR_HI if i%4==0 else HAIR)
+ add_sphere(HEAD,f'EyeWhite_{side}',(side*head_w*.172,.018,face_z),(head_w*.078,.013,.0065),SCLERA,22,12)
+ add_sphere(HEAD,f'Iris_{side}',(side*head_w*.172,.018,face_z+.007),(head_w*.031,.010,.0042),IRIS,18,10)
+ add_sphere(HEAD,f'Pupil_{side}',(side*head_w*.172,.018,face_z+.010),(head_w*.012,.0065,.0028),PUPIL,14,8)
+ add_box(HEAD,f'Eyeliner_{side}',(side*head_w*.172,.035,face_z+.009),(head_w*.090,.006,.0035),HAIR,.0015,rot=(0,0,-side*.075))
+ add_box(HEAD,f'Brow_{side}',(side*head_w*.172,.070,face_z+.002),(head_w*.108,.006,.004),HAIR,.0015,rot=(0,0,-side*.085))
+add_sphere(HEAD,'Nose',(0,-.014,face_z+.007),(.010,.025,.009),SKIN,18,10)
+add_box(HEAD,'Mouth',(0,-.078,face_z+.003),(.044,.006,.004),LIP,.0013)
+# Hair shell is kept behind the face and sized from the skull instead of a large dome.
+add_sphere(HEAD,'HairBack',(0,.035,-head_d*.22),(head_w*.535,.160,head_d*.555),HAIR,38,26)
+add_sphere(HEAD,'HairCrown',(0,.112,-.020),(head_w*.525,.090,head_d*.515),HAIR,38,24)
+# Seven swept ribbon bangs replace the comb-like vertical tubes.
+bang_specs=[
+ (-.092,-.050,-.080,.030),(-.062,-.018,-.052,.034),(-.032,.008,-.024,.037),
+ ( .000,.020,.008,.038),( .032,.004,.035,.036),( .064,-.022,.064,.033),( .094,-.055,.088,.028)
+]
+for i,(sx,ey,ex,w0) in enumerate(bang_specs):
+ add_ribbon(HEAD,f'Bang_{i}',[(sx,.142,.015),(sx*.86,.108,face_z*.66),(ex*.92,.060,face_z-.002),(ex,ey,face_z+.004)],[w0,w0*.95,w0*.72,w0*.42],.006,HAIR_HI if i in(1,5) else HAIR)
 for side in(-1,1):
- for i in range(5):
-  add_strand(HEAD,f'SideLock_{side}_{i}',[(side*(head_w*.35+i*.010),.095,head_d*.16),(side*(head_w*.47+i*.012),-.04,head_d*.28),(side*(head_w*.50+i*.012),-.30,head_d*.12),(side*(head_w*.43+i*.010),-.52,-.015)],.009,HAIR_HI if i==0 else HAIR)
+ for i in range(3):
+  x0=side*(head_w*.38+i*.012)
+  add_ribbon(HEAD,f'SideRibbon_{side}_{i}',[(x0,.095,head_d*.10),(side*(head_w*.48+i*.010),-.025,head_d*.20),(side*(head_w*.50+i*.012),-.255,head_d*.08),(side*(head_w*.43+i*.010),-.500,-.012)],[.033-i*.003,.030-i*.003,.024-i*.002,.014],.006,HAIR_HI if i==0 else HAIR)
 PONY=empty('BL_PONY_DYNAMIC',HEAD)
-for i in range(27):
- lane=(i-13)/13;spread=.030+.035*abs(lane)
- add_strand(PONY,f'Pony_{i}',[(lane*.020,.105,-head_d*.46),(lane*.065,-.005,-head_d*.70),(lane*.115,-.36,-.38),(lane*.19,-.88,-.31),(lane*.28,-1.48,-.12)],.0095+(i%5)*.0011,HAIR_HI if i%7==0 else HAIR)
-add_box(HEAD,'HairTie',(0,.100,-head_d*.47),(.100,.032,.040),SILVER,.009)
+# Broad overlapping ribbons provide the main ponytail volume; fine strands break the silhouette at the edge.
+for i in range(13):
+ lane=(i-6)/6;root_x=lane*.030
+ add_ribbon(PONY,f'PonyRibbon_{i}',[(root_x,.104,-head_d*.47),(lane*.065,-.015,-head_d*.70),(lane*.120,-.365,-.39),(lane*.185,-.860,-.30),(lane*.245,-1.470,-.10)],[.040,.047,.052,.043,.015],.007,HAIR_HI if i%5==0 else HAIR)
+for i in range(12):
+ lane=(i-5.5)/5.5
+ add_strand(PONY,f'PonyFine_{i}',[(lane*.018,.105,-head_d*.49),(lane*.074,-.050,-head_d*.72),(lane*.145,-.440,-.38),(lane*.230,-.980,-.25),(lane*.315,-1.520,-.075)],.0048+(i%3)*.0008,HAIR_HI if i%4==0 else HAIR)
+add_box(HEAD,'HairTie',(0,.100,-head_d*.48),(.096,.030,.038),SILVER,.008)
 
 # === LIMBS ===
 # Diameters come directly from the front sheet; side depth comes from the side view.
@@ -146,7 +205,7 @@ for group,name in[(FA_L,'L'),(FA_R,'R')]:
  add_box(group,'ForearmPlate'+name,(0,.06,fa_d*.78),(fa*1.35,.43,fa_d*.52),WHITE,.014);add_box(group,'ForearmRail'+name,(0,.05,fa_d*1.08),(.018,.35,.012),SILVER,.005)
 # Thigh-high boot begins below the garter line, preserving measured leg diameter.
 for group,name in[(TH_L,'L'),(TH_R,'R')]:
- add_cylinder(group,'Garter'+name,(0,-.21,0),th*1.08,.055,BLACK,24);add_cylinder(group,'ThighBootTop'+name,(0,.235,0),th*.97,.47,BLACK,28)
+ add_cylinder(group,'Garter'+name,(0,-.245,0),th*1.06,.048,BLACK,24);add_cylinder(group,'ThighBootTop'+name,(0,.105,0),th*.96,.70,BLACK,28)
 for group,name in[(SH_L,'L'),(SH_R,'R')]:
  add_box(group,'ShinPlate'+name,(0,.03,calf_d*.78),(calf*1.30,.50,calf_d*.44),BLACK_SOFT,.012);add_box(group,'ShinAccent'+name,(0,.06,calf_d*1.02),(.018,.40,.012),SILVER,.005)
 for group,name in[(HAND_L,'L'),(HAND_R,'R')]:
