@@ -23,8 +23,8 @@ add_panel(PELVIS,'SideBladeR',[(.214,.080,-.035),(.285,-.68,-.045),(.338,-.44,-.
 add_panel(PELVIS,'RearPanelL',[(-.155,.095,-.105),(-.025,.090,-.120),(-.060,-.50,-.150),(-.138,-.80,-.128),(-.252,-.52,-.080)],.018,WHITE)
 add_panel(PELVIS,'RearPanelR',[(.025,.090,-.120),(.155,.095,-.105),(.252,-.52,-.080),(.138,-.80,-.128),(.060,-.50,-.150)],.018,WHITE)
 """
-if old_skirt not in s:raise SystemExit('skirt block not found')
-s=s.replace(old_skirt,new_skirt)
+if old_skirt in s:s=s.replace(old_skirt,new_skirt)
+elif new_skirt not in s:raise SystemExit('skirt block not found')
 
 old_head="""# === HEAD / FACE ===
 # 0.128H front width, 0.114H side depth. Jaw is narrower than the cranium to avoid the old mask/ball look.
@@ -71,8 +71,8 @@ for i in range(11):
  end_y=.018-.058*abs(lane);end_x=lane*head_w*.42
  add_strand(HEAD,f'Fringe_{i}',[(lane*head_w*.33,.142,head_d*.18),(lane*head_w*.30,.098,head_d*.40),(lane*head_w*.33,.060,face_z-.003),(end_x,end_y,face_z+.002)],.0068+(i%2)*.0010,HAIR_HI if i%4==0 else HAIR)
 """
-if old_head not in s:raise SystemExit('head block not found')
-s=s.replace(old_head,new_head)
+if old_head in s:s=s.replace(old_head,new_head)
+elif new_head not in s:raise SystemExit('head block not found')
 
 # Ponytail root follows the smaller crown while keeping the reference's long back silhouette.
 s=s.replace("[(side*(head_w*.35+i*.010),.120,head_d*.16),(side*(head_w*.47+i*.012),-.04,head_d*.28),(side*(head_w*.50+i*.012),-.33,head_d*.12),(side*(head_w*.43+i*.010),-.55,-.015)]","[(side*(head_w*.35+i*.010),.095,head_d*.16),(side*(head_w*.47+i*.012),-.04,head_d*.28),(side*(head_w*.50+i*.012),-.30,head_d*.12),(side*(head_w*.43+i*.010),-.52,-.015)]")
@@ -80,4 +80,4 @@ s=s.replace("[(lane*.020,.145,-head_d*.46),(lane*.065,.015,-head_d*.70),(lane*.1
 s=s.replace("add_box(HEAD,'HairTie',(0,.135,-head_d*.47),(.105,.036,.042),SILVER,.010)","add_box(HEAD,'HairTie',(0,.100,-head_d*.47),(.100,.032,.040),SILVER,.009)")
 
 p.write_text(s,encoding='utf-8')
-print('Applied reference v1.3 face/head/skirt refinement')
+print('Reference v1.3 face/head/skirt refinement is current')
