@@ -1,6 +1,5 @@
 Parry Doll GitHub Pages release
-Key-art heroine and parry pass complete.
-Heroine/parry implementation: 41aca3e67cb90b3fe38d332f8aa95334238f5cea
-Parry readability polish: b334fa42c10197191fb9f74653aa9b066c04b278
-Final WebGL audit: run 34309780033
+Heroine narrow-shoulder refinement complete.
+Heroine visual implementation: 937076e70de6c85831479323150ea56c9a2c0b68
+Final WebGL audit: run 34311062504
 Published: 2026-09-09
