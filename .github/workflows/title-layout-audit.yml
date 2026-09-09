@@ -1,0 +1,42 @@
+name: Title Layout Audit
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/title-layout-audit.trigger
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install browser
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Serve game
+        run: |
+          python3 -m http.server 4173 --directory dist > /tmp/parry-http.log 2>&1 &
+          for i in {1..30}; do curl -fsS http://127.0.0.1:4173/ >/dev/null && exit 0; sleep 1; done
+          cat /tmp/parry-http.log
+          exit 1
+      - name: Audit title layout
+        run: xvfb-run -a --server-args='-screen 0 900x900x24' node .github/scripts/title-layout-audit.cjs
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: parry-doll-title-layout-audit
+          path: title-layout-audit/
+          retention-days: 3
