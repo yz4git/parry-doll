@@ -1,1 +1,1 @@
-2026-09-10 Blender heroine v4.4 rebuilt portrait topology larger inset eyes sheet-like swept bangs WebGL audit
+2026-09-10 Blender heroine v4.4 retry WebGL audit after Playwright apt hardening
