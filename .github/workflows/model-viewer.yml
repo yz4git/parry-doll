@@ -47,3 +47,4 @@ jobs:
           idx.write_text(h)
           PY
           bash .github/scripts/model-viewer.sh
+          bash .github/scripts/model-viewer-polish.sh
