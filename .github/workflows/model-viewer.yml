@@ -1,0 +1,25 @@
+name: Heroine Model Viewer
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/model-viewer.trigger
+
+permissions:
+  contents: write
+
+jobs:
+  build-viewer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Implement model viewer
+        run: bash .github/scripts/model-viewer.sh
