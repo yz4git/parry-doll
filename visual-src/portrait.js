@@ -17,8 +17,8 @@ export function makePortrait(mats){
   group.add(curveMesh(upper,.009,mats.hair,'#27212a'));group.add(curveMesh(lower,.004,mats.skin,'#946c66'));group.add(curveMesh(brow,.013,mats.hair,'#3c3036'));
   const ear=new THREE.Mesh(paint(new THREE.SphereGeometry(1,20,16),'#dbad9e'),mats.skin);ear.position.set(side*.62,-.04,.012);ear.scale.set(.104,.19,.085);group.add(ear);
  }
- group.add(curveMesh([[-.135,-.437,.463],[-.06,-.418,.49],[0,-.432,.50],[.06,-.418,.49],[.135,-.437,.463]],.016,mats.skin,'#bd8480'));
- group.add(curveMesh([[-.13,-.445,.464],[0,-.474,.50],[.13,-.445,.464]],.022,mats.skin,'#d29590'));
+ group.add(curveMesh([[-.135,-.437,.463],[-.06,-.418,.49],[0,-.432,.50],[.06,-.418,.49],[.135,-.437,.463]],.009,mats.skin,'#bd8480'));
+ group.add(curveMesh([[-.13,-.445,.464],[0,-.474,.50],[.13,-.445,.464]],.012,mats.skin,'#d29590'));
  group.add(curveMesh([[-.12,-.442,.48],[0,-.447,.507],[.12,-.442,.48]],.004,mats.skin,'#795558'));
  return group;
 }

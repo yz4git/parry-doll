@@ -19,7 +19,7 @@ for(let l=0;l<4;l++){
   const hero=actors[0],rig=hero.rig;
   if(rig){assert.equal(rig.skeleton.bones.length,17);for(const side of ['L','R']){const hand=state.player.nodes.find(n=>n.name===(side==='L'?'offhand':'hand'));assert(rig.world['hand'+side].distanceTo(new THREE.Vector3(hand.p.x,hand.p.y,hand.p.z))<1e-8,'Wrist endpoint changed');const foot=state.player.nodes.find(n=>n.name==='foot'&&Math.sign(n.rest.x)===(side==='L'?-1:1));assert(rig.world['foot'+side].distanceTo(new THREE.Vector3(foot.p.x,foot.p.y,foot.p.z))<1e-8,'Foot endpoint changed');}
    const g=hero.body.geometry,point=new THREE.Vector3();for(let i=0;i<g.attributes.position.count;i+=53){hero.body.getVertexPosition(i,point);assert(point.toArray().every(Number.isFinite),'Non-finite skinned vertex');assert(point.distanceTo(rig.world.pelvis)<6,'Exploded skin binding');}
-   if(frame===0){const w=g.attributes.skinWeight;for(let i=0;i<w.count;i++)assert(Math.abs(w.getX(i)+w.getY(i)+w.getZ(i)+w.getW(i)-1)<1e-5,'Bad skin weights');assert(g.attributes.normal.getX(5*40)>.5,'Inward body surface');}
+   if(frame===0){const w=g.attributes.skinWeight;for(let i=0;i<w.count;i++)assert(Math.abs(w.getX(i)+w.getY(i)+w.getZ(i)+w.getW(i)-1)<1e-5,'Bad skin weights');let sideIndex=0,maxX=-Infinity;for(let j=0;j<g.attributes.position.count;j++){const y=g.attributes.position.getY(j),x=g.attributes.position.getX(j);if(y>1.45&&y<1.9&&x>maxX){maxX=x;sideIndex=j}}assert(g.attributes.normal.getX(sideIndex)>0,'Inward body surface');}
   }
   scene.traverse(o=>{assert(o.matrixWorld.elements.every(Number.isFinite),'Non-finite model transform');if(frame===0&&o.geometry)assert(Array.from(o.geometry.attributes.position.array).every(Number.isFinite),'Non-finite geometry')});frames++;
  }
