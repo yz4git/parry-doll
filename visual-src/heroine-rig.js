@@ -2,7 +2,7 @@ import * as THREE from 'three';
 const V=p=>new THREE.Vector3(p.x,p.y,p.z),Y=new THREE.Vector3(0,1,0);
 // Adult proportion rig, in unscaled game units. Its topology is independent of the PBD doll.
 export const REST={pelvis:[0,1.38,0],spine:[0,1.64,0],chest:[0,1.94,0],neck:[0,2.09,0],head:[0,2.29,0],
- shoulderL:[-.275,1.96,0],elbowL:[-.455,1.48,.07],handL:[-.7,1,.2],shoulderR:[.275,1.96,0],elbowR:[.455,1.48,.07],handR:[.7,1,.2],
+ shoulderL:[-.255,1.96,0],elbowL:[-.44,1.48,.07],handL:[-.7,1,.2],shoulderR:[.255,1.96,0],elbowR:[.44,1.48,.07],handR:[.7,1,.2],
  hipL:[-.18,1.36,0],kneeL:[-.23,.75,.06],footL:[-.28,.16,.22],hipR:[.18,1.36,0],kneeR:[.23,.75,.06],footR:[.28,.16,.22]};
 export const PARENT={pelvis:null,spine:'pelvis',chest:'spine',neck:'chest',head:'neck',shoulderL:'chest',elbowL:'shoulderL',handL:'elbowL',shoulderR:'chest',elbowR:'shoulderR',handR:'elbowR',hipL:'pelvis',kneeL:'hipL',footL:'kneeL',hipR:'pelvis',kneeR:'hipR',footR:'kneeR'};
 const TARGET={pelvis:'spine',spine:'chest',chest:'neck',neck:'head',shoulderL:'elbowL',elbowL:'handL',shoulderR:'elbowR',elbowR:'handR',hipL:'kneeL',kneeL:'footL',hipR:'kneeR',kneeR:'footR'};
@@ -16,7 +16,7 @@ export class HeroineRig{
   const pelvis=V(source[0].p).addScaledVector(up,.33*s),points={pelvis,spine:pelvis.clone().addScaledVector(up,.24*s),chest:pelvis.clone().addScaledVector(up,.52*s),neck:pelvis.clone().addScaledVector(up,.66*s),head:pelvis.clone().addScaledVector(up,.85*s)};
   // Retain head-hit and collapse direction, while compressing the old overlong neck.
   const liveHead=V(source[2].p).sub(V(source[1].p)).normalize();points.head.addScaledVector(liveHead.clone().sub(up),.16*s);
-  for(const [suffix,side]of [['L',-1],['R',1]]){const find=name=>source.find(n=>n.name===name&&Math.sign(n.rest.x)===side);const hand=find(side<0?'offhand':'hand'),elbow=find('elbow'),knee=find('knee'),foot=find('foot');points['shoulder'+suffix]=points.chest.clone().addScaledVector(right,side*.275*s).addScaledVector(up,.015*s);points['hand'+suffix]=V(hand.p);points['elbow'+suffix]=solveJoint(points['shoulder'+suffix],points['hand'+suffix],V(elbow.p).addScaledVector(right,side*.095*s),.51*s,.51*s);points['hip'+suffix]=pelvis.clone().addScaledVector(right,side*.17*s).addScaledVector(up,.005*s);points['foot'+suffix]=V(foot.p);points['knee'+suffix]=solveJoint(points['hip'+suffix],points['foot'+suffix],V(knee.p).addScaledVector(forward,.2*s),.62*s,.62*s);}
+  for(const [suffix,side]of [['L',-1],['R',1]]){const find=name=>source.find(n=>n.name===name&&Math.sign(n.rest.x)===side);const hand=find(side<0?'offhand':'hand'),elbow=find('elbow'),knee=find('knee'),foot=find('foot');points['shoulder'+suffix]=points.chest.clone().addScaledVector(right,side*.255*s).addScaledVector(up,.012*s);points['hand'+suffix]=V(hand.p);points['elbow'+suffix]=solveJoint(points['shoulder'+suffix],points['hand'+suffix],V(elbow.p).addScaledVector(right,side*.080*s),.51*s,.51*s);points['hip'+suffix]=pelvis.clone().addScaledVector(right,side*.17*s).addScaledVector(up,.005*s);points['foot'+suffix]=V(foot.p);points['knee'+suffix]=solveJoint(points['hip'+suffix],points['foot'+suffix],V(knee.p).addScaledVector(forward,.2*s),.62*s,.62*s);}
   this.setWorld(points,d.face,s);this.scale=s;return points;
  }
  nodeName(n){if(n.name==='hip')return'pelvis';if(['chest','head'].includes(n.name))return n.name;const suffix=n.rest.x<0?'L':'R';return ({shoulder:'shoulder',elbow:'elbow',hand:'hand',offhand:'hand',knee:'knee',foot:'foot'}[n.name]||'hand')+suffix}

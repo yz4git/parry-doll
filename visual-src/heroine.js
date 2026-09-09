@@ -28,7 +28,7 @@ export class Heroine {
    if(torso){
     // Continuous, weighted torso is supplied by the offline-authored body mesh.
     a.add('box',black,[0,-.05,-.53],[.22,.83,.08],[0,0,0],'cloth');
-    for(const s of [-1,1]){a.add('box',black,[s*.53,.05,-.43],[.10,.83,.09],[0,0,-s*.12],'cloth');a.add('box',silver,[s*.55,.08,-.49],[.050,.3,.04]);a.add('plate',black,[s*.51,.32,.4],[.34,.28,.21],[0,s*.26,0],'cloth');a.add('box',silver,[s*.56,.19,.57],[.042,.38,.04],[0,0,-s*.19]);}
+    for(const s of [-1,1]){a.add('box',black,[s*.49,.05,-.43],[.095,.82,.085],[0,0,-s*.10],'cloth');a.add('box',silver,[s*.51,.08,-.49],[.047,.29,.038]);a.add('plate',black,[s*.47,.31,.4],[.30,.27,.20],[0,s*.23,0],'cloth');a.add('box',silver,[s*.52,.18,.57],[.040,.36,.038],[0,0,-s*.17]);}
     a.add('box',silver,[0,.18,-.59],[.065,.34,.025]);a.add('box',black,[0,.39,-.57],[1.2,.065,.035],[0,0,0],'cloth');a.add('plate',white,[0,.18,-.585],[.72,.24,.045],[0,0,0],'porcelain');a.add('plate',white,[0,-.12,-.56],[.56,.18,.04],[0,0,0],'porcelain');a.add('box',silver,[0,.02,-.625],[.055,.62,.025]);
    }else if(neck){a.add('cylinder',skin,[0,.02,0],[.45,.85,.45],[0,0,0],'skin');a.add('cylinder',black,[0,-.29,0],[.59,.3,.55],[0,0,0],'cloth');}
    else{
@@ -36,7 +36,7 @@ export class Heroine {
     // Smooth limb surface is skinned across the elbow/knee, with separate armor accents.
     if(names.includes('elbow')&&!names.includes('shoulder')){a.add('plate',white,[0,-.02,.49],[.52,.58,.21],[0,0,0],'porcelain');a.add('plate',black,[0,.13,.575],[.35,.34,.085]);a.add('box',silver,[0,.08,.615],[.06,.48,.04]);}
     if(names.includes('foot')){a.add('plate',white,[0,.10,.55],[.43,.65,.13],[0,0,0],'porcelain');a.add('box',silver,[0,.11,.65],[.07,.52,.06]);}
-    if(names.includes('shoulder')){a.add('cylinder',silver,[0,.25,0],[width*.90,.04,width*.84]);a.add('plate',white,[0,.08,.46],[.40,.34,.12],[.05,0,0],'porcelain');}if(names.includes('knee')&&names.includes('hip')){a.add('plate',white,[0,.06,.48],[.34,.50,.11],[0,0,0],'porcelain');a.add('box',silver,[0,.12,.57],[.055,.46,.03]);}
+    if(names.includes('shoulder')){a.add('cylinder',silver,[0,.25,0],[width*.82,.04,width*.78]);a.add('plate',white,[0,.07,.45],[.35,.31,.11],[.045,0,0],'porcelain');}if(names.includes('knee')&&names.includes('hip')){a.add('plate',white,[0,.06,.48],[.34,.50,.11],[0,0,0],'porcelain');a.add('box',silver,[0,.12,.57],[.055,.46,.03]);}
    }
    this.links.push({l,p:add(a)});
   }
@@ -55,8 +55,8 @@ export class Heroine {
     a.add('cylinder',black,[0,.2,0],[1.0,.22,.75],[0,0,0],'cloth');a.add('box',silver,[.32,.2,.72],[.25,.17,.06]);
     for(const s of [-1,1]){a.add('box',silver,[s*.97,.19,.04],[.09,.20,.29]);a.add('box',black,[s*.63,.19,-.61],[.11,.32,.06],[0,0,0],'cloth');}
     a.add('box',silver,[0,.20,-.77],[.30,.13,.035]);a.add('box',black,[0,.20,-.795],[.22,.065,.012],[0,0,0],'cloth');
-   }else if(n.name==='chest'){a.add('sphere',black,[0,0,0],[.68,.33,.49],[0,0,0],'cloth');a.add('ring',silver,[0,.26,0],[.37,.37,.37],[Math.PI/2,0,0]);}
-   else if(n.name==='shoulder'){a.add('plate',white,[0,.23,-.05],[.52,.40,.48],[.22,0,0],'porcelain');a.add('plate',silver,[0,.22,.32],[.31,.21,.09]);}
+   }else if(n.name==='chest'){a.add('sphere',black,[0,0,0],[.61,.32,.47],[0,0,0],'cloth');a.add('ring',silver,[0,.25,0],[.34,.34,.34],[Math.PI/2,0,0]);}
+   else if(n.name==='shoulder'){a.add('plate',white,[0,.21,-.04],[.45,.36,.43],[.19,0,0],'porcelain');a.add('plate',silver,[0,.20,.31],[.27,.19,.085]);}
    else if(n.name==='foot'){a.add('sphere',black,[0,-.15,.18],[.65,.53,.99],[0,0,0],'cloth');a.add('box',black,[0,-.45,.17],[1.03,.17,1.5],[0,0,0],'cloth');a.add('box',silver,[0,-.33,.76],[.7,.13,.09]);}
    else if(n.name==='hand'||n.name==='offhand'){a.add('box',black,[0,-.1,0],[.72,.9,.42],[0,0,0],'cloth');for(let j=0;j<4;j++){a.add('sphere',black,[(j-1.5)*.18,-.53,.13],[.12,.32,.13],[.18,0,0],'cloth');a.add('box',silver,[(j-1.5)*.18,-.12,.25],[.12,.22,.045]);}}else{a.add('plate',silver,[0,.02,.54],[.33,.27,.09]);}
    const p=add(a);this.nodes.push(p);
