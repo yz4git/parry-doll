@@ -1,0 +1,30 @@
+name: Heroine Narrow Shoulders
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/heroine-narrow-shoulders.trigger
+
+permissions:
+  contents: write
+
+jobs:
+  refine:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install mesh dependency
+        run: python -m pip install --disable-pip-version-check numpy
+      - name: Apply narrow-shoulder heroine pass
+        run: bash .github/scripts/heroine-narrow-shoulders.sh
