@@ -113,6 +113,7 @@ TH_L=empty('BL_THIGH_L',ROOT);SH_L=empty('BL_SHIN_L',ROOT);FOOT_L=empty('BL_FOOT
 # REFERENCE_V22: eye-clear tapered fringe proportions.
 # REFERENCE_V23: projected portrait features for reliable front/profile readability.
 # REFERENCE_V24: eyebrow-height fringe with open eye line.
+# REFERENCE_V25: larger portrait eyes and strand-separated ponytail mass.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
@@ -196,24 +197,19 @@ add_cylinder(HEAD,'Choker',(0,-.139,-.006),W('neck')*.46,.034,BLACK,28)
 add_cylinder(HEAD,'ChokerTrim',(0,-.124,-.006),W('neck')*.47,.009,SILVER,28)
 for side in(-1,1):add_sphere(HEAD,f'Ear_{side}',(side*head_w*.485,-.018,-.014),(.010,.023,.009),SKIN,18,10)
 # Portrait feature plane is projected slightly beyond the continuous head shell.
-# This keeps the eyes/brows/mouth visible in WebGL without changing the measured skull silhouette.
 face_z=head_d*.585
 for side in(-1,1):
  ex=side*head_w*.158
- # Almond-like eye plate: compact vertically, wider horizontally, with dark upper lash.
- add_panel(HEAD,f'EyePlate_{side}',[(ex-head_w*.088,.031,face_z),(ex+head_w*.088,.031,face_z),(ex+head_w*.072,-.003,face_z),(ex-head_w*.072,-.003,face_z)],.0040,SCLERA)
- add_sphere(HEAD,f'Iris_{side}',(ex,.013,face_z+.0065),(head_w*.039,.0100,.0042),IRIS,22,12)
- add_sphere(HEAD,f'Pupil_{side}',(ex,.013,face_z+.0100),(head_w*.014,.0060,.0028),PUPIL,16,10)
- add_box(HEAD,f'UpperLash_{side}',(ex,.032,face_z+.0090),(head_w*.190,.0062,.0034),HAIR,.0012,rot=(0,0,-side*.080))
- add_box(HEAD,f'Brow_{side}',(ex,.071,face_z+.0040),(head_w*.172,.0050,.0030),HAIR,.0012,rot=(0,0,-side*.095))
- # Tiny catchlight prevents the iris from reading as a dead black dot at game distance.
- add_sphere(HEAD,f'EyeLight_{side}',(ex-side*head_w*.010,.019,face_z+.0135),(head_w*.010,.0038,.0018),SCLERA,12,8)
-# Slim nose bridge and tip, pushed only enough to read in profile.
-add_sphere(HEAD,'NoseBridge',(0,.010,face_z+.001),(.0065,.030,.0055),SKIN,18,10)
-add_sphere(HEAD,'NoseTip',(0,-.028,face_z+.008),(.0082,.012,.0070),SKIN,18,10)
-# Soft two-part lip line rather than one thick rectangular bar.
-add_panel(HEAD,'UpperLip',[(-.037,-.067,face_z+.006),(.037,-.067,face_z+.006),(.026,-.075,face_z+.007),(-.026,-.075,face_z+.007)],.0025,LIP)
-add_panel(HEAD,'LowerLip',[(-.027,-.076,face_z+.006),(.027,-.076,face_z+.006),(.018,-.083,face_z+.005),(-.018,-.083,face_z+.005)],.0020,LIP)
+ add_panel(HEAD,f'EyePlate_{side}',[(ex-head_w*.102,.033,face_z),(ex+head_w*.102,.033,face_z),(ex+head_w*.082,-.006,face_z),(ex-head_w*.082,-.006,face_z)],.0040,SCLERA)
+ add_sphere(HEAD,f'Iris_{side}',(ex,.013,face_z+.0067),(head_w*.050,.0115,.0045),IRIS,24,14)
+ add_sphere(HEAD,f'Pupil_{side}',(ex,.013,face_z+.0102),(head_w*.018,.0066,.0029),PUPIL,18,10)
+ add_box(HEAD,f'UpperLash_{side}',(ex,.034,face_z+.0092),(head_w*.205,.0064,.0035),HAIR,.0012,rot=(0,0,-side*.080))
+ add_box(HEAD,f'Brow_{side}',(ex,.073,face_z+.0040),(head_w*.170,.0048,.0030),HAIR,.0012,rot=(0,0,-side*.095))
+ add_sphere(HEAD,f'EyeLight_{side}',(ex-side*head_w*.012,.020,face_z+.0138),(head_w*.011,.0040,.0018),SCLERA,12,8)
+add_sphere(HEAD,'NoseBridge',(0,.010,face_z+.001),(.0062,.029,.0053),SKIN,18,10)
+add_sphere(HEAD,'NoseTip',(0,-.028,face_z+.008),(.0080,.0115,.0068),SKIN,18,10)
+add_panel(HEAD,'UpperLip',[(-.030,-.068,face_z+.006),(.030,-.068,face_z+.006),(.021,-.075,face_z+.007),(-.021,-.075,face_z+.007)],.0024,LIP)
+add_panel(HEAD,'LowerLip',[(-.022,-.076,face_z+.006),(.022,-.076,face_z+.006),(.015,-.082,face_z+.005),(-.015,-.082,face_z+.005)],.0020,LIP)
 # Rear scalp never crosses the forehead; frontal hair is entirely layered geometry.
 add_sphere(HEAD,'HairBack',(0,.022,-head_d*.370),(head_w*.515,.128,head_d*.450),HAIR,44,30)
 add_sphere(HEAD,'HairCrown',(0,.093,-head_d*.380),(head_w*.450,.047,head_d*.270),HAIR,40,24)
@@ -240,21 +236,21 @@ add_box(HEAD,'HairTie',(0,.143,-head_d*.470),(.090,.023,.034),SILVER,.007)
 for side in(-1,1):add_box(HEAD,f'HairTieFin_{side}',(side*.055,.147,-head_d*.475),(.009,.086,.018),SILVER,.003,rot=(0,0,side*.18))
 PONY=empty('BL_PONY_DYNAMIC',HEAD)
 add_section_mesh(PONY,'PonyCore',[
- (.150,.055,.040,.052,-head_d*.49),
- (.025,.095,.061,.076,-head_d*.76),
- (-.235,.142,.073,.090,-.465),
- (-.545,.168,.081,.102,-.375),
- (-.895,.162,.077,.096,-.282),
- (-1.225,.128,.061,.075,-.190),
- (-1.500,.078,.039,.050,-.102),
- (-1.665,.034,.019,.026,-.040)
+ (.150,.046,.038,.050,-head_d*.49),
+ (.025,.076,.057,.071,-head_d*.76),
+ (-.235,.108,.067,.083,-.465),
+ (-.545,.126,.073,.090,-.375),
+ (-.895,.120,.068,.084,-.282),
+ (-1.225,.092,.054,.066,-.190),
+ (-1.500,.055,.034,.043,-.102),
+ (-1.665,.025,.017,.023,-.040)
 ],HAIR,40)
 for i in range(11):
  lane=(i-5)/5
- add_ribbon(PONY,f'PonyLayer_{i}',[(lane*.026,.143,-head_d*.50),(lane*.075,-.010,-head_d*.78),(lane*.150,-.325,-.470),(lane*.235,-.755,-.338),(lane*.318,-1.225,-.192),(lane*.365,-1.645,-.045)],[.047,.066,.080,.073,.048,.010],.0050,HAIR_HI if i in(2,8) else HAIR)
-for i in range(12):
- lane=(i-5.5)/5.5
- add_strand(PONY,f'PonyEdge_{i}',[(lane*.026,.138,-head_d*.51),(lane*.092,-.080,-head_d*.80),(lane*.175,-.505,-.438),(lane*.270,-1.035,-.250),(lane*.370,-1.685,-.030)],.0030+(i%2)*.0006,HAIR_HI if i%4==0 else HAIR)
+ add_ribbon(PONY,f'PonyLayer_{i}',[(lane*.022,.143,-head_d*.50),(lane*.058,-.010,-head_d*.78),(lane*.112,-.325,-.470),(lane*.176,-.755,-.338),(lane*.240,-1.225,-.192),(lane*.276,-1.645,-.045)],[.040,.054,.064,.058,.038,.008],.0046,HAIR_HI if i in(2,8) else HAIR)
+for i in range(14):
+ lane=(i-6.5)/6.5
+ add_strand(PONY,f'PonyEdge_{i}',[(lane*.024,.138,-head_d*.51),(lane*.072,-.080,-head_d*.80),(lane*.136,-.505,-.438),(lane*.208,-1.035,-.250),(lane*.286,-1.685,-.030)],.0027+(i%2)*.0005,HAIR_HI if i%4==0 else HAIR)
 
 # === LIMBS ===
 # Diameters come directly from the front sheet; side depth comes from the side view.
