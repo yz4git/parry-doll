@@ -107,9 +107,9 @@ def add_anatomical_head(p,name,sections,mat,segments=64):
      # Subtle lower-cheek hollow keeps the face from reading as one smooth egg.
      z-=fm*.0038*math.exp(-((x-side*head_w*.245)/(head_w*.110))**2-((yy+.060)/.045)**2)
     # Nose bridge grows continuously from the brow, with a stronger tip and soft columella.
-    z+=fm*.0145*math.exp(-(x/(head_w*.060))**2-((yy-.020)/.086)**2)
-    z+=fm*.0315*math.exp(-(x/(head_w*.076))**2-((yy+.041)/.025)**2)
-    z+=fm*.0060*math.exp(-(x/(head_w*.052))**2-((yy+.058)/.017)**2)
+    z+=fm*.0170*math.exp(-(x/(head_w*.060))**2-((yy-.020)/.086)**2)
+    z+=fm*.0355*math.exp(-(x/(head_w*.076))**2-((yy+.041)/.025)**2)
+    z+=fm*.0072*math.exp(-(x/(head_w*.052))**2-((yy+.058)/.017)**2)
     # Philtrum, mouth cushion and chin plane.
     z-=fm*.0028*math.exp(-(x/(head_w*.054))**2-((yy+.067)/.017)**2)
     z+=fm*.0070*math.exp(-(x/(head_w*.155))**2-((yy+.083)/.027)**2)
@@ -156,14 +156,14 @@ def add_lock_mesh(p,name,pts,widths,depths,mat,ring_segments=10):
  last=(n-1)*ring_segments;faces.append(tuple(last+k for k in range(ring_segments)))
  mesh=bpy.data.meshes.new(name+'Mesh');mesh.from_pydata(verts,[],faces);mesh.update();o=bpy.data.objects.new(name,mesh);bpy.context.scene.collection.objects.link(o);o.data.materials.append(mat);smooth(o);return parent(o,p)
 
-def add_almond_surface(p,name,cx,cy,cz,rx,ry,bulge,mat,segments=28):
+def add_almond_surface(p,name,cx,cy,cz,rx,ry,bulge,mat,segments=28,side=1,tilt=0.0):
  verts=[bpos((cx,cy,cz+bulge))]
  for i in range(segments):
   a=2*math.pi*i/segments
   ca=math.cos(a);sa=math.sin(a)
-  # Pinch toward the inner/outer corners while retaining a soft upper/lower arc.
-  yy=cy+ry*sa*(.72+.28*abs(ca))
   x=cx+rx*ca
+  # Pinched almond with a slight canthal tilt: the outer corner sits higher than the inner corner.
+  yy=cy+ry*sa*(.68+.32*abs(ca))+tilt*side*ca
   verts.append(bpos((x,yy,cz)))
  faces=[]
  for i in range(segments):faces.append((0,1+i,1+((i+1)%segments)))
@@ -235,6 +235,7 @@ TH_L=empty('BL_THIGH_L',ROOT);SH_L=empty('BL_SHIN_L',ROOT);FOOT_L=empty('BL_FOOT
 # REFERENCE_V35: asymmetric key-art fringe, stronger portrait cues and brighter couture balance.
 # REFERENCE_V36: portrait anatomy rebuild, larger almond eyes and dark layered forehead locks.
 # REFERENCE_V37: separate skull width from hair span and retarget portrait features to the narrower face.
+# REFERENCE_V38: tilted expressive almond eyes and stronger central portrait cues.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
@@ -346,42 +347,47 @@ add_cylinder(HEAD,'Neck',(0,-.158,-.008),W('neck')*.33,.084,SKIN,26)
 add_cylinder(HEAD,'Choker',(0,-.139,-.006),W('neck')*.46,.034,BLACK,28)
 add_cylinder(HEAD,'ChokerTrim',(0,-.124,-.006),W('neck')*.47,.009,SILVER,28)
 for side in(-1,1):add_sphere(HEAD,f'Ear_{side}',(side*head_w*.445,-.018,-.014),(.010,.023,.009),SKIN,18,10)
-# Anatomy v3.6: single-shell portrait with deeper sockets, larger almond eyes and explicit nose/mouth cues.
+# Anatomy v3.8: narrower v3.7 skull with expressive tilted almond eyes and readable central features.
 face_front=head_d*.512
-eye_y=.029
-eye_x=head_w*.128
-eye_rx=head_w*.116
-eye_ry=.0210
+eye_y=.030
+eye_x=head_w*.139
+eye_rx=head_w*.122
+eye_ry=.0168
+eye_tilt=.0044
 for side in(-1,1):
  ex=side*eye_x
- add_sphere(HEAD,f'EyeballHiddenV36_{side}',(ex,eye_y,head_d*.423),(head_w*.096,.021,head_d*.072),SCLERA,34,22)
- add_almond_surface(HEAD,f'EyeOpeningV36_{side}',ex,eye_y,face_front,eye_rx,eye_ry,.0034,SCLERA,32)
- add_sphere(HEAD,f'IrisV36_{side}',(ex,eye_y,face_front+.0058),(head_w*.046,.0135,.0030),IRIS,28,18)
- add_sphere(HEAD,f'PupilV36_{side}',(ex,eye_y,face_front+.0084),(head_w*.017,.0068,.0020),PUPIL,20,12)
- add_sphere(HEAD,f'EyeLightV36_{side}',(ex-side*head_w*.011,eye_y+.0060,face_front+.0102),(head_w*.0075,.0032,.0013),SCLERA,12,8)
- inner=ex-side*eye_rx*.92;outer=ex+side*eye_rx*.98
- add_strand(HEAD,f'UpperLidV36_{side}',[(inner,eye_y+.001,face_front+.0025),(ex,eye_y+.019,face_front+.0058),(outer,eye_y+.002,face_front+.0025)],.00135,SKIN)
- add_strand(HEAD,f'LowerLidV36_{side}',[(inner,eye_y-.001,face_front+.0020),(ex,eye_y-.013,face_front+.0030),(outer,eye_y-.001,face_front+.0020)],.00085,SKIN)
- add_strand(HEAD,f'LowerLashV37_{side}',[(inner,eye_y-.001,face_front+.0046),(ex,eye_y-.011,face_front+.0050),(outer,eye_y-.001,face_front+.0046)],.00055,HAIR)
- add_strand(HEAD,f'UpperLashV36_{side}',[(inner,eye_y+.004,face_front+.0065),(ex,eye_y+.020,face_front+.0082),(outer,eye_y+.004,face_front+.0065)],.00205,HAIR)
- add_strand(HEAD,f'LashWingV36_{side}',[(outer,eye_y+.004,face_front+.0067),(outer+side*head_w*.031,eye_y+.012,face_front+.0075)],.00160,HAIR)
- # Slightly lower, angled brows frame the eyes like the key art instead of floating high on the forehead.
- add_strand(HEAD,f'BrowV36_{side}',[(ex-side*eye_rx*.82,.071,head_d*.510),(ex,.083,head_d*.516),(ex+side*eye_rx*1.02,.067,head_d*.510)],.00175,HAIR)
+ add_sphere(HEAD,f'EyeballHiddenV38_{side}',(ex,eye_y,head_d*.423),(head_w*.098,.019,head_d*.072),SCLERA,34,22)
+ add_almond_surface(HEAD,f'EyeOpeningV38_{side}',ex,eye_y,face_front,eye_rx,eye_ry,.0032,SCLERA,32,side,eye_tilt)
+ # Iris coverage is increased so the eye reads expressive rather than googly/white-heavy.
+ add_sphere(HEAD,f'IrisV38_{side}',(ex,eye_y+.0010,face_front+.0058),(head_w*.050,.0122,.0030),IRIS,28,18)
+ add_sphere(HEAD,f'PupilV38_{side}',(ex,eye_y+.0010,face_front+.0084),(head_w*.0185,.0063,.0020),PUPIL,20,12)
+ add_sphere(HEAD,f'EyeLightV38_{side}',(ex-side*head_w*.012,eye_y+.0065,face_front+.0104),(head_w*.0075,.0032,.0013),SCLERA,12,8)
+ inner=ex-side*eye_rx*.93;outer=ex+side*eye_rx*.99
+ # The lash arc follows the same outward-up tilt as the sclera opening.
+ inner_y=eye_y-eye_tilt
+ outer_y=eye_y+eye_tilt
+ add_strand(HEAD,f'UpperLidV38_{side}',[(inner,inner_y+.001,face_front+.0024),(ex,eye_y+.0165,face_front+.0056),(outer,outer_y+.001,face_front+.0024)],.00125,SKIN)
+ add_strand(HEAD,f'LowerLidV38_{side}',[(inner,inner_y-.001,face_front+.0020),(ex,eye_y-.0105,face_front+.0030),(outer,outer_y-.001,face_front+.0020)],.00078,SKIN)
+ add_strand(HEAD,f'UpperLashV38_{side}',[(inner,inner_y+.003,face_front+.0065),(ex,eye_y+.0180,face_front+.0080),(outer,outer_y+.003,face_front+.0065)],.00205,HAIR)
+ add_strand(HEAD,f'LashWingV38_{side}',[(outer,outer_y+.003,face_front+.0068),(outer+side*head_w*.034,outer_y+.011,face_front+.0075)],.00155,HAIR)
+ add_strand(HEAD,f'LowerLashV38_{side}',[(inner,inner_y,face_front+.0047),(ex,eye_y-.0095,face_front+.0050),(outer,outer_y,face_front+.0047)],.00048,HAIR)
+ # Brows are closer to the eye and follow a gentle key-art arch.
+ add_strand(HEAD,f'BrowV38_{side}',[(ex-side*eye_rx*.82,.070,head_d*.510),(ex,.081,head_d*.516),(ex+side*eye_rx*1.04,.067,head_d*.510)],.00172,HAIR)
 
-# The bridge/tip is already in HeadShellV36. Tiny skin volumes only reinforce the profile silhouette.
-add_sphere(HEAD,'NoseTipSoftV36',(0,-.041,head_d*.525),(.0105,.0085,.0060),SKIN,20,12)
+# Connected shell supplies bridge and tip; tiny cues underneath make it readable front-on.
+add_sphere(HEAD,'NoseTipSoftV38',(0,-.041,head_d*.531),(.0098,.0078,.0050),SKIN,20,12)
 for side in(-1,1):
- add_sphere(HEAD,f'NoseWingSoftV36_{side}',(side*.0105,-.049,head_d*.520),(.0060,.0052,.0042),SKIN,16,10)
- add_sphere(HEAD,f'NostrilV36_{side}',(side*.0072,-.050,head_d*.526),(.0024,.0017,.0013),FACE_DARK,12,8)
-add_strand(HEAD,'NoseUndersideV36',[(-.010,-.049,head_d*.524),(0,-.054,head_d*.527),(.010,-.049,head_d*.524)],.00092,FACE_DARK)
+ add_sphere(HEAD,f'NoseWingSoftV38_{side}',(side*.0100,-.049,head_d*.526),(.0054,.0048,.0037),SKIN,16,10)
+ add_sphere(HEAD,f'NostrilV38_{side}',(side*.0071,-.050,head_d*.531),(.0025,.0017,.0013),FACE_DARK,12,8)
+add_strand(HEAD,'NoseUndersideV38',[(-.010,-.049,head_d*.529),(0,-.054,head_d*.532),(.010,-.049,head_d*.529)],.00095,FACE_DARK)
 
-# Defined but compact lips. Splitting the upper lip creates a readable cupid bow without a decal card.
-add_strand(HEAD,'UpperLipLeftV36',[(-.027,-.079,head_d*.524),(-.014,-.074,head_d*.527),(0,-.079,head_d*.528)],.00145,LIP)
-add_strand(HEAD,'UpperLipRightV36',[(0,-.079,head_d*.528),(.014,-.074,head_d*.527),(.027,-.079,head_d*.524)],.00145,LIP)
-add_strand(HEAD,'MouthLineV36',[(-.026,-.083,head_d*.526),(0,-.086,head_d*.528),(.026,-.083,head_d*.526)],.00095,FACE_DARK)
-add_strand(HEAD,'LowerLipV36',[(-.022,-.087,head_d*.524),(0,-.092,head_d*.527),(.022,-.087,head_d*.524)],.00118,LIP)
+# Wider, clearer mouth line while keeping the lips compact and embedded in the muzzle.
+add_strand(HEAD,'UpperLipLeftV38',[(-.030,-.079,head_d*.529),(-.015,-.074,head_d*.532),(0,-.079,head_d*.533)],.00142,LIP)
+add_strand(HEAD,'UpperLipRightV38',[(0,-.079,head_d*.533),(.015,-.074,head_d*.532),(.030,-.079,head_d*.529)],.00142,LIP)
+add_strand(HEAD,'MouthLineV38',[(-.030,-.083,head_d*.531),(0,-.086,head_d*.533),(.030,-.083,head_d*.531)],.00108,FACE_DARK)
+add_strand(HEAD,'LowerLipV38',[(-.024,-.087,head_d*.529),(0,-.092,head_d*.532),(.024,-.087,head_d*.529)],.00115,LIP)
 for side in(-1,1):
- add_sphere(HEAD,f'MouthCornerV36_{side}',(side*.027,-.083,head_d*.526),(.0018,.0015,.0011),FACE_DARK,10,6)
+ add_sphere(HEAD,f'MouthCornerV38_{side}',(side*.030,-.083,head_d*.531),(.0018,.0015,.0011),FACE_DARK,10,6)
 
 # Hair v3.6: dark scalp mass -> five broad forehead locks -> sparse crossing pieces -> separated ponytail.
 add_sphere(HEAD,'HairBackV36',(0,.028,-head_d*.365),(head_w*.520,.132,head_d*.455),HAIR,46,32)
