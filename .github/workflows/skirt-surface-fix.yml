@@ -1,0 +1,71 @@
+name: Skirt Surface Correction
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/skirt-surface.trigger
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Correct rear cloth surface orientation
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def flip_panel_winding(path):
+              p=Path(path); s=p.read_text()
+              marker='function panelGeometry'
+              start=s.index(marker)
+              target='idx.push(a,d,b,b,d,e)'
+              pos=s.index(target,start)
+              s=s[:pos]+s[pos:].replace(target,'idx.push(a,b,d,b,e,d)',1)
+              p.write_text(s)
+
+          flip_panel_winding('visual-src/couture.js')
+          flip_panel_winding('.github/scripts/heroine-silhouette-pass.sh')
+
+          p=Path('tests/reference-models.mjs'); s=p.read_text()
+          needle="for(const panel of [left,right]){const pos=panel.geometry.attributes.position,base=panel.userData.base,count=6;"
+          repl="for(const panel of [left,right]){const pos=panel.geometry.attributes.position,base=panel.userData.base,normal=panel.geometry.attributes.normal,count=6;const mid=Math.floor(pos.count*.5);assert(normal.getZ(mid)<-.25,'Rear panel outer face does not face the rear camera');"
+          if needle not in s: raise SystemExit('reference-model panel loop not found')
+          p.write_text(s.replace(needle,repl,1))
+
+          p=Path('.github/scripts/heroine-silhouette-pass.sh'); s=p.read_text()
+          if needle not in s: raise SystemExit('generated test panel loop not found')
+          p.write_text(s.replace(needle,repl,1))
+
+          d=Path('docs/COUTURE_REFINEMENT.md'); text=d.read_text()
+          marker='## Rear cloth surface correction'
+          if marker not in text:
+              text += "\n## Rear cloth surface correction\nReal WebGL close-up review exposed a winding error: the rear panels' bright outer surfaces faced forward, so the gameplay camera culled them and showed the dark lining instead. The panel winding is now reversed so the pale outer cloth faces the rear gameplay camera while the dark lining remains visible from the inner/front side. A normal-direction regression assertion prevents this silhouette bug from returning.\n"
+              d.write_text(text)
+          PY
+      - name: Build visual bundle
+        working-directory: visual-src
+        run: |
+          npm ci
+          npm run build
+      - name: Model regression test
+        run: node tests/reference-models.mjs
+      - name: Commit correction
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add visual-src/couture.js dist/visual-engine.js tests/reference-models.mjs docs/COUTURE_REFINEMENT.md .github/scripts/heroine-silhouette-pass.sh
+          git diff --cached --quiet && exit 0
+          git commit -m 'fix: show heroine rear skirt outer cloth correctly'
+          git push origin HEAD:main
