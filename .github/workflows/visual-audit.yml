@@ -37,7 +37,7 @@ jobs:
       - name: Capture real WebGL gameplay
         run: |
           mkdir -p visual-audit
-          cat > /tmp/audit.cjs <<'NODE'
+          cat > audit.cjs <<'NODE'
           const { chromium } = require('playwright');
           const fs = require('fs');
           const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -75,13 +75,10 @@ jobs:
             await page.locator('#start').click();
             await sleep(1600);
             await page.screenshot({path:'visual-audit/02-fight-open.png'});
-
-            // Real movement input: approach, circle, then attack.
             await page.keyboard.down('KeyW'); await sleep(1150); await page.keyboard.up('KeyW');
             await page.keyboard.down('KeyD'); await sleep(480); await page.keyboard.up('KeyD');
             await sleep(180);
             await page.screenshot({path:'visual-audit/03-approach.png'});
-
             const attack=page.locator('#attack');
             for(let i=0;i<3;i++){
               await attack.click();
@@ -89,14 +86,12 @@ jobs:
               await page.screenshot({path:`visual-audit/04-attack-${i+1}.png`});
               await sleep(i===2?520:330);
             }
-
-            // Play for a real parry. Cue opacity is only used to decide when to press the UI button.
             const parry=page.locator('#parry');
             let parryShot=false;
             for(let i=0;i<500;i++){
               const state=await page.evaluate(()=>{
-                const cue=document.getElementById('cue'),stats=document.getElementById('stats'),ov=document.getElementById('overlay');
-                return {opacity:+getComputedStyle(cue).opacity||0,text:cue.textContent||'',stats:stats.textContent||'',overlayHidden:ov.classList.contains('hidden')};
+                const cue=document.getElementById('cue'),stats=document.getElementById('stats');
+                return {opacity:+getComputedStyle(cue).opacity||0,text:cue.textContent||'',stats:stats.textContent||''};
               });
               if(state.opacity>.18 || /PARRY|弾|危|!/i.test(state.text)){
                 await parry.click().catch(()=>{});
@@ -132,7 +127,7 @@ jobs:
             if(!webgl.renderer)process.exitCode=2;
           })().catch(e=>{console.error(e);process.exit(1)});
           NODE
-          node /tmp/audit.cjs
+          node audit.cjs
       - name: Upload audit frames
         if: always()
         uses: actions/upload-artifact@v4
