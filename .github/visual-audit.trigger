@@ -1,1 +1,1 @@
-2026-09-09 narrowed heroine shoulder visual audit
+2026-09-09 heroine narrow-shoulder v2 visual audit
