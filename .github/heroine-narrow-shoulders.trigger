@@ -1,1 +1,1 @@
-2026-09-09 heroine narrow-shoulder refinement rerun
+2026-09-09 heroine narrow-shoulder v2 refinement
