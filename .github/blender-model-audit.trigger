@@ -1,1 +1,1 @@
-2026-09-10 fixed four-view Blender heroine v3.7 narrowed skull retargeted portrait audit
+2026-09-10 Blender heroine v3.8 expressive-eye measured-reference audit
