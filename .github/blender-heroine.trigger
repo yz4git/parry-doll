@@ -1,1 +1,1 @@
-2026-09-09 build Blender heroine v2.1 solid scalp and panel fringe fix
+2026-09-09 build Blender heroine v2.2 eye-clear fringe correction
