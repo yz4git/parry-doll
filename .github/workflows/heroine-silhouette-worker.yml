@@ -18,5 +18,10 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install mesh authoring dependency
+        run: python -m pip install --disable-pip-version-check numpy
       - name: Apply heroine silhouette pass
         run: bash .github/scripts/heroine-silhouette-pass.sh
