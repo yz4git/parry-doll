@@ -21,8 +21,8 @@ BLACK=material('Suit Black',(0.014,0.018,0.027),.08,.30)
 BLACK_SOFT=material('Suit Soft',(0.030,0.035,0.048),.02,.44)
 WHITE=material('Porcelain White',(0.86,0.88,0.88),.18,.28)
 SILVER=material('Silver',(0.50,0.53,0.56),.78,.19)
-HAIR=material('Hair',(0.027,0.020,0.022),.02,.40)
-HAIR_HI=material('Hair Highlight',(0.075,0.048,0.050),.02,.35)
+HAIR=material('Hair',(0.012,0.010,0.014),.03,.30)
+HAIR_HI=material('Hair Highlight',(0.050,0.036,0.046),.03,.27)
 SCLERA=material('Sclera',(0.86,0.84,0.82),0,.42)
 IRIS=material('Iris',(0.18,0.24,0.25),.04,.24)
 PUPIL=material('Pupil',(0.004,0.005,0.006),0,.30)
@@ -114,6 +114,7 @@ TH_L=empty('BL_THIGH_L',ROOT);SH_L=empty('BL_SHIN_L',ROOT);FOOT_L=empty('BL_FOOT
 # REFERENCE_V23: projected portrait features for reliable front/profile readability.
 # REFERENCE_V24: eyebrow-height fringe with open eye line.
 # REFERENCE_V25: larger portrait eyes and strand-separated ponytail mass.
+# REFERENCE_V26: strand-flow fringe, split pony cascade and couture micro-detail.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
@@ -180,6 +181,18 @@ add_panel(PELVIS,'RearTailWhiteR',[(.105,.082,-.145),(.205,.090,-.120),(.275,-.5
 add_panel(PELVIS,'RearTailBlackL',[(-.250,.070,-.145),(-.165,.062,-.165),(-.185,-.520,-.195),(-.245,-.875,-.132),(-.315,-.485,-.105)],.012,BLACK)
 add_panel(PELVIS,'RearTailBlackR',[(.165,.062,-.165),(.250,.070,-.145),(.315,-.485,-.105),(.245,-.875,-.132),(.185,-.520,-.195)],.012,BLACK)
 
+# === REFERENCE COUTURE MICRO DETAIL v2.6 ===
+add_box(TORSO,'BackSpineRail',(0,.040,-bust_d*.505),(.018,.390,.014),SILVER,.004)
+add_panel(TORSO,'BackHarnessKite',[(-.072,.235,-bust_d*.50),(.072,.235,-bust_d*.50),(.110,.060,-bust_d*.54),(0,-.095,-bust_d*.57),(-.110,.060,-bust_d*.54)],.012,BLACK_SOFT)
+for side in(-1,1):
+ add_box(TORSO,f'BackHarnessUpper_{side}',(side*.076,.185,-bust_d*.535),(.016,.250,.012),SILVER,.004,rot=(0,0,-side*.36))
+ add_box(TORSO,f'BackHarnessLower_{side}',(side*.060,-.070,-bust_d*.555),(.015,.210,.011),SILVER,.004,rot=(0,0,side*.28))
+ add_box(PELVIS,f'HipBuckle_{side}',(side*.206,.068,.108),(.042,.046,.026),SILVER,.006)
+ add_box(PELVIS,f'HipStrap_{side}',(side*.205,-.015,.090),(.028,.190,.018),BLACK_SOFT,.005,rot=(0,0,-side*.10))
+add_panel(PELVIS,'WaistChevronL',[(-.155,.142,.145),(-.018,.150,.165),(-.042,.070,.176),(-.168,.088,.148)],.010,WHITE)
+add_panel(PELVIS,'WaistChevronR',[(.018,.150,.165),(.155,.142,.145),(.168,.088,.148),(.042,.070,.176)],.010,WHITE)
+add_box(PELVIS,'WaistCenterGem',(0,.102,.184),(.026,.050,.018),SILVER,.005)
+
 # === HEAD / FACE ===
 # One continuous measured portrait shell instead of overlapping spheres.
 add_section_mesh(HEAD,'HeadShell',[
@@ -216,16 +229,26 @@ add_sphere(HEAD,'HairCrown',(0,.093,-head_d*.380),(head_w*.450,.047,head_d*.270)
 for side in(-1,1):add_sphere(HEAD,f'HairTemple_{side}',(side*head_w*.414,.006,-.030),(head_w*.093,.080,head_d*.150),HAIR,28,18)
 add_sphere(HEAD,'HairTopCap',(0,.078,-head_d*.105),(head_w*.500,.071,head_d*.405),HAIR,42,24)
 add_sphere(HEAD,'HairFrontCrown',(0,.082,head_d*.105),(head_w*.455,.046,head_d*.235),HAIR,38,22)
-# Broad fringe now terminates above the eye line; only the narrow center lock drops between the eyes.
-bang_z=face_z+.018
-add_panel(HEAD,'BangOuterL',[(-.138,.100,bang_z),(-.078,.112,bang_z),(-.082,.058,bang_z),(-.128,.046,bang_z)],.0056,HAIR)
-add_panel(HEAD,'BangInnerL',[(-.096,.112,bang_z),(-.028,.120,bang_z),(-.036,.057,bang_z),(-.072,.050,bang_z)],.0058,HAIR_HI)
-add_panel(HEAD,'BangCenter',[(-.028,.121,bang_z),(.024,.120,bang_z),(.014,.012,bang_z),(-.010,-.004,bang_z)],.0060,HAIR)
-add_panel(HEAD,'BangInnerR',[(.026,.120,bang_z),(.096,.110,bang_z),(.072,.050,bang_z),(.036,.057,bang_z)],.0058,HAIR_HI)
-add_panel(HEAD,'BangOuterR',[(.078,.112,bang_z),(.138,.098,bang_z),(.128,.046,bang_z),(.082,.058,bang_z)],.0056,HAIR)
-# Fine temple tips sit outside the eye centers and stop at the upper lash line.
-add_ribbon(HEAD,'BangTipL',[(-.094,.072,bang_z+.003),(-.088,.052,bang_z+.004),(-.082,.038,bang_z+.002)],[.014,.009,.0035],.0032,HAIR)
-add_ribbon(HEAD,'BangTipR',[(.094,.072,bang_z+.003),(.088,.052,bang_z+.004),(.082,.038,bang_z+.002)],[.014,.009,.0035],.0032,HAIR)
+# Layered curved fringe: roots sit on the crown and sweep forward, avoiding flat plate/teeth silhouettes.
+bang_z=face_z+.019
+fringe_data=[
+ (-.120,-.111,-.104,.050,.050),
+ (-.086,-.078,-.068,.047,.046),
+ (-.054,-.044,-.034,.044,.043),
+ (-.022,-.012,-.006,.006,.039),
+ (.022,.012,.006,.018,.039),
+ (.054,.044,.034,.044,.043),
+ (.086,.078,.068,.047,.046),
+ (.120,.111,.104,.050,.050)
+]
+for i,(rootx,midx,tipx,tipy,w) in enumerate(fringe_data):
+ add_ribbon(HEAD,f'FringeFlow_{i}',[(rootx,.132,head_d*.10),(midx,.116,head_d*.34),(tipx,.086,face_z*.78),(tipx*.98,tipy,bang_z)],[w*.72,w,w*.76,w*.20],.0042,HAIR_HI if i in(1,6) else HAIR)
+# Fine surface locks break up the crown cap without exposing scalp.
+for i,lane in enumerate((-.34,-.17,0,.17,.34)):
+ add_ribbon(HEAD,f'CrownVeil_{i}',[(lane*head_w,.140,-head_d*.20),(lane*head_w*.96,.132,head_d*.02),(lane*head_w*.90,.118,head_d*.24),(lane*head_w*.78,.102,face_z*.50)],[.026,.030,.026,.010],.0028,HAIR_HI if i in(1,3) else HAIR)
+# Two light temple wisps soften the hard hairline corners.
+add_ribbon(HEAD,'TempleWispL',[(-.118,.086,bang_z),(-.126,.055,bang_z+.002),(-.132,.016,bang_z-.002)],[.018,.012,.004],.0028,HAIR)
+add_ribbon(HEAD,'TempleWispR',[(.118,.086,bang_z),(.126,.055,bang_z+.002),(.132,.016,bang_z-.002)],[.018,.012,.004],.0028,HAIR)
 # Longer side fringe frames the jaw like the supplied sheet.
 for side in(-1,1):
  add_ribbon(HEAD,f'FaceFrame_{side}',[(side*head_w*.365,.070,-.006),(side*head_w*.445,-.012,head_d*.115),(side*head_w*.458,-.178,head_d*.044),(side*head_w*.395,-.415,-.020)],[.042,.038,.026,.010],.0052,HAIR)
@@ -235,22 +258,26 @@ add_sphere(HEAD,'PonyRootMass',(0,.148,-head_d*.410),(.076,.061,.064),HAIR,32,22
 add_box(HEAD,'HairTie',(0,.143,-head_d*.470),(.090,.023,.034),SILVER,.007)
 for side in(-1,1):add_box(HEAD,f'HairTieFin_{side}',(side*.055,.147,-head_d*.475),(.009,.086,.018),SILVER,.003,rot=(0,0,side*.18))
 PONY=empty('BL_PONY_DYNAMIC',HEAD)
-add_section_mesh(PONY,'PonyCore',[
- (.150,.046,.038,.050,-head_d*.49),
- (.025,.076,.057,.071,-head_d*.76),
- (-.235,.108,.067,.083,-.465),
- (-.545,.126,.073,.090,-.375),
- (-.895,.120,.068,.084,-.282),
- (-1.225,.092,.054,.066,-.190),
- (-1.500,.055,.034,.043,-.102),
- (-1.665,.025,.017,.023,-.040)
-],HAIR,40)
-for i in range(11):
- lane=(i-5)/5
- add_ribbon(PONY,f'PonyLayer_{i}',[(lane*.022,.143,-head_d*.50),(lane*.058,-.010,-head_d*.78),(lane*.112,-.325,-.470),(lane*.176,-.755,-.338),(lane*.240,-1.225,-.192),(lane*.276,-1.645,-.045)],[.040,.054,.064,.058,.038,.008],.0046,HAIR_HI if i in(2,8) else HAIR)
-for i in range(14):
- lane=(i-6.5)/6.5
- add_strand(PONY,f'PonyEdge_{i}',[(lane*.024,.138,-head_d*.51),(lane*.072,-.080,-head_d*.80),(lane*.136,-.505,-.438),(lane*.208,-1.035,-.250),(lane*.286,-1.685,-.030)],.0027+(i%2)*.0005,HAIR_HI if i%4==0 else HAIR)
+pony_specs=[
+ (-.074,-.110,-.168,1.55,.046),
+ (-.052,-.078,-.120,1.64,.048),
+ (-.030,-.046,-.072,1.70,.047),
+ (0.000,.006,.012,1.73,.050),
+ (.030,.046,.072,1.69,.047),
+ (.052,.078,.120,1.62,.048),
+ (.074,.110,.168,1.53,.046)
+]
+for i,(rx,mx,ex,endy,w) in enumerate(pony_specs):
+ sway=(-1 if i%2==0 else 1)*.020
+ add_ribbon(PONY,f'PonyBundle_{i}',[(rx,.145,-head_d*.50),(rx*.92,.012,-head_d*.78),(mx+sway,-.315,-.470),(mx-sway,-.690,-.345),(ex+sway,-1.070,-.235),(ex,-1.390,-.120),(ex*.94,-endy,-.038)],[w*.64,w,w*1.02,w*.94,w*.72,w*.40,.007],.0044,HAIR_HI if i in(1,5) else HAIR)
+# Root feathers bridge the tie into the separated cascade.
+for i,lane in enumerate((-.060,-.030,0,.030,.060)):
+ add_ribbon(PONY,f'PonyRootFeather_{i}',[(lane,.150,-head_d*.49),(lane*1.15,.070,-head_d*.67),(lane*1.28,-.060,-head_d*.76)],[.030,.036,.014],.0036,HAIR_HI if i in(1,3) else HAIR)
+# Long flyaways give the silhouette the fine layered tails visible in the reference sheet.
+for i in range(18):
+ lane=(i-8.5)/8.5
+ side=-1 if i%2==0 else 1
+ add_strand(PONY,f'PonyFly_{i}',[(lane*.052,.138,-head_d*.52),(lane*.090+side*.010,-.080,-head_d*.78),(lane*.140-side*.016,-.470,-.445),(lane*.205+side*.018,-.900,-.285),(lane*.270-side*.012,-1.300,-.145),(lane*.310,-1.620-(i%3)*.035,-.030)],.0019+(i%3)*.00035,HAIR_HI if i%5==0 else HAIR)
 
 # === LIMBS ===
 # Diameters come directly from the front sheet; side depth comes from the side view.
