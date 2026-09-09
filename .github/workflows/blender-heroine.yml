@@ -45,7 +45,8 @@ jobs:
           python tools/refine-blender-reference-v18.py
           python tools/refine-blender-reference-v19.py
           python tools/refine-blender-reference-v20.py
-          python -m py_compile tools/make-blender-heroine.py tools/refine-blender-reference-v14.py tools/refine-blender-reference-v15.py tools/refine-blender-reference-v16.py tools/refine-blender-reference-v17.py tools/refine-blender-reference-v18.py tools/refine-blender-reference-v19.py tools/refine-blender-reference-v20.py tools/enable-blender-heroine.py
+          python tools/refine-blender-reference-v21.py
+          python -m py_compile tools/make-blender-heroine.py tools/refine-blender-reference-v14.py tools/refine-blender-reference-v15.py tools/refine-blender-reference-v16.py tools/refine-blender-reference-v17.py tools/refine-blender-reference-v18.py tools/refine-blender-reference-v19.py tools/refine-blender-reference-v20.py tools/refine-blender-reference-v21.py tools/enable-blender-heroine.py
           python - <<'PY'
           import json
           from pathlib import Path
@@ -74,10 +75,10 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add visual-src/engine.js visual-src/blender-heroine.js dist/visual-engine.js dist/visual-engine.js.LEGAL.txt dist/model-viewer.js dist/style.css dist/assets/models/heroine-blender.glb tools/make-blender-heroine.py tools/enable-blender-heroine.py tools/refine-blender-reference-v14.py tools/refine-blender-reference-v15.py tools/refine-blender-reference-v16.py tools/refine-blender-reference-v17.py tools/refine-blender-reference-v18.py tools/refine-blender-reference-v19.py tools/refine-blender-reference-v20.py tools/heroine-reference-proportions.json
+          git add visual-src/engine.js visual-src/blender-heroine.js dist/visual-engine.js dist/visual-engine.js.LEGAL.txt dist/model-viewer.js dist/style.css dist/assets/models/heroine-blender.glb tools/make-blender-heroine.py tools/enable-blender-heroine.py tools/refine-blender-reference-v14.py tools/refine-blender-reference-v15.py tools/refine-blender-reference-v16.py tools/refine-blender-reference-v17.py tools/refine-blender-reference-v18.py tools/refine-blender-reference-v19.py tools/refine-blender-reference-v20.py tools/refine-blender-reference-v21.py tools/heroine-reference-proportions.json
           if git diff --cached --quiet; then
             echo "Blender heroine already current"
             exit 0
           fi
-          git commit -m "feat: refine Blender heroine from measured reference v2.0"
+          git commit -m "feat: refine Blender heroine from measured reference v2.1"
           git push origin main
