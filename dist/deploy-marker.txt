@@ -1,5 +1,6 @@
 Parry Doll GitHub Pages release
-Heroine silhouette WebGL review complete.
-Visual source commit: fba5829094791ae7b6484213ade7725daa693014
-Final audit trigger: 15e2963c1f975e9412e9ab48e17ec5894586af5a
+Key-art heroine and parry pass complete.
+Heroine/parry implementation: 41aca3e67cb90b3fe38d332f8aa95334238f5cea
+Parry readability polish: b334fa42c10197191fb9f74653aa9b066c04b278
+Final WebGL audit: run 34309780033
 Published: 2026-09-09
