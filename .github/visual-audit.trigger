@@ -1,1 +1,1 @@
-2026-09-09 polished key-art parry visual audit
+2026-09-09 narrowed heroine shoulder visual audit
