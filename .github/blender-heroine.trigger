@@ -1,1 +1,1 @@
-2026-09-10 build Blender heroine v3.4 almond eyes and swept fringe
+2026-09-10 build Blender heroine v3.5 asymmetric fringe portrait couture
