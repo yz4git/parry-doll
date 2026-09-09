@@ -1,11 +1,12 @@
 import * as THREE from 'three';
+import {HeroineRig} from './heroine-rig.js';
 // All coordinates belong to the render rig. The simulation dolls are read-only.
 const Y=new THREE.Vector3(0,1,0);
 function taper(points,radius){const curve=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p)));const g=new THREE.TubeGeometry(curve,18,radius,6,false),p=g.attributes.position;for(let i=0;i<p.count;i++){const t=Math.floor(i/7)/18,center=curve.getPointAt(t),f=Math.pow(1-t,.55)*.94+.035;p.setXYZ(i,center.x+(p.getX(i)-center.x)*f,center.y+(p.getY(i)-center.y)*f,center.z+(p.getZ(i)-center.z)*f)}g.computeVertexNormals();return g}
 function profile(points){return new THREE.LatheGeometry(points.map(p=>new THREE.Vector2(...p)),24)}
 export class Heroine {
  constructor(d,scene,mats,{Assembly,frame}){
-  this.frame=frame;this.root=new THREE.Group();scene.add(this.root);this.links=[];this.nodes=[];this.hair=[];this.tails=[];
+  this.frame=frame;this.root=new THREE.Group();scene.add(this.root);this.rig=new HeroineRig(this.root);this.links=[];this.nodes=[];this.hair=[];this.tails=[];
   const white='#e8e5df',black='#171b27',silver='#aeb9c5',skin='#edc1ab',hair='#25232c';
   const add=a=>{const p=a.build();this.root.add(p);return p};
   for(const l of d.links){const a=new Assembly(mats),names=[d.nodes[l.a].name,d.nodes[l.b].name],torso=l.a===0&&l.b===1,neck=names.includes('head'),leg=names.includes('knee')||names.includes('foot');
@@ -49,13 +50,11 @@ export class Heroine {
   const blade=new Assembly(mats);blade.add('blade','#dbe4ec',[0,.06,0],[1,1,1]);blade.add('blade','#87cddd',[.013,.09,.023],[.23,.9,.2]);blade.add('box',silver,[0,.015,0],[.33,.055,.14]);blade.add('cylinder',black,[0,-.13,0],[.036,.24,.036],[0,0,0],'cloth');for(let i=0;i<6;i++)blade.add('cylinder',silver,[0,-.22+i*.034,0],[.038,.008,.038]);this.weapon=add(blade);
  }
  update(d,pose,clock=0){const vec=p=>new THREE.Vector3(p.x,p.y,p.z),torso=vec(d.nodes[1].p).sub(vec(d.nodes[0].p)),rot=this.frame(torso,d.face);
-  // Lengthen the leg silhouette and narrow the shoulders without moving hands or hitboxes.
-  const up=torso.clone().normalize(),right=new THREE.Vector3(Math.cos(d.face),0,-Math.sin(d.face));
-  const display=d.nodes.map(n=>{const p=vec(n.p);if(n.name==='hip')p.addScaledVector(up,.25*d.spec.scale);if(n.name==='knee')p.addScaledVector(up,.08*d.spec.scale);if(n.name==='shoulder')p.addScaledVector(right,-Math.sign(n.rest.x)*.12*d.spec.scale);return p});
-  for(const {l,p} of this.links){const a=display[l.a],b=display[l.b],delta=b.clone().sub(a);p.position.copy(a).lerp(b,.5);p.quaternion.copy(this.frame(delta,d.face));p.scale.set(l.r,delta.length(),l.r);}
-  this.nodes.forEach((p,i)=>{p.position.copy(display[i]);p.quaternion.copy(rot);p.scale.setScalar(d.nodes[i].r*(i===2?.88:1))});
+  const points=this.rig.update(d);
+  for(const {l,p} of this.links){const [a,b]=this.rig.segment(d,l),delta=b.clone().sub(a);p.position.copy(a).lerp(b,.5);p.quaternion.copy(this.frame(delta,d.face));p.scale.set(l.r,delta.length(),l.r);}
+  this.nodes.forEach((p,i)=>{const n=d.nodes[i];p.position.copy(points[this.rig.nodeName(n)]);p.quaternion.copy(rot);p.scale.setScalar(n.r*(i===2?.90:n.name==='shoulder'?.78:n.name==='elbow'||n.name==='knee'?.75:1))});
   const motion=Math.min(.35,Math.hypot(d.vel?.x||0,d.vel?.z||0)*.035);this.hair.forEach((p,i)=>{p.rotation.x=-motion+Math.sin(clock*2.5+i*.5)*.065;p.rotation.z=Math.sin(clock*2+i*.7)*.05});this.tails.forEach((p,i)=>{p.rotation.x=-motion*.7+Math.sin(clock*2+i)*.04});
   const hand=d.nodes.find(n=>n.name==='hand'),v=vec(pose),length=v.length();v.applyAxisAngle(Y,d.face);this.weapon.position.copy(vec(hand.p));this.weapon.quaternion.setFromUnitVectors(Y,v.normalize());this.weapon.scale.set(d.spec.scale,d.spec.scale*length/1.51,d.spec.scale);
  }
- dispose(){this.root.traverse(o=>{if(o.isMesh)o.geometry.dispose()});this.root.removeFromParent()}
+ dispose(){this.rig.dispose();this.root.traverse(o=>{if(o.isMesh)o.geometry.dispose()});this.root.removeFromParent()}
 }
