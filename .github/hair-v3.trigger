@@ -1,1 +1,1 @@
-2026-09-09 Hair v3 scalp coverage and ponytail rebuild retry 2
+2026-09-09 Hair v3.1 closed crown coverage
