@@ -1,1 +1,1 @@
-2026-09-09 heroine model viewer early-load fix
+2026-09-09 heroine model viewer framing polish
