@@ -111,6 +111,7 @@ TH_L=empty('BL_THIGH_L',ROOT);SH_L=empty('BL_SHIN_L',ROOT);FOOT_L=empty('BL_FOOT
 # REFERENCE_V20: fuller bodice curve, longer fringe, deeper ponytail and broader front couture.
 # REFERENCE_V21: solid scalp coverage and panel-based fringe.
 # REFERENCE_V22: eye-clear tapered fringe proportions.
+# REFERENCE_V23: projected portrait features for reliable front/profile readability.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
@@ -193,18 +194,25 @@ add_cylinder(HEAD,'Neck',(0,-.158,-.008),W('neck')*.33,.084,SKIN,26)
 add_cylinder(HEAD,'Choker',(0,-.139,-.006),W('neck')*.46,.034,BLACK,28)
 add_cylinder(HEAD,'ChokerTrim',(0,-.124,-.006),W('neck')*.47,.009,SILVER,28)
 for side in(-1,1):add_sphere(HEAD,f'Ear_{side}',(side*head_w*.485,-.018,-.014),(.010,.023,.009),SKIN,18,10)
-# Facial plane is tied to the front depth of the eye/cheek rings.
-face_z=head_d*.505
+# Portrait feature plane is projected slightly beyond the continuous head shell.
+# This keeps the eyes/brows/mouth visible in WebGL without changing the measured skull silhouette.
+face_z=head_d*.585
 for side in(-1,1):
- add_sphere(HEAD,f'EyeWhite_{side}',(side*head_w*.158,.014,face_z),(head_w*.091,.0105,.0060),SCLERA,30,16)
- add_sphere(HEAD,f'Iris_{side}',(side*head_w*.158,.012,face_z+.0068),(head_w*.041,.0087,.0043),IRIS,22,12)
- add_sphere(HEAD,f'Pupil_{side}',(side*head_w*.158,.012,face_z+.0096),(head_w*.014,.0054,.0026),PUPIL,16,10)
- add_box(HEAD,f'UpperLash_{side}',(side*head_w*.158,.030,face_z+.0092),(head_w*.105,.0044,.0030),HAIR,.0012,rot=(0,0,-side*.090))
- add_box(HEAD,f'Brow_{side}',(side*head_w*.158,.064,face_z+.001),(head_w*.101,.0042,.0030),HAIR,.0012,rot=(0,0,-side*.095))
-# A slim bridge + tip reads in profile without becoming a toy nose.
-add_sphere(HEAD,'NoseBridge',(0,.004,face_z+.004),(.0075,.031,.0060),SKIN,20,12)
-add_sphere(HEAD,'NoseTip',(0,-.027,face_z+.011),(.0085,.013,.0080),SKIN,18,10)
-add_box(HEAD,'Mouth',(0,-.073,face_z+.0040),(.044,.0048,.0032),LIP,.0010)
+ ex=side*head_w*.158
+ # Almond-like eye plate: compact vertically, wider horizontally, with dark upper lash.
+ add_panel(HEAD,f'EyePlate_{side}',[(ex-head_w*.088,.031,face_z),(ex+head_w*.088,.031,face_z),(ex+head_w*.072,-.003,face_z),(ex-head_w*.072,-.003,face_z)],.0040,SCLERA)
+ add_sphere(HEAD,f'Iris_{side}',(ex,.013,face_z+.0065),(head_w*.039,.0100,.0042),IRIS,22,12)
+ add_sphere(HEAD,f'Pupil_{side}',(ex,.013,face_z+.0100),(head_w*.014,.0060,.0028),PUPIL,16,10)
+ add_box(HEAD,f'UpperLash_{side}',(ex,.032,face_z+.0090),(head_w*.190,.0062,.0034),HAIR,.0012,rot=(0,0,-side*.080))
+ add_box(HEAD,f'Brow_{side}',(ex,.071,face_z+.0040),(head_w*.172,.0050,.0030),HAIR,.0012,rot=(0,0,-side*.095))
+ # Tiny catchlight prevents the iris from reading as a dead black dot at game distance.
+ add_sphere(HEAD,f'EyeLight_{side}',(ex-side*head_w*.010,.019,face_z+.0135),(head_w*.010,.0038,.0018),SCLERA,12,8)
+# Slim nose bridge and tip, pushed only enough to read in profile.
+add_sphere(HEAD,'NoseBridge',(0,.010,face_z+.001),(.0065,.030,.0055),SKIN,18,10)
+add_sphere(HEAD,'NoseTip',(0,-.028,face_z+.008),(.0082,.012,.0070),SKIN,18,10)
+# Soft two-part lip line rather than one thick rectangular bar.
+add_panel(HEAD,'UpperLip',[(-.037,-.067,face_z+.006),(.037,-.067,face_z+.006),(.026,-.075,face_z+.007),(-.026,-.075,face_z+.007)],.0025,LIP)
+add_panel(HEAD,'LowerLip',[(-.027,-.076,face_z+.006),(.027,-.076,face_z+.006),(.018,-.083,face_z+.005),(-.018,-.083,face_z+.005)],.0020,LIP)
 # Rear scalp never crosses the forehead; frontal hair is entirely layered geometry.
 add_sphere(HEAD,'HairBack',(0,.022,-head_d*.370),(head_w*.515,.128,head_d*.450),HAIR,44,30)
 add_sphere(HEAD,'HairCrown',(0,.093,-head_d*.380),(head_w*.450,.047,head_d*.270),HAIR,40,24)
