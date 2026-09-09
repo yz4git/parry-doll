@@ -1,0 +1,67 @@
+name: Blender Heroine Worker
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/blender-heroine.trigger
+
+permissions:
+  contents: write
+
+jobs:
+  build-blender-heroine:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Python authoring dependencies
+        run: |
+          python -m pip install --disable-pip-version-check numpy
+          python - <<'PY'
+          import numpy
+          print('numpy', numpy.__version__)
+          PY
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install Blender
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq blender
+          blender --version | head -n 2
+      - name: Build Blender heroine and integrate runtime
+        run: |
+          blender --background --python tools/make-blender-heroine.py
+          python tools/enable-blender-heroine.py
+          pushd visual-src >/dev/null
+          npm ci
+          npm run build
+          popd >/dev/null
+          test -s dist/assets/models/heroine-blender.glb
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('dist/assets/models/heroine-blender.glb')
+          assert p.read_bytes()[:4] == b'glTF'
+          print('GLB bytes', p.stat().st_size)
+          PY
+          node --check dist/visual-engine.js
+          node --check dist/model-viewer.js
+          git diff --check
+      - name: Commit Blender heroine variant
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add visual-src/engine.js visual-src/blender-heroine.js dist/visual-engine.js dist/visual-engine.js.LEGAL.txt dist/model-viewer.js dist/style.css dist/assets/models/heroine-blender.glb tools/make-blender-heroine.py tools/enable-blender-heroine.py
+          if git diff --cached --quiet; then
+            echo "Blender heroine already current"
+            exit 0
+          fi
+          git commit -m "feat: add switchable Blender heroine model"
+          git push origin main
