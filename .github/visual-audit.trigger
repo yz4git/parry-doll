@@ -1,1 +1,1 @@
-2026-09-09 key-art parry visual audit
+2026-09-09 deterministic key-art parry visual audit
