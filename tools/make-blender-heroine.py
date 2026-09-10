@@ -375,6 +375,53 @@ def add_profile_head_v55(p,name,rows,mat,segments=96):
  bpy.context.view_layer.objects.active=o;bpy.ops.object.modifier_apply(modifier=mod.name)
  return parent(o,p)
 
+
+def add_anime_head_v60(p,name,mat,segments=96,rings=48):
+ # Smooth UV topology replaces row-profile rings that produced horizontal shading bands.
+ verts=[]
+ top=bpos((0,.179,0));bottom=bpos((0,-.151,0));verts.append(top)
+ for r in range(1,rings):
+  theta=math.pi*r/rings
+  sy=math.cos(theta);rad=math.sin(theta)
+  yy=.014+.165*sy
+  # Adult/anime silhouette: broad cranium, tapered lower cheek and compact chin.
+  lower=max(0.0,min(1.0,(-.030-yy)/.120))
+  cheek=math.exp(-((yy+.010)/.060)**2)
+  width=.132*(1.0-.205*lower+.025*cheek)
+  for i in range(segments):
+   phi=2*math.pi*i/segments
+   cp=math.cos(phi);sp=math.sin(phi)
+   x=width*rad*cp
+   depth=(.103 if sp<0 else .0975)*rad
+   z=depth*sp
+   if sp>0:
+    fm=sp**2.0
+    # Recess the eye sockets while supporting the zygomatic plane.
+    for side in (-1,1):
+     ex=side*.0415
+     z-=fm*.0042*math.exp(-((x-ex)/.026)**2-((yy-.033)/.022)**2)
+     z+=fm*.0034*math.exp(-((x-side*.054)/.035)**2-((yy+.004)/.040)**2)
+    # Restrained central profile: bridge, small tip, philtrum break and chin support.
+    z+=fm*.0038*math.exp(-(x/.019)**2-((yy+.002)/.052)**2)
+    z+=fm*.0080*math.exp(-(x/.017)**2-((yy+.043)/.017)**2)
+    z-=fm*.0025*math.exp(-(x/.018)**2-((yy+.061)/.012)**2)
+    z+=fm*.0018*math.exp(-(x/.038)**2-((yy+.081)/.015)**2)
+    z+=fm*.0028*math.exp(-(x/.034)**2-((yy+.118)/.020)**2)
+   verts.append(bpos((x,yy,z)))
+ bottom_idx=len(verts);verts.append(bottom)
+ faces=[]
+ first=1
+ for i in range(segments):faces.append((0,first+i,first+(i+1)%segments))
+ for r in range(rings-2):
+  a=1+r*segments;b=a+segments
+  for i in range(segments):
+   j=(i+1)%segments;faces.append((a+i,a+j,b+j,b+i))
+ last=1+(rings-2)*segments
+ for i in range(segments):faces.append((last+i,bottom_idx,last+(i+1)%segments))
+ mesh=bpy.data.meshes.new(name+'Mesh');mesh.from_pydata(verts,[],faces);mesh.update()
+ o=bpy.data.objects.new(name,mesh);bpy.context.scene.collection.objects.link(o);o.data.materials.append(mat);smooth(o)
+ return parent(o,p)
+
 ROOT=empty('BLENDER_HEROINE');PELVIS=empty('BL_PELVIS',ROOT);TORSO=empty('BL_TORSO',ROOT);HEAD=empty('BL_HEAD',ROOT)
 UA_L=empty('BL_UPPER_ARM_L',ROOT);FA_L=empty('BL_FOREARM_L',ROOT);HAND_L=empty('BL_HAND_L',ROOT);UA_R=empty('BL_UPPER_ARM_R',ROOT);FA_R=empty('BL_FOREARM_R',ROOT);HAND_R=empty('BL_HAND_R',ROOT)
 TH_L=empty('BL_THIGH_L',ROOT);SH_L=empty('BL_SHIN_L',ROOT);FOOT_L=empty('BL_FOOT_L',ROOT);TH_R=empty('BL_THIGH_R',ROOT);SH_R=empty('BL_SHIN_R',ROOT);FOOT_R=empty('BL_FOOT_R',ROOT);SWORD=empty('BL_SWORD',ROOT)
@@ -427,6 +474,7 @@ TH_L=empty('BL_THIGH_L',ROOT);SH_L=empty('BL_SHIN_L',ROOT);FOOT_L=empty('BL_FOOT
 # REFERENCE_V57: expressive realistic-anime eyes, tapered lower face and filled side-swept hairline.
 # REFERENCE_V58: reference body volume, layered rounded fringe and larger portrait eyes.
 # REFERENCE_V59: broad swept fringe, full high pony cascade and softer human limb volume.
+# REFERENCE_V60: stable UV portrait head, continuous facial planes and restrained adult profile.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
@@ -515,67 +563,38 @@ add_panel(PELVIS,'WaistChevronR',[(.018,.150,.165),(.155,.142,.145),(.168,.088,.
 add_box(PELVIS,'WaistCenterGem',(0,.102,.184),(.026,.050,.018),SILVER,.005)
 
 # === HEAD / FACE ===
-# One continuous measured portrait shell instead of overlapping spheres.
-add_profile_head_v55(HEAD,'HeadShellV57',[
- (-.149,.029,.045,.054),
- (-.141,.044,.057,.073),
- (-.133,.061,.070,.091),
- (-.123,.078,.080,.103),
- (-.113,.091,.087,.097),
- (-.103,.103,.091,.090),
- (-.093,.114,.094,.097),
- (-.084,.121,.096,.108),
- (-.076,.126,.098,.110),
- (-.068,.130,.099,.100),
- (-.058,.132,.100,.099),
- (-.048,.133,.100,.120),
- (-.040,.133,.101,.124),
- (-.030,.133,.102,.110),
- (-.016,.133,.103,.102),
- (.000,.133,.103,.097),
- (.018,.133,.103,.092),
- (.034,.133,.103,.090),
- (.052,.132,.102,.096),
- (.072,.129,.101,.101),
- (.095,.121,.099,.101),
- (.118,.108,.095,.094),
- (.140,.088,.087,.082),
- (.160,.062,.073,.066),
- (.176,.032,.052,.045)
-],SKIN,96)
+# v6.0 uses one dense UV surface. Facial depth is deliberately restrained to avoid the v5.x muzzle/nose blowout.
+add_anime_head_v60(HEAD,'HeadShellV60',SKIN,96,48)
 add_cylinder(HEAD,'Neck',(0,-.158,-.008),W('neck')*.33,.084,SKIN,26)
 add_cylinder(HEAD,'Choker',(0,-.139,-.006),W('neck')*.46,.034,BLACK,28)
 add_cylinder(HEAD,'ChokerTrim',(0,-.124,-.006),W('neck')*.47,.009,SILVER,28)
-for side in(-1,1):add_sphere(HEAD,f'Ear_{side}',(side*head_w*.445,-.018,-.014),(.010,.023,.009),SKIN,18,10)
-# Anatomy v5.8: larger dark portrait eyes with stronger lashes and the v5.7 tapered lower face.
-face_front=.0925
-eye_y=.0328
-eye_x=head_w*.146
-eye_rx=head_w*.138
-eye_ry=.0194
-eye_tilt=.0036
+for side in(-1,1):add_sphere(HEAD,f'EarV60_{side}',(side*.126,-.018,-.012),(.009,.021,.008),SKIN,20,12)
+
+# Large but adult almond eyes seated directly on the smooth shell.
+face_front=.0964
+eye_y=.0330
+eye_x=.0415
+eye_rx=.0368
+eye_ry=.0168
+eye_tilt=.0030
 for side in(-1,1):
  ex=side*eye_x
- add_sphere(HEAD,f'EyeballHiddenV58_{side}',(ex,eye_y,.0785),(head_w*.082,.0155,.0122),SCLERA,46,28)
- add_almond_surface(HEAD,f'EyeOpeningV58_{side}',ex,eye_y,face_front,eye_rx,eye_ry,.00135,SCLERA,66,side,eye_tilt)
- add_ellipse_surface(HEAD,f'IrisV58_{side}',ex,eye_y,face_front+.0015,head_w*.067,.0141,IRIS,50)
- add_ellipse_surface(HEAD,f'IrisInnerV58_{side}',ex,eye_y-.0001,face_front+.0021,head_w*.041,.0092,IRIS_INNER,44)
- add_ellipse_surface(HEAD,f'PupilV58_{side}',ex,eye_y-.0001,face_front+.0028,head_w*.0160,.0053,PUPIL,34)
- add_ellipse_surface(HEAD,f'EyeLightV58A_{side}',ex-side*head_w*.0120,eye_y+.0048,face_front+.0034,head_w*.0041,.0020,SCLERA,18)
- add_ellipse_surface(HEAD,f'EyeLightV58B_{side}',ex+side*head_w*.0070,eye_y+.0017,face_front+.00345,head_w*.0017,.0009,SCLERA,14)
- inner=ex-side*eye_rx*.95;outer=ex+side*eye_rx*1.02
- inner_y=eye_y-eye_tilt;outer_y=eye_y+eye_tilt
- add_strand(HEAD,f'UpperLidV58_{side}',[(inner,inner_y+.0010,face_front+.00225),(ex,eye_y+.0194,face_front+.0030),(outer,outer_y+.0010,face_front+.00235)],.00034,FACE_DARK)
- add_strand(HEAD,f'UpperLashV58_{side}',[(inner,inner_y+.0014,face_front+.0030),(ex,eye_y+.0200,face_front+.0035),(outer,outer_y+.0014,face_front+.0031)],.00052,HAIR)
- add_strand(HEAD,f'LashWingV58_{side}',[(outer,outer_y+.0014,face_front+.0031),(outer+side*head_w*.015,outer_y+.0054,face_front+.0031)],.00030,HAIR)
- add_strand(HEAD,f'LowerLidV58_{side}',[(inner+side*eye_rx*.12,inner_y-.0002,face_front+.00195),(ex,eye_y-.0115,face_front+.0023),(outer-side*eye_rx*.12,outer_y-.0002,face_front+.00195)],.00013,FACE_DARK)
- add_strand(HEAD,f'BrowV58_{side}',[(ex-side*eye_rx*.78,.0672,.1018),(ex,.0764,.1035),(ex+side*eye_rx*.98,.0640,.1022)],.00060,HAIR)
+ add_sphere(HEAD,f'EyeballHiddenV60_{side}',(ex,eye_y,.0835),(.0205,.0160,.0122),SCLERA,46,28)
+ add_almond_surface(HEAD,f'EyeOpeningV60_{side}',ex,eye_y,face_front,eye_rx,eye_ry,.00115,SCLERA,64,side,eye_tilt)
+ add_ellipse_surface(HEAD,f'IrisV60_{side}',ex,eye_y,face_front+.0014,.0184,.0122,IRIS,48)
+ add_ellipse_surface(HEAD,f'IrisInnerV60_{side}',ex,eye_y-.0002,face_front+.0020,.0116,.0077,IRIS_INNER,42)
+ add_ellipse_surface(HEAD,f'PupilV60_{side}',ex,eye_y-.0002,face_front+.0026,.0044,.0049,PUPIL,32)
+ add_ellipse_surface(HEAD,f'EyeLightV60_{side}',ex-side*.0052,eye_y+.0052,face_front+.0032,.0016,.0014,SCLERA,18)
+ inner=ex-side*eye_rx*.94;outer=ex+side*eye_rx*1.02
+ add_strand(HEAD,f'UpperLashV60_{side}',[(inner,eye_y-eye_tilt+.0012,face_front+.0025),(ex,eye_y+.0173,face_front+.0030),(outer,eye_y+eye_tilt+.0011,face_front+.0026)],.00042,HAIR)
+ add_strand(HEAD,f'LowerLidV60_{side}',[(inner+side*.004,eye_y-eye_tilt-.0003,face_front+.0018),(ex,eye_y-.0102,face_front+.0021),(outer-side*.004,eye_y+eye_tilt-.0003,face_front+.0018)],.00012,FACE_DARK)
+ add_strand(HEAD,f'BrowV60_{side}',[(ex-side*.027,.067,.101),(ex,.075,.103),(ex+side*.032,.064,.1015)],.00052,HAIR)
 
-for side in(-1,1):
- add_sphere(HEAD,f'NostrilV58_{side}',(side*.0042,-.0540,.1162),(.00042,.00030,.00027),FACE_DARK,10,7)
-add_almond_surface(HEAD,'UpperLipV58',0,-.0760,.1084,.0275,.0040,.00092,LIP,54,1,0.0)
-add_almond_surface(HEAD,'LowerLipV58',0,-.0835,.1093,.0268,.0046,.00102,LIP,54,1,0.0)
-add_strand(HEAD,'MouthSeamV58',[(-.0235,-.0802,.1101),(0,-.0812,.1106),(.0235,-.0802,.1101)],.00013,FACE_DARK)
+# Only tiny surface accents are separate; the head mesh owns the actual nose/chin profile.
+for side in(-1,1):add_sphere(HEAD,f'NostrilV60_{side}',(side*.0042,-.0535,.1055),(.00042,.00030,.00026),FACE_DARK,10,7)
+add_almond_surface(HEAD,'UpperLipV60',0,-.0770,.1012,.0265,.0038,.00075,LIP,54,1,0.0)
+add_almond_surface(HEAD,'LowerLipV60',0,-.0840,.1018,.0255,.0042,.00085,LIP,54,1,0.0)
+add_strand(HEAD,'MouthSeamV60',[(-.0225,-.0805,.1024),(0,-.0812,.1028),(.0225,-.0805,.1024)],.00011,FACE_DARK)
 
 # Hair v5.9: broad layered side sweep with an open eye line, plus a much fuller high pony cascade.
 add_section_mesh(HEAD,'HairTopCapV59',[
