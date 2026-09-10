@@ -1,1 +1,1 @@
-2026-09-10 Blender heroine v5.5 unified closed profile head recessed orbit scalp-covered hair WebGL audit
+2026-09-10 Blender heroine v5.6 cleaner adult profile visible almond eyes eyebrow-clear swept fringe WebGL audit
