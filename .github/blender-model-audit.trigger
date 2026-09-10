@@ -1,1 +1,1 @@
-2026-09-10 Blender heroine v7.5 DPR2 high-res audit stable entry click
+2026-09-10 Blender heroine v7.6 covered hairline V-face wider almond eyes sculpted Cupid lips dual five-view audit
