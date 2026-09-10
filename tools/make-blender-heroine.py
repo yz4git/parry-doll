@@ -591,6 +591,7 @@ TH_L=empty('BL_THIGH_L',ROOT);SH_L=empty('BL_SHIN_L',ROOT);FOOT_L=empty('BL_FOOT
 # REFERENCE_V80: mature flush almond eyes, softened centre profile and rounded side-swept hair masses.
 # REFERENCE_V81: clean cheek silhouette, lifted side wisps and sealed crown root for production portrait readability.
 # REFERENCE_V82: artifact-free cheeks, no detached side strands and a front-visible overlapping crown seal.
+# REFERENCE_V83: +10% mature almond aperture, lower side-swept fringe and clean temple silhouette.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
@@ -707,21 +708,21 @@ for side in(-1,1):add_sphere(HEAD,f'EarV78_{side}',(side*.121,-.018,-.012),(.008
 face_front=.0974
 eye_y=.0330
 eye_x=.0478
-eye_rx=.0284
-eye_ry=.0112
+eye_rx=.0312
+eye_ry=.0123
 eye_tilt=.0024
 for side in(-1,1):
  ex=side*eye_x
- add_almond_surface(HEAD,f'EyeScleraV80_{side}',ex,eye_y,.1030,.0310,.0108,.00130,SCLERA,72,side,eye_tilt*.70)
+ add_almond_surface(HEAD,f'EyeScleraV83_{side}',ex,eye_y,.1030,.0340,.0118,.00130,SCLERA,76,side,eye_tilt*.70)
  # v7.1: the embedded eyeball itself supplies the curved visible sclera; no flat white sticker surface.
- add_ellipse_surface(HEAD,f'IrisV80_{side}',ex,eye_y,.10445,.0108,.0090,IRIS_INNER,40)
+ add_ellipse_surface(HEAD,f'IrisV83_{side}',ex,eye_y,.10445,.0118,.0097,IRIS_INNER,42)
  # v7.5 intentionally uses a single iris field; no concentric inner target ring.
- add_ellipse_surface(HEAD,f'PupilV80_{side}',ex,eye_y-.0002,.10482,.00315,.00405,PUPIL,32)
+ add_ellipse_surface(HEAD,f'PupilV83_{side}',ex,eye_y-.0002,.10482,.00330,.00425,PUPIL,32)
  add_ellipse_surface(HEAD,f'EyeLightV80_{side}',ex-side*.0037,eye_y+.0035,.10505,.00108,.00088,SCLERA,18)
  inner=ex-side*eye_rx*.94;outer=ex+side*eye_rx*1.02
- add_strand(HEAD,f'UpperLashV80_{side}',[(inner,eye_y-eye_tilt+.0008,.1040),(ex,eye_y+.0114,.10465),(outer,eye_y+eye_tilt+.0008,.10405)],.00058,HAIR)
- add_strand(HEAD,f'UpperLidFoldV80_{side}',[(inner+side*.0040,eye_y-eye_tilt+.0028,.10355),(ex,eye_y+.0140,.1040),(outer-side*.0040,eye_y+eye_tilt+.0028,.10355)],.00015,FACE_DARK)
- add_strand(HEAD,f'LowerLidV80_{side}',[(inner+side*.0040,eye_y-eye_tilt-.0001,.10345),(ex,eye_y-.0080,.10375),(outer-side*.0040,eye_y+eye_tilt-.0001,.10345)],.000055,FACE_DARK)
+ add_strand(HEAD,f'UpperLashV83_{side}',[(inner,eye_y-eye_tilt+.0008,.1040),(ex,eye_y+.0125,.10465),(outer,eye_y+eye_tilt+.0008,.10405)],.00062,HAIR)
+ add_strand(HEAD,f'UpperLidFoldV83_{side}',[(inner+side*.0042,eye_y-eye_tilt+.0030,.10355),(ex,eye_y+.0152,.1040),(outer-side*.0042,eye_y+eye_tilt+.0030,.10355)],.00016,FACE_DARK)
+ add_strand(HEAD,f'LowerLidV83_{side}',[(inner+side*.0042,eye_y-eye_tilt-.0001,.10345),(ex,eye_y-.0088,.10375),(outer-side*.0042,eye_y+eye_tilt-.0001,.10345)],.000058,FACE_DARK)
  add_strand(HEAD,f'BrowV80_{side}',[(ex-side*.026,.0650,.1018),(ex,.0710,.1024),(ex+side*.029,.0630,.1019)],.00042,HAIR)
 
 # v7.1 integrated portrait accents: head topology owns all nose/mouth depth.
@@ -754,9 +755,9 @@ add_rear_hair_shell(HEAD,'HairRearShellV59',[
 ],HAIR,44)
 
 # v8.0 rounded scalp-following fringe. Broad geometry lives above the forehead, not as flat face cards.
-add_smooth_lock(HEAD,'FringeMassV80_A',[(-.090,.190,.030),(-.075,.177,.055),(-.048,.160,.078),(-.010,.145,.095),(.034,.134,.101),(.076,.126,.098)],[.048,.052,.049,.039,.026,.010],[.018,.019,.017,.013,.009,.004],HAIR,14,6)
-add_smooth_lock(HEAD,'FringeMassV80_B',[(-.035,.194,.026),(-.016,.181,.052),(.014,.165,.076),(.050,.150,.094),(.086,.138,.099),(.112,.130,.096)],[.041,.043,.039,.030,.019,.008],[.016,.017,.015,.011,.007,.003],HAIR,14,6)
-add_smooth_lock(HEAD,'FringeAccentV80',[(-.112,.184,.024),(-.092,.169,.050),(-.064,.153,.074),(-.028,.140,.090),(.012,.132,.098)],[.025,.027,.024,.018,.007],[.010,.010,.009,.006,.003],HAIR_HI,12,5)
+add_smooth_lock(HEAD,'FringeMassV83_A',[(-.098,.190,.030),(-.084,.173,.056),(-.060,.151,.080),(-.026,.127,.099),(.018,.108,.106),(.066,.094,.107)],[.054,.058,.054,.043,.028,.010],[.019,.020,.018,.014,.009,.004],HAIR,14,6)
+add_smooth_lock(HEAD,'FringeMassV83_B',[(-.040,.194,.026),(-.020,.178,.053),(.010,.156,.078),(.048,.132,.098),(.086,.111,.105),(.118,.098,.104)],[.046,.048,.043,.033,.021,.008],[.017,.018,.016,.012,.007,.003],HAIR,14,6)
+add_smooth_lock(HEAD,'FringeAccentV83',[(-.116,.185,.025),(-.098,.166,.052),(-.072,.145,.077),(-.038,.124,.096),(.002,.110,.104)],[.028,.030,.027,.020,.007],[.011,.011,.010,.007,.003],HAIR_HI,12,5)
 # v8.2 overlaps the exact front crown gap visible in the five-view audit. Two small rounded
 # masses sit on the scalp/front transition; neither extends down across the forehead like a card.
 add_smooth_lock(HEAD,'CrownRootSealV82_A',[(-.030,.187,.078),(-.016,.180,.092),(0,.172,.101),(.020,.164,.104)],[.033,.038,.032,.009],[.011,.012,.010,.003],HAIR,14,6)
@@ -769,9 +770,7 @@ add_strand(HEAD,'FringeFineV80_E',[(-.008,.184,.025),(.038,.163,.066),(.108,.136
 # v8.2 deliberately omits isolated cheek wisps. At portrait scale even a physically thin curve
 # reads as a detached black scratch in profile; the existing broad temple/face locks carry the hairstyle.
 
-for side in(-1,1):
- pts=[(side*head_w*.394,.112,-head_d*.038),(side*head_w*.423,.050,-.013),(side*head_w*.428,-.028,-.016),(side*head_w*.416,-.103,-.044),(side*head_w*.401,-.178,-.064)]
- add_smooth_lock(HEAD,f'FaceLockV59_{side}',pts,[.010,.013,.0105,.0060,.0026],[.008,.009,.007,.0045,.0022],HAIR,10,5)
+# v8.3: no isolated front temple locks; the rear shell/fringe own this silhouette continuously.
 
 add_box(HEAD,'HairTieV59',(.014,.138,-head_d*.530),(.072,.017,.027),SILVER,.003)
 PONY=empty('BL_PONY_DYNAMIC',HEAD)
