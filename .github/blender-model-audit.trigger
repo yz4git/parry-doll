@@ -1,1 +1,1 @@
-2026-09-10 Blender heroine v5.6 cleaner adult profile visible almond eyes eyebrow-clear swept fringe WebGL audit
+2026-09-10 Blender heroine v5.7 expressive realistic-anime eyes tapered lower face filled side-swept hairline WebGL audit
