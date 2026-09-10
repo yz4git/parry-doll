@@ -700,6 +700,7 @@ TH_L=empty('BL_THIGH_L',ROOT);SH_L=empty('BL_SHIN_L',ROOT);FOOT_L=empty('BL_FOOT
 # REFERENCE_V101: side hair becomes a scalp-tight undercap plus several rounded swept locks, replacing the large profile-facing leaf plate.
 # REFERENCE_V102: temporal lock tips sweep rearward around the ear instead of dropping into straight claw-like prongs.
 # REFERENCE_V103: adult visible ears sit outside a notched temporal undercap, restoring a natural hairline-to-ear transition in profile.
+# REFERENCE_V104: the notched temporal undercap widens rearward into the rear-hair shell, covering the exposed side scalp without hiding the ears.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
@@ -882,19 +883,20 @@ add_rear_hair_shell(HEAD,'HairRearShellV59',[
 # v10.1: a scalp-tight undercap provides dark root coverage without becoming the visible silhouette.
 # head_w is the full measured head width, so ~0.46*head_w tracks the actual cranium instead of floating far outside it.
 for side in (-1,1):
- add_temporal_leaf_v95(HEAD,f'TemporalUnderCapV103_{side}',side,[
+ add_temporal_leaf_v95(HEAD,f'TemporalUnderCapV104_{side}',side,[
   (.171,head_w*.360, head_d*.030,.003,.0004),
-  (.151,head_w*.405, head_d*.022,.018,.0008),
-  (.126,head_w*.442, head_d*.012,.032,.0012),
-  (.098,head_w*.462, head_d*.000,.041,.0015),
-  (.068,head_w*.465,-head_d*.014,.041,.0015),
-  (.043,head_w*.446,-head_d*.031,.034,.0013),
-  (.022,head_w*.421,-head_d*.049,.024,.0010),
-  (.004,head_w*.402,-head_d*.067,.015,.0008),
-  (-.014,head_w*.406,-head_d*.085,.010,.0007),
-  (-.031,head_w*.424,-head_d*.101,.008,.0006),
-  (-.045,head_w*.442,-head_d*.113,.003,.0003)
- ],HAIR,17)
+  (.151,head_w*.405, head_d*.016,.021,.0009),
+  (.126,head_w*.442,-head_d*.004,.039,.0014),
+  (.098,head_w*.462,-head_d*.045,.052,.0018),
+  (.068,head_w*.465,-head_d*.095,.058,.0020),
+  (.043,head_w*.446,-head_d*.150,.060,.0020),
+  # Ear notch: the radial base moves inward here while the sheet extends behind the ear in Z.
+  (.022,head_w*.421,-head_d*.210,.054,.0018),
+  (.004,head_w*.402,-head_d*.265,.043,.0015),
+  (-.014,head_w*.406,-head_d*.320,.035,.0012),
+  (-.031,head_w*.424,-head_d*.365,.025,.0009),
+  (-.045,head_w*.442,-head_d*.400,.012,.0005)
+ ],HAIR,21)
 
  # Rounded swept locks sit above the undercap. Each covers only a narrow front/back band, so profile reads as layered hair.
  add_smooth_lock(HEAD,f'TemporalLockV101_Front_{side}',[
