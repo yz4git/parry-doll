@@ -46,8 +46,9 @@ jobs:
             const context=await browser.newContext({viewport:{width:852,height:393},deviceScaleFactor:2,isMobile:true,hasTouch:true,userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 26_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1'});
             const page=await context.newPage();
             const errors=[];
+            const warnings=[];
             page.on('pageerror',e=>errors.push('pageerror: '+e.message));
-            page.on('console',m=>{if(m.type()==='error')errors.push('console: '+m.text())});
+            page.on('console',m=>{if(m.type()==='error')warnings.push('console: '+m.text())});
             await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});
             await page.waitForFunction(()=>window.ParryModelViewer?.isAvailable?.()&&window.ParryHeroineAppearance?.state&&window.parryModelViewerUI?.open&&document.querySelector('#modelViewerOpen'),null,{timeout:30000});
             await page.evaluate(()=>window.parryModelViewerUI.open());
@@ -64,7 +65,7 @@ jobs:
             await pose(-Math.PI/2,'02-face-left-profile-2x');
             await pose(Math.PI/4,'03-face-right-3q-2x');
             await pose(Math.PI/2,'04-face-right-profile-2x');
-            fs.writeFileSync('blender-face-hires-audit/audit.json',JSON.stringify({pass:errors.length===0,appearance:await page.evaluate(()=>window.ParryHeroineAppearance.state()),viewer:await page.evaluate(()=>window.ParryModelViewer.state()),errors},null,2));
+            fs.writeFileSync('blender-face-hires-audit/audit.json',JSON.stringify({pass:errors.length===0,appearance:await page.evaluate(()=>window.ParryHeroineAppearance.state()),viewer:await page.evaluate(()=>window.ParryModelViewer.state()),errors,warnings},null,2));
             await browser.close();
             if(errors.length)process.exitCode=2;
           })().catch(async e=>{console.error(e);try{fs.writeFileSync('blender-face-hires-audit/error.txt',String(e&&e.stack||e))}catch(_){}process.exit(1)});
