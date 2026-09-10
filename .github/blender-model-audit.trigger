@@ -1,1 +1,1 @@
-2026-09-10 Blender heroine v6.3 detailed gray-brown gaze fringe separation WebGL audit
+2026-09-10 Blender heroine v6.4 readable soft gaze restrained profile WebGL audit
