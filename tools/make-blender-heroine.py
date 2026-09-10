@@ -697,6 +697,7 @@ TH_L=empty('BL_THIGH_L',ROOT);SH_L=empty('BL_SHIN_L',ROOT);FOOT_L=empty('BL_FOOT
 # REFERENCE_V98: a hidden convex temporal root underlay fills the fringe-to-side-lock scalp gap while preserving the canonical ears.
 # REFERENCE_V99: side-hair roots stay substantial through the ear line, then taper behind the jaw instead of opening a large bare temporal patch.
 # REFERENCE_V100: adult portrait reset reduces oversized doll eyes and tightens the lower-face silhouette while preserving the established profile and hair.
+# REFERENCE_V101: side hair becomes a scalp-tight undercap plus several rounded swept locks, replacing the large profile-facing leaf plate.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
@@ -861,73 +862,60 @@ add_rear_hair_shell(HEAD,'HairRearShellV59',[
  (.206,head_w*.080,head_d*.105,-head_d*.005)
 ],HAIR,44)
 
-# v9.8 root underlay: this is intentionally broad but sits underneath the visible v9.5 leaves.
-# It covers only the upper side scalp and tapers out above the ear, preventing a helmet panel or ear-pad read.
+# v10.1: a scalp-tight undercap provides dark root coverage without becoming the visible silhouette.
+# head_w is the full measured head width, so ~0.46*head_w tracks the actual cranium instead of floating far outside it.
 for side in (-1,1):
- add_temporal_leaf_v95(HEAD,f'TemporalRootUnderlayV99_{side}',side,[
-  (.170,head_w*.385, head_d*.042,.004,.0008),
-  (.151,head_w*.440, head_d*.040,.024,.0021),
-  (.128,head_w*.492, head_d*.034,.043,.0036),
-  (.102,head_w*.530, head_d*.024,.058,.0048),
-  (.075,head_w*.552, head_d*.010,.067,.0058),
-  (.050,head_w*.560,-head_d*.004,.070,.0060),
-  (.026,head_w*.558,-head_d*.020,.067,.0058),
-  (.004,head_w*.550,-head_d*.038,.060,.0052),
-  (-.018,head_w*.536,-head_d*.058,.050,.0044),
-  (-.038,head_w*.516,-head_d*.078,.039,.0035),
-  (-.056,head_w*.490,-head_d*.098,.027,.0026),
-  (-.070,head_w*.458,-head_d*.116,.014,.0016),
-  (-.078,head_w*.430,-head_d*.126,.004,.0007)
+ add_temporal_leaf_v95(HEAD,f'TemporalUnderCapV101_{side}',side,[
+  (.171,head_w*.360, head_d*.030,.003,.0004),
+  (.151,head_w*.405, head_d*.022,.018,.0008),
+  (.126,head_w*.442, head_d*.012,.032,.0012),
+  (.098,head_w*.462, head_d*.000,.041,.0015),
+  (.068,head_w*.468,-head_d*.014,.043,.0016),
+  (.039,head_w*.465,-head_d*.028,.038,.0014),
+  (.014,head_w*.455,-head_d*.041,.028,.0011),
+  (-.004,head_w*.442,-head_d*.050,.016,.0008),
+  (-.014,head_w*.430,-head_d*.055,.004,.0003)
  ],HAIR,15)
 
-# v9.5: three overlapping tapered scalp leaves carry the side sweep from crown to rear hair.
-# They span the exposed temple/ear zone in depth while remaining thin radially, so profile reads as
-# layered hair rather than a vertical ear-pad.  The face plane itself stays completely untouched.
-for side in (-1,1):
- add_temporal_leaf_v95(HEAD,f'TemporalLeafV99_Front_{side}',side,[
-  (.188,head_w*.365, head_d*.030,.003,.0010),
-  (.163,head_w*.430, head_d*.022,.016,.0020),
-  (.132,head_w*.485, head_d*.012,.029,.0030),
-  (.095,head_w*.515, head_d*.000,.039,.0036),
-  (.056,head_w*.520,-head_d*.018,.040,.0035),
-  (.020,head_w*.515,-head_d*.035,.036,.0030),
-  (-.012,head_w*.502,-head_d*.052,.029,.0025),
-  (-.038,head_w*.482,-head_d*.068,.020,.0019),
-  (-.058,head_w*.458,-head_d*.080,.011,.0012),
-  (-.070,head_w*.438,-head_d*.086,.003,.0006)
- ],HAIR,11)
- add_temporal_leaf_v95(HEAD,f'TemporalLeafV99_Mid_{side}',side,[
-  (.186,head_w*.350,-head_d*.030,.003,.0009),
-  (.158,head_w*.425,-head_d*.040,.017,.0019),
-  (.124,head_w*.485,-head_d*.052,.032,.0030),
-  (.084,head_w*.520,-head_d*.066,.042,.0037),
-  (.042,head_w*.530,-head_d*.082,.043,.0036),
-  (.004,head_w*.522,-head_d*.100,.038,.0030),
-  (-.032,head_w*.505,-head_d*.120,.030,.0024),
-  (-.060,head_w*.482,-head_d*.138,.020,.0018),
-  (-.080,head_w*.455,-head_d*.151,.010,.0011),
-  (-.091,head_w*.430,-head_d*.158,.003,.0005)
- ],HAIR,11)
- # A hairline-thin direction accent supplies variation without turning a whole leaf brown.
- add_strand(HEAD,f'TemporalFlowV99_{side}',[
-  (side*head_w*.486,.142,-head_d*.052),
-  (side*head_w*.526,.078,-head_d*.078),
-  (side*head_w*.520,.012,-head_d*.108),
-  (side*head_w*.500,-.038,-head_d*.137),
-  (side*head_w*.468,-.074,-head_d*.160)
- ],.000036,HAIR_HI)
- add_temporal_leaf_v95(HEAD,f'TemporalLeafV99_Rear_{side}',side,[
-  (.178,head_w*.330,-head_d*.090,.003,.0008),
-  (.150,head_w*.405,-head_d*.105,.015,.0018),
-  (.116,head_w*.468,-head_d*.122,.029,.0028),
-  (.076,head_w*.505,-head_d*.140,.038,.0034),
-  (.034,head_w*.520,-head_d*.158,.039,.0033),
-  (-.004,head_w*.514,-head_d*.176,.035,.0028),
-  (-.040,head_w*.500,-head_d*.195,.027,.0022),
-  (-.068,head_w*.478,-head_d*.210,.018,.0016),
-  (-.088,head_w*.452,-head_d*.220,.009,.0010),
-  (-.098,head_w*.430,-head_d*.225,.003,.0005)
- ],HAIR,11)
+ # Rounded swept locks sit above the undercap. Each covers only a narrow front/back band, so profile reads as layered hair.
+ add_smooth_lock(HEAD,f'TemporalLockV101_Front_{side}',[
+  (side*head_w*.350,.174, head_d*.026),
+  (side*head_w*.420,.145, head_d*.018),
+  (side*head_w*.468,.108, head_d*.006),
+  (side*head_w*.486,.068,-head_d*.010),
+  (side*head_w*.482,.028,-head_d*.027),
+  (side*head_w*.466,-.006,-head_d*.043),
+  (side*head_w*.438,-.032,-head_d*.055)
+ ],[.003,.006,.009,.010,.009,.006,.0015],[.007,.012,.016,.019,.017,.011,.0035],HAIR,14,6)
+
+ add_smooth_lock(HEAD,f'TemporalLockV101_Mid_{side}',[
+  (side*head_w*.344,.170,-head_d*.030),
+  (side*head_w*.410,.139,-head_d*.041),
+  (side*head_w*.462,.101,-head_d*.056),
+  (side*head_w*.490,.059,-head_d*.073),
+  (side*head_w*.489,.016,-head_d*.091),
+  (side*head_w*.470,-.020,-head_d*.108),
+  (side*head_w*.440,-.048,-head_d*.121)
+ ],[.003,.006,.009,.011,.010,.006,.0015],[.008,.014,.019,.022,.020,.013,.004],HAIR,14,6)
+
+ add_smooth_lock(HEAD,f'TemporalLockV101_Rear_{side}',[
+  (side*head_w*.332,.164,-head_d*.082),
+  (side*head_w*.392,.132,-head_d*.096),
+  (side*head_w*.448,.094,-head_d*.113),
+  (side*head_w*.480,.051,-head_d*.132),
+  (side*head_w*.482,.008,-head_d*.151),
+  (side*head_w*.463,-.030,-head_d*.168),
+  (side*head_w*.432,-.058,-head_d*.181)
+ ],[.003,.006,.009,.011,.010,.006,.0015],[.008,.014,.020,.023,.020,.013,.004],HAIR,14,6)
+
+ # One very fine highlight follows the flow; no whole lock is tinted brown.
+ add_strand(HEAD,f'TemporalFlowV101_{side}',[
+  (side*head_w*.445,.142,-head_d*.055),
+  (side*head_w*.482,.090,-head_d*.078),
+  (side*head_w*.488,.036,-head_d*.101),
+  (side*head_w*.468,-.012,-head_d*.124),
+  (side*head_w*.438,-.046,-head_d*.142)
+ ],.000032,HAIR_HI)
 
 # v9.0: the fringe is born inside the existing crown cap instead of being patched to it with blobs.
 # The first two samples are narrow and hidden under the cap; width only opens after the path exits the crown.
