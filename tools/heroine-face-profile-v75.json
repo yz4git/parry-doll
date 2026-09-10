@@ -1,0 +1,40 @@
+{
+  "version": "7.5",
+  "purpose": "Absolute front-surface targets for the PARRY DOLL heroine, informed by the five-view modeling sheet and CC0 MakeHuman/MPFB continuous facial topology.",
+  "coordinate_system": "heroine logical coordinates: y up, z forward, x left/right",
+  "profile_curve": [
+    {"landmark":"forehead","y":0.075,"front_z":0.0950,"half_width":0.0550},
+    {"landmark":"glabella","y":0.050,"front_z":0.0990,"half_width":0.0420},
+    {"landmark":"bridge","y":0.020,"front_z":0.1040,"half_width":0.0300},
+    {"landmark":"dorsum","y":-0.010,"front_z":0.1110,"half_width":0.0250},
+    {"landmark":"nose_tip","y":-0.045,"front_z":0.1250,"half_width":0.0220},
+    {"landmark":"columella","y":-0.058,"front_z":0.1150,"half_width":0.0190},
+    {"landmark":"subnasal","y":-0.068,"front_z":0.1030,"half_width":0.0260},
+    {"landmark":"upper_lip","y":-0.079,"front_z":0.1090,"half_width":0.0440},
+    {"landmark":"lower_lip","y":-0.091,"front_z":0.1110,"half_width":0.0460},
+    {"landmark":"labiomental","y":-0.105,"front_z":0.0980,"half_width":0.0440},
+    {"landmark":"chin","y":-0.125,"front_z":0.1030,"half_width":0.0520},
+    {"landmark":"under_chin","y":-0.145,"front_z":0.0710,"half_width":0.0550}
+  ],
+  "surface_blend": {
+    "lateral_power": 4.0,
+    "description": "Use 1/(1+(abs(x)/half_width)^power) to spread depth through neighboring facial vertices rather than a narrow center-line spike."
+  },
+  "eye_target": {
+    "center_x": 0.0475,
+    "center_y": 0.0308,
+    "sclera_half_width": 0.0320,
+    "sclera_half_height": 0.0118,
+    "sclera_edge_z": 0.1032,
+    "sclera_bulge": 0.0042,
+    "iris_half_width": 0.0108,
+    "iris_half_height": 0.0092
+  },
+  "acceptance_views": ["front","left_profile","right_profile","left_three_quarter","right_three_quarter"],
+  "acceptance_notes": [
+    "The nose tip must remain visible in true profile without becoming a bulb in three-quarter view.",
+    "Upper and lower lip volumes must sit in front of the labiomental crease while remaining part of the same surface.",
+    "The chin must project enough to break the spherical egg silhouette but remain behind the lips.",
+    "The entire almond sclera aperture must be readable from the front; the iris must not appear as a target ring."
+  ]
+}
