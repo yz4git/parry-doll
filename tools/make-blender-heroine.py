@@ -16,7 +16,7 @@ def bpos(v):x,y,z=v;return(x,-z,y)
 def bscale(v):x,y,z=v;return(x,z,y)
 def material(name,color,metallic=0.0,roughness=.45):
  m=bpy.data.materials.new(name);m.use_nodes=True;b=m.node_tree.nodes.get('Principled BSDF');b.inputs['Base Color'].default_value=(*color,1);b.inputs['Metallic'].default_value=metallic;b.inputs['Roughness'].default_value=roughness;return m
-SKIN=material('Skin',(0.50,0.335,0.320),0,.72)
+SKIN=material('Skin',(0.36,0.235,0.215),0,.76)
 BLACK=material('Suit Black',(0.014,0.018,0.027),.08,.30)
 BLACK_SOFT=material('Suit Soft',(0.030,0.035,0.048),.02,.44)
 WHITE=material('Porcelain White',(0.86,0.88,0.88),.18,.28)
@@ -31,7 +31,7 @@ for _hair_mat,_spec in ((HAIR,.14),(HAIR_HI,.18)):
   _old=_bsdf.inputs.get('Specular')
   if _ior:_ior.default_value=_spec
   elif _old:_old.default_value=_spec
-SCLERA=material('Sclera',(0.66,0.635,0.615),0,.62)
+SCLERA=material('Sclera',(0.58,0.565,0.550),0,.64)
 IRIS=material('Iris',(0.042,0.031,0.033),.01,.50)
 IRIS_INNER=material('Iris Inner',(0.180,0.125,0.112),.01,.52)
 PUPIL=material('Pupil',(0.004,0.005,0.006),0,.30)
@@ -479,6 +479,7 @@ TH_L=empty('BL_THIGH_L',ROOT);SH_L=empty('BL_SHIN_L',ROOT);FOOT_L=empty('BL_FOOT
 # REFERENCE_V62: cinematic almond gaze, warm skin response and subtle readable side-profile nose.
 # REFERENCE_V63: layered grey-brown irises, smaller pupils and fine separated portrait fringe.
 # REFERENCE_V64: readable soft grey-brown gaze and continuous restrained nose-lip-chin profile.
+# REFERENCE_V65: reference silhouette limb volume, readable warm skin and overlapping pony foundation mass.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
@@ -488,9 +489,9 @@ add_section_mesh(TORSO,'TorsoSuitV58',[
  (-.220,waist_w*.455,waist_d*.45,waist_d*.58,-.001),
  (-.150,bust_w*.350,bust_d*.40,bust_d*.52,.005),
  (-.075,bust_w*.445,bust_d*.41,bust_d*.61,.015),
- (.000,bust_w*.515,bust_d*.43,bust_d*.705,.030),
- (.075,bust_w*.555,bust_d*.45,bust_d*.770,.044),
- (.135,bust_w*.540,bust_d*.45,bust_d*.735,.041),
+ (.000,bust_w*.535,bust_d*.43,bust_d*.705,.030),
+ (.075,bust_w*.580,bust_d*.45,bust_d*.770,.044),
+ (.135,bust_w*.565,bust_d*.45,bust_d*.735,.041),
  (.195,bust_w*.480,bust_d*.42,bust_d*.610,.026),
  (.255,bust_w*.392,bust_d*.37,bust_d*.470,.011),
  (.315,bust_w*.300,bust_d*.31,bust_d*.350,.000)
@@ -531,8 +532,8 @@ for side in(-1,1):
 # Compact pelvis and high waist: measured 0.123H width and 0.089H depth.
 add_section_mesh(PELVIS,'PelvisSuitV47',[
  (-.180,pelvis_w*.445,pelvis_d*.62,pelvis_d*.51,-.018),
- (-.080,pelvis_w*.525,pelvis_d*.60,pelvis_d*.56,-.011),
- (.040,pelvis_w*.510,pelvis_d*.54,pelvis_d*.55,-.004),
+ (-.080,pelvis_w*.555,pelvis_d*.60,pelvis_d*.56,-.011),
+ (.040,pelvis_w*.540,pelvis_d*.54,pelvis_d*.55,-.004),
  (.155,waist_w*.545,waist_d*.55,waist_d*.60,0.000)
 ],BLACK,44)
 add_box(PELVIS,'HighWaist',(0,.105,.012),(pelvis_w*.96,.070,pelvis_d*.88),BLACK,.018)
@@ -644,6 +645,22 @@ for side in(-1,1):
 
 add_box(HEAD,'HairTieV59',(.014,.138,-head_d*.530),(.072,.017,.027),SILVER,.003)
 PONY=empty('BL_PONY_DYNAMIC',HEAD)
+# v6.5 overlapping foundation: broad spline locks eliminate the separated vertical-string silhouette.
+for i in range(5):
+ lane=(i-2)/2
+ sideflow=.055*lane
+ pts=[
+  (lane*.018+.014,.138,-head_d*.540),
+  (lane*.030+.018,.025,-head_d*.615),
+  (lane*.046+.030,-.220,-.255),
+  (lane*.060+.055+sideflow*.25,-.500,-.210),
+  (lane*.075+.085+sideflow*.55,-.820,-.162),
+  (lane*.090+.110+sideflow*.75,-1.150,-.120),
+  (lane*.105+.125+sideflow,-1.485,-.085)
+ ]
+ widths=[.052,.095,.118,.122,.104,.070,.014]
+ depths=[.026,.040,.047,.048,.041,.029,.008]
+ add_smooth_lock(PONY,f'PonyFoundationV65_{i}',pts,widths,depths,HAIR_HI if i in(1,3) else HAIR,14,7)
 # Eleven broad spline-smoothed locks create one readable hair mass with controlled asymmetry.
 for i in range(11):
  lane=(i-5)/5
@@ -670,7 +687,7 @@ for i in range(7):
 
 # === LIMBS ===
 # Diameters come directly from the front sheet; side depth comes from the side view.
-ua=W('upper_arm')*.64;fa=W('forearm')*.60;th=W('thigh_each')*.68;kn=W('knee_each')*.61;calf=W('calf_each')*.59;ank=W('ankle_each')*.50
+ua=W('upper_arm')*.74;fa=W('forearm')*.69;th=W('thigh_each')*.82;kn=W('knee_each')*.70;calf=W('calf_each')*.72;ank=W('ankle_each')*.56
 ua_d=ua*.78;fa_d=fa*.80;th_d=D('thigh')*.50;calf_d=D('calf')*.50;ank_d=D('ankle')*.50
 for group,name,r1,r2,d1,d2,mat in[
  (UA_L,'UpperArmL',ua*1.04,ua*.82,ua_d*1.05,ua_d*.86,SKIN),(UA_R,'UpperArmR',ua*1.04,ua*.82,ua_d*1.05,ua_d*.86,SKIN),
