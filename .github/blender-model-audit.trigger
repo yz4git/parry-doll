@@ -1,1 +1,1 @@
-2026-09-10 Blender heroine v9.1 fuller upper crown cap wraps buried roots removes 3q scalp stripe dual five-view audit
+2026-09-10 Blender heroine v9.2 temporal scalp shell fringe-rear bridge dual five-view audit
