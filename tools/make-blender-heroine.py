@@ -635,6 +635,7 @@ TH_L=empty('BL_THIGH_L',ROOT);SH_L=empty('BL_SHIN_L',ROOT);FOOT_L=empty('BL_FOOT
 # REFERENCE_V84: overlap-closed front fringe with the v8.3 face and eye proportions frozen.
 # REFERENCE_V85: scalp-hugging convex fringe surfaces replace the braided/tubular front locks.
 # REFERENCE_V86: high-sample Catmull-Clark fringe surfaces for smooth production hair silhouette.
+# REFERENCE_V87: unified two-layer side sweep; crown root folded into the main fringe instead of a third fin.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
@@ -797,14 +798,13 @@ add_rear_hair_shell(HEAD,'HairRearShellV59',[
  (.206,head_w*.080,head_d*.105,-head_d*.005)
 ],HAIR,44)
 
-# v8.5: two overlapping convex surfaces form a coherent side-swept fringe instead of rope-like locks.
-add_fringe_surface_v85(HEAD,'FringeSurfaceV85_Main',[(-.108,.194,.034),(-.092,.177,.060),(-.064,.154,.083),(-.026,.130,.099),(.020,.110,.105),(.072,.096,.106)],[.094,.100,.096,.082,.060,.025],[.0050,.0062,.0068,.0056,.0038,.0017],HAIR,.0034)
-add_fringe_surface_v85(HEAD,'FringeSurfaceV85_Over',[(-.040,.199,.030),(-.022,.181,.055),(.006,.158,.079),(.042,.135,.097),(.082,.115,.103),(.116,.102,.103)],[.070,.076,.072,.060,.040,.017],[.0042,.0054,.0059,.0050,.0034,.0013],HAIR_HI,.0031)
-# A compact root overlap seals the crown/front junction while remaining visibly part of the same hair sheet.
-add_fringe_surface_v85(HEAD,'FringeSurfaceV85_Root',[(-.066,.202,.036),(-.048,.190,.061),(-.025,.176,.082),(.003,.163,.097)],[.070,.076,.066,.030],[.0046,.0054,.0050,.0025],HAIR,.0032)
-add_strand(HEAD,'FringeFineV85_A',[(-.102,.187,.043),(-.062,.157,.084),(.026,.112,.108)],.000050,HAIR_HI)
-add_strand(HEAD,'FringeFineV85_B',[(-.052,.194,.040),(.002,.160,.081),(.090,.113,.105)],.000048,HAIR_HI)
-add_strand(HEAD,'FringeFineV85_C',[(-.090,.194,.040),(-.042,.172,.074),(.046,.129,.103)],.000044,HAIR_HI)
+# v8.7: one broad scalp-following sweep carries the crown/root volume itself; a narrower upper
+# layer only adds direction and highlight. This removes the three-fin silhouette from v8.5/v8.6.
+add_fringe_surface_v85(HEAD,'FringeSurfaceV87_Main',[(-.082,.204,.032),(-.076,.192,.047),(-.064,.175,.066),(-.043,.155,.083),(-.014,.136,.097),(.022,.119,.105),(.060,.107,.108),(.094,.101,.106)],[.118,.122,.119,.111,.098,.078,.050,.018],[.0046,.0052,.0058,.0061,.0058,.0048,.0032,.0012],HAIR,.0033)
+add_fringe_surface_v85(HEAD,'FringeSurfaceV87_Over',[(-.034,.202,.034),(-.026,.188,.052),(-.009,.170,.071),(.016,.151,.088),(.047,.134,.100),(.080,.120,.106),(.110,.112,.104)],[.070,.074,.073,.068,.057,.036,.012],[.0038,.0045,.0050,.0052,.0045,.0030,.0010],HAIR_HI,.0028)
+# Two hair-direction accents are enough once the mass reads as a single sweep.
+add_strand(HEAD,'FringeFineV87_A',[(-.078,.193,.050),(-.038,.157,.086),(.032,.121,.108)],.000042,HAIR_HI)
+add_strand(HEAD,'FringeFineV87_B',[(-.028,.193,.047),(.018,.158,.084),(.090,.119,.105)],.000040,HAIR_HI)
 # v8.2 deliberately omits isolated cheek wisps. At portrait scale even a physically thin curve
 # reads as a detached black scratch in profile; the existing broad temple/face locks carry the hairstyle.
 
