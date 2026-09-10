@@ -439,10 +439,10 @@ def add_cc0_face_patch_v77(p,name,mat):
   yy=-.145+yn*.305
   # 0.245 total mapping gives a slim 0.1225 half-face; taper the lower third into the reference V jaw.
   jaw_t=max(0.0,min(1.0,(-.025-yy)/.120))
-  x=vx*.245*(1.0-.105*jaw_t)
+  x=vx*.238*(1.0-.135*jaw_t)
   # Anime-reference eye spacing: spread the orbital band without widening cheeks/jaw globally.
   orbital=math.exp(-((yy-.031)/.035)**2)
-  x+=math.copysign(.0060*orbital*max(0.0,1.0-abs(x)/.122),x) if abs(x)>1e-8 else 0.0
+  x+=math.copysign(.0076*orbital*max(0.0,1.0-abs(x)/.119),x) if abs(x)>1e-8 else 0.0
   # Lock the foremost profile at every height to v7.5+, then transfer only CC0's local rearward relief.
   pz,_=sample_face_profile_v75(yy)
   generic_front=sample_cc0_front_v77(yn)
@@ -582,6 +582,7 @@ TH_L=empty('BL_THIGH_L',ROOT);SH_L=empty('BL_SHIN_L',ROOT);FOOT_L=empty('BL_FOOT
 # REFERENCE_V75: CC0-informed facial plane, absolute profile cage, single iris and flush two-volume lips.
 # REFERENCE_V76: covered hairline, slimmer V-face, wider almond gaze and sculpted Cupid lips.
 # REFERENCE_V77: pinned-CC0 quad topology hybrid face retargeted to the PARRY DOLL multiview profile.
+# REFERENCE_V78: narrower mature face, wider almond gaze, fuller sculpted lips and cleaner swept hairline.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
@@ -692,35 +693,35 @@ add_cc0_face_patch_v77(HEAD,'FaceQuadPatchV77',SKIN)
 add_cylinder(HEAD,'Neck',(0,-.158,-.008),W('neck')*.33,.084,SKIN,26)
 add_cylinder(HEAD,'Choker',(0,-.139,-.006),W('neck')*.46,.034,BLACK,28)
 add_cylinder(HEAD,'ChokerTrim',(0,-.124,-.006),W('neck')*.47,.009,SILVER,28)
-for side in(-1,1):add_sphere(HEAD,f'EarV60_{side}',(side*.126,-.018,-.012),(.009,.021,.008),SKIN,20,12)
+for side in(-1,1):add_sphere(HEAD,f'EarV78_{side}',(side*.121,-.018,-.012),(.0085,.0205,.0078),SKIN,20,12)
 
 # Large but adult almond eyes seated directly on the smooth shell.
 face_front=.0974
-eye_y=.0308
-eye_x=.0465
-eye_rx=.0285
-eye_ry=.0124
-eye_tilt=.0030
+eye_y=.0330
+eye_x=.0498
+eye_rx=.0318
+eye_ry=.0128
+eye_tilt=.0024
 for side in(-1,1):
  ex=side*eye_x
- add_almond_lens(HEAD,f'EyeScleraV76_{side}',ex,eye_y,.1034,.0350,.0127,.00425,SCLERA,8,72,side,eye_tilt*.70)
+ add_almond_lens(HEAD,f'EyeScleraV78_{side}',ex,eye_y,.1038,.0392,.0129,.00410,SCLERA,8,80,side,eye_tilt*.72)
  # v7.1: the embedded eyeball itself supplies the curved visible sclera; no flat white sticker surface.
- add_sphere(HEAD,f'IrisV76_{side}',(ex,eye_y,.1083),(.0123,.0102,.00140),IRIS_INNER,48,28)
+ add_sphere(HEAD,f'IrisV78_{side}',(ex,eye_y,.1087),(.0137,.0104,.00142),IRIS_INNER,52,30)
  # v7.5 intentionally uses a single iris field; no concentric inner target ring.
- add_sphere(HEAD,f'PupilV76_{side}',(ex,eye_y-.0001,.1094),(.00255,.00325,.00096),PUPIL,30,20)
- add_ellipse_surface(HEAD,f'EyeLightV60_{side}',ex-side*.0038,eye_y+.0043,.1100,.00120,.00100,SCLERA,18)
+ add_sphere(HEAD,f'PupilV78_{side}',(ex,eye_y-.0002,.1098),(.00275,.00335,.00098),PUPIL,32,22)
+ add_ellipse_surface(HEAD,f'EyeLightV78_{side}',ex-side*.0044,eye_y+.0041,.1104,.00128,.00102,SCLERA,18)
  inner=ex-side*eye_rx*.94;outer=ex+side*eye_rx*1.02
  add_strand(HEAD,f'UpperLashV76_{side}',[(inner,eye_y-eye_tilt+.0010,.1072),(ex,eye_y+.0138,.1085),(outer,eye_y+eye_tilt+.0010,.1073)],.00088,HAIR)
  add_strand(HEAD,f'UpperLidFoldV76_{side}',[(inner+side*.0042,eye_y-eye_tilt+.0032,.1060),(ex,eye_y+.0160,.1068),(outer-side*.0042,eye_y+eye_tilt+.0032,.1060)],.00021,FACE_DARK)
  add_strand(HEAD,f'LowerLidV76_{side}',[(inner+side*.0042,eye_y-eye_tilt-.0002,.1054),(ex,eye_y-.0095,.1059),(outer-side*.0042,eye_y+eye_tilt-.0002,.1054)],.000075,FACE_DARK)
- add_strand(HEAD,f'BrowV76_{side}',[(ex-side*.026,.064,.1010),(ex,.0715,.1021),(ex+side*.030,.061,.1012)],.00056,HAIR)
+ add_strand(HEAD,f'BrowV78_{side}',[(ex-side*.028,.0655,.1014),(ex,.0725,.1024),(ex+side*.032,.0625,.1016)],.00052,HAIR)
 
 # v7.1 integrated portrait accents: head topology owns all nose/mouth depth.
 # Only a shallow colour patch remains for the lips, following the actual mouth plane instead of floating in front of it.
-add_panel(HEAD,'UpperLipV76_L',[(-.0230,-.0850,.1100),(-.0115,-.0802,.1113),(0,-.0834,.1120),(0,-.0871,.1123),(-.0100,-.0862,.1119),(-.0215,-.0884,.1107)],.00050,LIP)
-add_panel(HEAD,'UpperLipV76_R',[(0,-.0834,.1120),(.0115,-.0802,.1113),(.0230,-.0850,.1100),(.0215,-.0884,.1107),(.0100,-.0862,.1119),(0,-.0871,.1123)],.00050,LIP)
-add_panel(HEAD,'LowerLipV76',[(-.0215,-.0884,.1111),(0,-.0876,.1122),(.0215,-.0884,.1111),(.0185,-.0945,.1108),(0,-.0970,.1110),(-.0185,-.0945,.1108)],.00055,LIP)
-add_strand(HEAD,'MouthSeamV76',[(-.0210,-.0868,.1110),(-.0100,-.0864,.1118),(0,-.0872,.1124),(.0100,-.0864,.1118),(.0210,-.0868,.1110)],.000052,FACE_DARK)
+add_panel(HEAD,'UpperLipV78_L',[(-.0260,-.0850,.1102),(-.0128,-.0797,.1118),(0,-.0828,.1129),(0,-.0870,.1132),(-.0110,-.0860,.1125),(-.0242,-.0883,.1109)],.00066,LIP)
+add_panel(HEAD,'UpperLipV78_R',[(0,-.0828,.1129),(.0128,-.0797,.1118),(.0260,-.0850,.1102),(.0242,-.0883,.1109),(.0110,-.0860,.1125),(0,-.0870,.1132)],.00066,LIP)
+add_panel(HEAD,'LowerLipV78',[(-.0242,-.0884,.1112),(0,-.0874,.1129),(.0242,-.0884,.1112),(.0208,-.0954,.1110),(0,-.0990,.1115),(-.0208,-.0954,.1110)],.00072,LIP)
+add_strand(HEAD,'MouthSeamV78',[(-.0248,-.0868,.1111),(-.0115,-.0862,.1123),(0,-.0872,.1133),(.0115,-.0862,.1123),(.0248,-.0868,.1111)],.000050,FACE_DARK)
 for side in(-1,1):
  add_ellipse_surface(HEAD,f'NostrilTintV76_{side}',side*.0056,-.0570,.1157,.00145,.00052,FACE_DARK,16)
 
@@ -744,8 +745,9 @@ add_rear_hair_shell(HEAD,'HairRearShellV59',[
  (.206,head_w*.080,head_d*.105,-head_d*.005)
 ],HAIR,44)
 
-# v7.7 single continuous front-scalp veil replaces crossed filler ribbons and closes the last forehead opening.
-add_flow_ribbon(HEAD,'HairlineVeilV77',[(0,.194,.052),(0,.177,.073),(0,.158,.091),(0,.138,.103),(0,.118,.109)],[.090,.174,.220,.226,.198],.00110,HAIR)
+# v7.8 swept root closes the seam without reading as a horizontal visor across the forehead.
+add_flow_ribbon(HEAD,'HairlineRootV78',[(-.038,.196,.048),(-.030,.184,.069),(-.014,.169,.087),(.010,.152,.101),(.036,.136,.108)],[.060,.092,.118,.112,.082],.00092,HAIR)
+add_flow_ribbon(HEAD,'HairlineRootHiV78',[(-.070,.188,.046),(-.056,.173,.069),(-.034,.156,.088),(-.006,.142,.101)],[.034,.050,.058,.044],.00052,HAIR_HI)
 
 # Two wide dark planes establish a natural side-swept fringe instead of repeated finger-like locks.
 add_flow_ribbon(HEAD,'FringeSweepV59_A',[(-.112,.182,.012),(-.096,.160,.045),(-.066,.134,.074),(-.027,.107,.096),(.018,.085,.106),(.060,.071,.110)],[.086,.088,.080,.064,.046,.028],.00145,HAIR)
