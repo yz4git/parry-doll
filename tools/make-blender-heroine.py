@@ -527,7 +527,7 @@ def add_cc0_face_patch_v77(p,name,mat):
   yy=-.145+yn*.305
   # 0.245 total mapping gives a slim 0.1225 half-face; taper the lower third into the reference V jaw.
   jaw_t=max(0.0,min(1.0,(-.025-yy)/.120))
-  x=vx*.238*(1.0-.135*jaw_t)
+  x=vx*.238*(1.0-.175*jaw_t)
   # Anime-reference eye spacing: spread the orbital band without widening cheeks/jaw globally.
   orbital=math.exp(-((yy-.031)/.035)**2)
   x+=math.copysign(.0076*orbital*max(0.0,1.0-abs(x)/.119),x) if abs(x)>1e-8 else 0.0
@@ -560,7 +560,7 @@ def add_anime_head_v60(p,name,mat,segments=96,rings=48):
   # Adult/anime silhouette: broad cranium, tapered lower cheek and compact chin.
   lower=max(0.0,min(1.0,(-.030-yy)/.120))
   cheek=math.exp(-((yy+.010)/.060)**2)
-  width=.1285*(1.0-.345*lower+.038*cheek)
+  width=.1285*(1.0-.385*lower+.034*cheek)
   for i in range(segments):
    phi=2*math.pi*i/segments
    cp=math.cos(phi);sp=math.sin(phi)
@@ -696,6 +696,7 @@ TH_L=empty('BL_THIGH_L',ROOT);SH_L=empty('BL_SHIN_L',ROOT);FOOT_L=empty('BL_FOOT
 # REFERENCE_V97: rear hair shell wraps forward around both temples; duplicate v9.6 ears are removed while the original EarV78 anatomy remains.
 # REFERENCE_V98: a hidden convex temporal root underlay fills the fringe-to-side-lock scalp gap while preserving the canonical ears.
 # REFERENCE_V99: side-hair roots stay substantial through the ear line, then taper behind the jaw instead of opening a large bare temporal patch.
+# REFERENCE_V100: adult portrait reset reduces oversized doll eyes and tightens the lower-face silhouette while preserving the established profile and hair.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
@@ -808,26 +809,24 @@ add_cylinder(HEAD,'Choker',(0,-.139,-.006),W('neck')*.46,.034,BLACK,28)
 add_cylinder(HEAD,'ChokerTrim',(0,-.124,-.006),W('neck')*.47,.009,SILVER,28)
 for side in(-1,1):add_sphere(HEAD,f'EarV78_{side}',(side*.121,-.018,-.012),(.0085,.0205,.0078),SKIN,20,12)
 
-# Large but adult almond eyes seated directly on the smooth shell.
+# v10.0 adult-scale almond eyes: narrower apertures, lower iris coverage and subtler lids remove the child/doll read.
 face_front=.0974
 eye_y=.0330
-eye_x=.0478
-eye_rx=.0312
-eye_ry=.0123
-eye_tilt=.0024
+eye_x=.0465
+eye_rx=.0262
+eye_ry=.0099
+eye_tilt=.0018
 for side in(-1,1):
  ex=side*eye_x
- add_almond_surface(HEAD,f'EyeScleraV83_{side}',ex,eye_y,.1030,.0340,.0118,.00130,SCLERA,76,side,eye_tilt*.70)
- # v7.1: the embedded eyeball itself supplies the curved visible sclera; no flat white sticker surface.
- add_ellipse_surface(HEAD,f'IrisV83_{side}',ex,eye_y,.10445,.0118,.0097,IRIS_INNER,42)
- # v7.5 intentionally uses a single iris field; no concentric inner target ring.
- add_ellipse_surface(HEAD,f'PupilV83_{side}',ex,eye_y-.0002,.10482,.00330,.00425,PUPIL,32)
- add_ellipse_surface(HEAD,f'EyeLightV80_{side}',ex-side*.0037,eye_y+.0035,.10505,.00108,.00088,SCLERA,18)
- inner=ex-side*eye_rx*.94;outer=ex+side*eye_rx*1.02
- add_strand(HEAD,f'UpperLashV83_{side}',[(inner,eye_y-eye_tilt+.0008,.1040),(ex,eye_y+.0125,.10465),(outer,eye_y+eye_tilt+.0008,.10405)],.00062,HAIR)
- add_strand(HEAD,f'UpperLidFoldV83_{side}',[(inner+side*.0042,eye_y-eye_tilt+.0030,.10355),(ex,eye_y+.0152,.1040),(outer-side*.0042,eye_y+eye_tilt+.0030,.10355)],.00016,FACE_DARK)
- add_strand(HEAD,f'LowerLidV83_{side}',[(inner+side*.0042,eye_y-eye_tilt-.0001,.10345),(ex,eye_y-.0088,.10375),(outer-side*.0042,eye_y+eye_tilt-.0001,.10345)],.000058,FACE_DARK)
- add_strand(HEAD,f'BrowV80_{side}',[(ex-side*.026,.0650,.1018),(ex,.0710,.1024),(ex+side*.029,.0630,.1019)],.00042,HAIR)
+ add_almond_surface(HEAD,f'EyeScleraV100_{side}',ex,eye_y,.1030,.0288,.0097,.00115,SCLERA,72,side,eye_tilt*.70)
+ add_ellipse_surface(HEAD,f'IrisV100_{side}',ex,eye_y,.10430,.0094,.0078,IRIS_INNER,40)
+ add_ellipse_surface(HEAD,f'PupilV100_{side}',ex,eye_y-.00015,.10466,.00285,.00345,PUPIL,30)
+ add_ellipse_surface(HEAD,f'EyeLightV100_{side}',ex-side*.0030,eye_y+.0028,.10488,.00090,.00072,SCLERA,16)
+ inner=ex-side*eye_rx*.96;outer=ex+side*eye_rx*1.03
+ add_strand(HEAD,f'UpperLashV100_{side}',[(inner,eye_y-eye_tilt+.0006,.10395),(ex,eye_y+.0101,.10450),(outer,eye_y+eye_tilt+.0006,.10400)],.00054,HAIR)
+ add_strand(HEAD,f'UpperLidFoldV100_{side}',[(inner+side*.0035,eye_y-eye_tilt+.0025,.10350),(ex,eye_y+.0124,.10392),(outer-side*.0035,eye_y+eye_tilt+.0025,.10350)],.00014,FACE_DARK)
+ add_strand(HEAD,f'LowerLidV100_{side}',[(inner+side*.0035,eye_y-eye_tilt-.0001,.10342),(ex,eye_y-.0072,.10368),(outer-side*.0035,eye_y+eye_tilt-.0001,.10342)],.000052,FACE_DARK)
+ add_strand(HEAD,f'BrowV100_{side}',[(ex-side*.0235,.0645,.1018),(ex,.0698,.1023),(ex+side*.0255,.0630,.1019)],.00038,HAIR)
 
 # v7.1 integrated portrait accents: head topology owns all nose/mouth depth.
 # Only a shallow colour patch remains for the lips, following the actual mouth plane instead of floating in front of it.
