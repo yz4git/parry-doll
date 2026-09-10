@@ -1,0 +1,74 @@
+name: Blender Heroine High-Res Face Audit
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/blender-model-audit.trigger
+
+permissions:
+  contents: read
+
+jobs:
+  capture-face:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install capture stack
+        run: |
+          sudo rm -f /etc/apt/sources.list.d/google-chrome.list /etc/apt/sources.list.d/google-chrome.sources || true
+          sudo apt-get clean
+          sudo rm -rf /var/lib/apt/lists/*
+          npm init -y >/dev/null 2>&1
+          npm install playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Serve game
+        run: |
+          python3 -m http.server 4173 --directory dist > /tmp/parry-http.log 2>&1 &
+          for i in {1..30}; do curl -fsS http://127.0.0.1:4173/ >/dev/null && exit 0; sleep 1; done
+          cat /tmp/parry-http.log
+          exit 1
+      - name: Capture high-resolution five-view portrait
+        run: |
+          mkdir -p blender-face-hires-audit
+          cat > blender-face-hires-audit.cjs <<'NODE'
+          const { chromium } = require('playwright');
+          const sleep = ms => new Promise(r=>setTimeout(r,ms));
+          (async()=>{
+            const browser=await chromium.launch({headless:true,args:['--enable-webgl','--ignore-gpu-blocklist','--enable-unsafe-swiftshader','--use-gl=angle','--use-angle=swiftshader-webgl','--disable-dev-shm-usage']});
+            const context=await browser.newContext({viewport:{width:1024,height:1024},deviceScaleFactor:1,isMobile:true,hasTouch:true,userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 26_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1'});
+            const page=await context.newPage();
+            await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});
+            await page.waitForFunction(()=>window.ParryModelViewer?.isAvailable?.()&&window.ParryHeroineAppearance?.state,{timeout:20000});
+            await page.waitForSelector('#modelViewerOpen',{timeout:10000});
+            await page.locator('#modelViewerOpen').click();
+            await page.waitForSelector('#modelViewerUI.show',{timeout:5000});
+            await page.evaluate(()=>window.ParryHeroineAppearance.set('blender'));
+            await page.waitForFunction(()=>{const s=window.ParryHeroineAppearance?.state?.();return s?.selected==='blender'&&s?.blenderReady===true&&s?.active==='blender'},null,{timeout:20000});
+            const pose=async(yaw,name)=>{
+              await page.evaluate(({yaw})=>{window.ParryModelViewer.reset();window.ParryModelViewer.setAuto(false);window.ParryModelViewer.rotate(.46,-.055);window.ParryModelViewer.preset('face');window.ParryModelViewer.rotate(yaw,0)},{yaw});
+              await sleep(450);
+              await page.screenshot({path:`blender-face-hires-audit/${name}.png`});
+            };
+            await pose(0,'00-face-front-1024');
+            await pose(-Math.PI/4,'01-face-left-3q-1024');
+            await pose(-Math.PI/2,'02-face-left-profile-1024');
+            await pose(Math.PI/4,'03-face-right-3q-1024');
+            await pose(Math.PI/2,'04-face-right-profile-1024');
+            await browser.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+          node blender-face-hires-audit.cjs
+      - name: Upload high-resolution face frames
+        uses: actions/upload-artifact@v4
+        with:
+          name: parry-doll-blender-face-hires-audit
+          path: blender-face-hires-audit/
+          if-no-files-found: error
+          retention-days: 3
