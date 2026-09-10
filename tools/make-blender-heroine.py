@@ -589,6 +589,7 @@ TH_L=empty('BL_THIGH_L',ROOT);SH_L=empty('BL_SHIN_L',ROOT);FOOT_L=empty('BL_FOOT
 # REFERENCE_V78: narrower mature face, wider almond gaze, fuller sculpted lips and cleaner swept hairline.
 # REFERENCE_V79: embedded eyes, stronger adult nose bridge, integrated lips and an open asymmetric fringe.
 # REFERENCE_V80: mature flush almond eyes, softened centre profile and rounded side-swept hair masses.
+# REFERENCE_V81: clean cheek silhouette, lifted side wisps and sealed crown root for production portrait readability.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
@@ -755,13 +756,14 @@ add_rear_hair_shell(HEAD,'HairRearShellV59',[
 add_smooth_lock(HEAD,'FringeMassV80_A',[(-.090,.190,.030),(-.075,.177,.055),(-.048,.160,.078),(-.010,.145,.095),(.034,.134,.101),(.076,.126,.098)],[.048,.052,.049,.039,.026,.010],[.018,.019,.017,.013,.009,.004],HAIR,14,6)
 add_smooth_lock(HEAD,'FringeMassV80_B',[(-.035,.194,.026),(-.016,.181,.052),(.014,.165,.076),(.050,.150,.094),(.086,.138,.099),(.112,.130,.096)],[.041,.043,.039,.030,.019,.008],[.016,.017,.015,.011,.007,.003],HAIR,14,6)
 add_smooth_lock(HEAD,'FringeAccentV80',[(-.112,.184,.024),(-.092,.169,.050),(-.064,.153,.074),(-.028,.140,.090),(.012,.132,.098)],[.025,.027,.024,.018,.007],[.010,.010,.009,.006,.003],HAIR_HI,12,5)
+add_smooth_lock(HEAD,'CrownRootSealV81',[(.004,.203,.018),(.018,.195,.037),(.034,.184,.055),(.050,.173,.071)],[.034,.032,.024,.009],[.014,.013,.010,.004],HAIR,14,5)
 add_strand(HEAD,'FringeFineV80_A',[(-.098,.177,.028),(-.058,.155,.076),(.030,.132,.101)],.000070,HAIR_HI)
 add_strand(HEAD,'FringeFineV80_B',[(-.040,.181,.027),(.018,.158,.077),(.098,.133,.099)],.000066,HAIR_HI)
 add_strand(HEAD,'FringeFineV80_C',[(-.116,.176,.026),(-.082,.158,.062),(-.012,.137,.095)],.000060,HAIR_HI)
 add_strand(HEAD,'FringeFineV80_D',[(-.070,.184,.025),(-.024,.162,.065),(.058,.137,.098)],.000060,HAIR_HI)
 add_strand(HEAD,'FringeFineV80_E',[(-.008,.184,.025),(.038,.163,.066),(.108,.136,.097)],.000058,HAIR_HI)
 for side in(-1,1):
- add_strand(HEAD,f'FaceWispV63_{side}',[(side*.105,.124,.094),(side*.116,.072,.101),(side*.120,.010,.099),(side*.112,-.052,.094)],.00010,HAIR_HI)
+ add_strand(HEAD,f'SideWispV81_{side}',[(side*.124,.118,.103),(side*.132,.075,.106),(side*.136,.022,.104),(side*.132,-.032,.099),(side*.124,-.073,.092)],.000075,HAIR_HI)
 
 for side in(-1,1):
  pts=[(side*head_w*.394,.112,-head_d*.038),(side*head_w*.423,.050,-.013),(side*head_w*.428,-.028,-.016),(side*head_w*.416,-.103,-.044),(side*head_w*.401,-.178,-.064)]
