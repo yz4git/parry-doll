@@ -1,1 +1,1 @@
-2026-09-10 build Blender heroine v9.0 crown-buried zero-width roots continuous cap-fringe join no filler blobs
+2026-09-10 build Blender heroine v9.1 fuller upper crown cap wraps buried fringe roots no scalp stripe
