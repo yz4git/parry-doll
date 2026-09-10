@@ -528,6 +528,11 @@ def add_cc0_face_patch_v77(p,name,mat):
   # 0.245 total mapping gives a slim 0.1225 half-face; taper the lower third into the reference V jaw.
   jaw_t=max(0.0,min(1.0,(-.025-yy)/.120))
   x=vx*.238*(1.0-.175*jaw_t)
+  # The open CC0 patch used to stay too wide below the mouth while HeadShellV60 narrows sharply.
+  # Smoothly pull only the lower third inward so its boundary stays inside the jaw/under-chin silhouette.
+  under_t=max(0.0,min(1.0,(-.080-yy)/.065))
+  under_t=under_t*under_t*(3.0-2.0*under_t)
+  x*=1.0-.40*under_t
   # Anime-reference eye spacing: spread the orbital band without widening cheeks/jaw globally.
   orbital=math.exp(-((yy-.031)/.035)**2)
   x+=math.copysign(.0076*orbital*max(0.0,1.0-abs(x)/.119),x) if abs(x)>1e-8 else 0.0
@@ -702,6 +707,7 @@ TH_L=empty('BL_THIGH_L',ROOT);SH_L=empty('BL_SHIN_L',ROOT);FOOT_L=empty('BL_FOOT
 # REFERENCE_V103: adult visible ears sit outside a notched temporal undercap, restoring a natural hairline-to-ear transition in profile.
 # REFERENCE_V104: the notched temporal undercap widens rearward into the rear-hair shell, covering the exposed side scalp without hiding the ears.
 # REFERENCE_V105: visible rear-hair geometry expands around ear height while the buried v10.4 undercap returns to the compact v10.3 footprint.
+# REFERENCE_V106: the CC0 face patch lower third tapers into the head shell, removing the collar-like under-chin boundary spikes without changing eyes, nose or cheeks.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
