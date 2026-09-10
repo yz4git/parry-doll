@@ -1,1 +1,1 @@
-2026-09-10 Blender heroine v6.0 stable UV portrait head continuous facial planes restrained adult profile WebGL audit
+2026-09-10 Blender heroine v6.1 expressive larger eyes tapered jaw restrained explicit nose lip profile WebGL audit
