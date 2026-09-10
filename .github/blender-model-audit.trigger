@@ -1,1 +1,1 @@
-2026-09-10 Blender heroine v7.0 volumetric portrait eyes unified nose curved natural lips WebGL audit
+2026-09-10 Blender heroine v7.1 integrated multiview face surface embedded eyes WebGL audit
