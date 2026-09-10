@@ -1,1 +1,1 @@
-2026-09-10 Blender heroine v4.9 skull hair vertical pony warm irises stronger profile WebGL audit
+2026-09-10 Blender heroine v5.0 open rear hair shell readable portrait eyes softer profile connected shoulders WebGL audit
