@@ -78,6 +78,11 @@ jobs:
             await page.screenshot({path:'blender-model-audit/08-blender-face-left.png'});
             await page.evaluate(()=>window.ParryModelViewer.rotate(Math.PI,0));await sleep(300);
             await page.screenshot({path:'blender-model-audit/09-blender-face-right.png'});
+            // Multi-view geometry gate: 3/4 views catch front/profile compromises that orthographic extremes miss.
+            await page.evaluate(()=>{window.ParryModelViewer.reset();window.ParryModelViewer.setAuto(false);window.ParryModelViewer.rotate(.46,-.055);window.ParryModelViewer.preset('face');window.ParryModelViewer.rotate(-Math.PI/4,0)});await sleep(300);
+            await page.screenshot({path:'blender-model-audit/10-blender-face-left-3q.png'});
+            await page.evaluate(()=>{window.ParryModelViewer.reset();window.ParryModelViewer.setAuto(false);window.ParryModelViewer.rotate(.46,-.055);window.ParryModelViewer.preset('face');window.ParryModelViewer.rotate(Math.PI/4,0)});await sleep(300);
+            await page.screenshot({path:'blender-model-audit/11-blender-face-right-3q.png'});
             await page.locator('#mvModel').click();
             await page.waitForFunction(()=>window.ParryHeroineAppearance?.state?.().active==='classic',{timeout:5000});await sleep(250);
             const backClassic=await page.evaluate(()=>window.ParryHeroineAppearance.state());
