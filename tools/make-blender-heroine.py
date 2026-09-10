@@ -530,9 +530,9 @@ def add_cc0_face_patch_v77(p,name,mat):
   x=vx*.238*(1.0-.175*jaw_t)
   # The open CC0 patch used to stay too wide below the mouth while HeadShellV60 narrows sharply.
   # Smoothly pull only the lower third inward so its boundary stays inside the jaw/under-chin silhouette.
-  under_t=max(0.0,min(1.0,(-.080-yy)/.065))
+  under_t=max(0.0,min(1.0,(-.078-yy)/.067))
   under_t=under_t*under_t*(3.0-2.0*under_t)
-  x*=1.0-.40*under_t
+  x*=1.0-.52*under_t
   # Anime-reference eye spacing: spread the orbital band without widening cheeks/jaw globally.
   orbital=math.exp(-((yy-.031)/.035)**2)
   x+=math.copysign(.0076*orbital*max(0.0,1.0-abs(x)/.119),x) if abs(x)>1e-8 else 0.0
@@ -543,7 +543,8 @@ def add_cc0_face_patch_v77(p,name,mat):
   # Reduce generic relief near the outer seam so it blends gently into the recessed UV cranium.
   seam=max(0.0,min(1.0,(.126-abs(x))/.040))
   relief_gain=.62+.38*seam
-  z=pz+local_relief*relief_gain+.0016
+  # Keep the expressive face patch proud through the cheeks, then settle its lower boundary into the backing shell.
+  z=pz+local_relief*relief_gain+(.0016-.0012*under_t)
   bridge_lat=math.exp(-(x/.030)**2)
   tip_lat=math.exp(-(x/.0215)**2)
   z+=.0024*bridge_lat*math.exp(-((yy+.006)/.052)**2)
@@ -708,6 +709,7 @@ TH_L=empty('BL_THIGH_L',ROOT);SH_L=empty('BL_SHIN_L',ROOT);FOOT_L=empty('BL_FOOT
 # REFERENCE_V104: the notched temporal undercap widens rearward into the rear-hair shell, covering the exposed side scalp without hiding the ears.
 # REFERENCE_V105: visible rear-hair geometry expands around ear height while the buried v10.4 undercap returns to the compact v10.3 footprint.
 # REFERENCE_V106: the CC0 face patch lower third tapers into the head shell, removing the collar-like under-chin boundary spikes without changing eyes, nose or cheeks.
+# REFERENCE_V107: the remaining lower patch edge tightens further and settles into the head shell, eliminating the last under-chin sawtooth silhouette.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
