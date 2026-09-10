@@ -42,9 +42,18 @@ jobs:
           du -h "$SRC/avatar-sources/anny/3dobjs/base.obj"
       - name: Analyze topology and extract normalized face patch
         run: |
-          python tools/analyze-cc0-face-topology.py --source-root /tmp/threews-cc0/avatar-sources/anny
+          python tools/analyze-cc0-face-topology-v2.py --source-root /tmp/threews-cc0/avatar-sources/anny
           python -m json.tool tools/cc0-face-topology-stats.json >/dev/null
           python -m json.tool tools/cc0-face-topology-template-v1.json >/dev/null
+          python - <<'PY'
+          import json
+          s=json.load(open('tools/cc0-face-topology-stats.json'))
+          p=s['patch']
+          assert 250 <= p['retained_vertices'] < 6000, p
+          assert p['boundary_edges'] > 0, p
+          assert p['quad_ratio'] > .90, p
+          print('local face patch',p['retained_vertices'],'verts',p['faces'],'faces','quad',p['quad_ratio'])
+          PY
           test -s docs/CC0_FACE_TOPOLOGY_ANALYSIS.md
       - name: Commit analysis products
         run: |
@@ -55,5 +64,5 @@ jobs:
             echo 'CC0 face analysis already current'
             exit 0
           fi
-          git commit -m 'docs: analyze pinned CC0 hm08 face topology'
+          git commit -m 'docs: refine pinned CC0 hm08 local face topology'
           git push origin main
