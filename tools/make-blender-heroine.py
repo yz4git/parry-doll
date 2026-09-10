@@ -694,6 +694,7 @@ TH_L=empty('BL_THIGH_L',ROOT);SH_L=empty('BL_SHIN_L',ROOT);FOOT_L=empty('BL_FOOT
 # REFERENCE_V95: three tapered convex scalp leaves per side replace the detached ear-pad lock with a continuous swept temple-to-rear flow.
 # REFERENCE_V96: anatomically readable ears and unified temporal-hair tone make the remaining exposed side skin intentional rather than bald.
 # REFERENCE_V97: rear hair shell wraps forward around both temples; duplicate v9.6 ears are removed while the original EarV78 anatomy remains.
+# REFERENCE_V98: a hidden convex temporal root underlay fills the fringe-to-side-lock scalp gap while preserving the canonical ears.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
@@ -859,6 +860,21 @@ add_rear_hair_shell(HEAD,'HairRearShellV59',[
  (.194,head_w*.230,head_d*.270,-head_d*.013),
  (.206,head_w*.080,head_d*.105,-head_d*.005)
 ],HAIR,44)
+
+# v9.8 root underlay: this is intentionally broad but sits underneath the visible v9.5 leaves.
+# It covers only the upper side scalp and tapers out above the ear, preventing a helmet panel or ear-pad read.
+for side in (-1,1):
+ add_temporal_leaf_v95(HEAD,f'TemporalRootUnderlayV98_{side}',side,[
+  (.170,head_w*.385, head_d*.042,.004,.0008),
+  (.151,head_w*.440, head_d*.040,.022,.0020),
+  (.128,head_w*.492, head_d*.035,.040,.0034),
+  (.102,head_w*.530, head_d*.026,.055,.0046),
+  (.075,head_w*.552, head_d*.014,.064,.0056),
+  (.050,head_w*.560, head_d*.002,.066,.0058),
+  (.029,head_w*.556,-head_d*.010,.058,.0050),
+  (.014,head_w*.542,-head_d*.020,.044,.0038),
+  (.006,head_w*.520,-head_d*.026,.022,.0020)
+ ],HAIR,15)
 
 # v9.5: three overlapping tapered scalp leaves carry the side sweep from crown to rear hair.
 # They span the exposed temple/ear zone in depth while remaining thin radially, so profile reads as
