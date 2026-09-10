@@ -17,7 +17,8 @@ s=s.replace(
 
 # A full 360-degree section mesh inevitably becomes a helmet at the cheeks. Build a rear-only scalp shell
 # and let the fringe cover the open front instead.
-helper=r'''\ndef add_rear_hair_shell(p,name,sections,mat,segments=36):
+helper=r'''
+def add_rear_hair_shell(p,name,sections,mat,segments=36):
  verts=[]
  # Logical Z is front/back; only sample the rear half of each horizontal section.
  angles=[math.pi+.055+(math.pi-.110)*i/segments for i in range(segments+1)]
