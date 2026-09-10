@@ -1,1 +1,1 @@
-2026-09-10 build Blender heroine v7.5 absolute CC0 face cage facial plane single iris hires multiview
+2026-09-10 build Blender heroine v7.6 covered hairline slimmer V-face wider almond gaze sculpted Cupid lips
