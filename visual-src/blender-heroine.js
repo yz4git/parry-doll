@@ -6,7 +6,7 @@ const Y=new THREE.Vector3(0,1,0);
 const TMP=new THREE.Vector3();
 // Measured from the user-provided four-view sheet, normalized to the Blender model's 2.42u nominal height.
 // These are visual-only retarget values. Gameplay/PBD nodes remain untouched.
-const REF_SHOULDER_HALF=.178;
+const REF_SHOULDER_HALF=.172;
 const REF_HIP_HALF=.151;
 
 function referenceRetarget(d,base){
