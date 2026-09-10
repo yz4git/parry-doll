@@ -318,7 +318,7 @@ def add_fringe_surface_v85(p,name,pts,widths,lifts,mat,thickness=.0032):
 def add_temporal_shell_v92(p,name,side,rows,mat,arc_segments=16):
  # rows: (logical_y, half_width, depth, z_offset).  The shell spans only the side scalp:
  # front-temple -> true side -> rear-temple, never crossing the cheek or eye region.
- angles=[-.72+1.46*i/arc_segments for i in range(arc_segments+1)]
+ angles=[-1.12+1.28*i/arc_segments for i in range(arc_segments+1)]
  verts=[]
  for yy,w,d,zoff in rows:
   for a in angles:
@@ -664,6 +664,7 @@ TH_L=empty('BL_THIGH_L',ROOT);SH_L=empty('BL_SHIN_L',ROOT);FOOT_L=empty('BL_FOOT
 # REFERENCE_V90: crown-buried zero-width roots replace filler blobs and create continuous hair-cap/fringe overlap.
 # REFERENCE_V91: fuller upper crown cap wraps the buried roots and removes the remaining 3/4 scalp stripe.
 # REFERENCE_V92: dedicated scalp-hugging temporal shells bridge fringe to rear hair above the ears without cheek wisps.
+# REFERENCE_V93: rear-biased lower temporal shells cover the ear-zone scalp while preserving the cheek and eye silhouette.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
@@ -831,14 +832,17 @@ add_rear_hair_shell(HEAD,'HairRearShellV59',[
 # v9.2 fills the true remaining gap: side scalp between the side-swept fringe and rear shell.
 # It stops above the ears and remains outside the facial plane, avoiding the old on-cheek wisp artifacts.
 for side in (-1,1):
- add_temporal_shell_v92(HEAD,f'TemporalHairShellV92_{side}',side,[
-  (.176,head_w*.390,head_d*.338,-head_d*.018),
-  (.151,head_w*.455,head_d*.405,-head_d*.024),
-  (.121,head_w*.492,head_d*.455,-head_d*.030),
-  (.090,head_w*.505,head_d*.470,-head_d*.036),
-  (.062,head_w*.474,head_d*.438,-head_d*.041),
-  (.044,head_w*.425,head_d*.392,-head_d*.044)
- ],HAIR,18)
+ add_temporal_shell_v92(HEAD,f'TemporalHairShellV93_{side}',side,[
+  (.178,head_w*.405,head_d*.365,-head_d*.020),
+  (.150,head_w*.470,head_d*.430,-head_d*.028),
+  (.118,head_w*.515,head_d*.485,-head_d*.036),
+  (.083,head_w*.542,head_d*.520,-head_d*.044),
+  (.048,head_w*.548,head_d*.535,-head_d*.051),
+  (.014,head_w*.535,head_d*.535,-head_d*.057),
+  (-.018,head_w*.510,head_d*.520,-head_d*.062),
+  (-.046,head_w*.468,head_d*.495,-head_d*.066),
+  (-.066,head_w*.420,head_d*.455,-head_d*.068)
+ ],HAIR,22)
 
 # v9.0: the fringe is born inside the existing crown cap instead of being patched to it with blobs.
 # The first two samples are narrow and hidden under the cap; width only opens after the path exits the crown.
