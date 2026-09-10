@@ -1,1 +1,1 @@
-2026-09-10 build Blender heroine v8.5 scalp-hugging convex fringe surfaces replace braided tubular front locks
+2026-09-10 build Blender heroine v8.6 dense Catmull-Clark fringe surfaces reduced crown lift
