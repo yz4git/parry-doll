@@ -1,1 +1,1 @@
-2026-09-10 build Blender heroine v7.9 embedded gaze stronger nose integrated mouth open side-swept fringe
+2026-09-10 build Blender heroine v8.0 flush mature gaze softer profile integrated lips rounded side-swept hair
