@@ -1,1 +1,1 @@
-2026-09-10 build Blender heroine v5.0 open rear hair shell readable eyes softer profile connected shoulders
+2026-09-10 rebuild Blender heroine v5.0 after rear hair helper syntax fix
