@@ -2,297 +2,221 @@
   "source": {
     "repo": "https://github.com/nirholas/three.ws",
     "commit": "03264788d967bcd33844be70e35db05b231aa017",
-    "path": "avatar-sources/anny",
     "license": "CC0-1.0",
     "base_mesh": "MakeHuman/MPFB hm08",
-    "coordinate_system": "Y-up, +Z face-forward, OBJ units as source"
+    "coordinate_system": "Y-up, +Z face-forward"
   },
-  "mesh": {
-    "total_vertices": 19158,
-    "body_vertex_limit": 13380,
-    "total_faces": 18486,
-    "body_faces": 13378
+  "head_roi": {
+    "head_target_files": 27,
+    "head_vertices": 4355,
+    "bbox": {
+      "min": [
+        -0.8793,
+        5.4729,
+        -0.3916
+      ],
+      "max": [
+        0.8793,
+        8.4913,
+        1.6807
+      ]
+    },
+    "front_cut_z": 0.1886440000000001,
+    "core_allowed_vertices": 4091,
+    "ring_allowed_vertices": 4154
   },
-  "facial_regions": {
+  "regions": {
     "cheek": {
       "target_files": 16,
-      "unique_body_vertices": 766,
-      "normalized_box": {
-        "min": [
-          0.23586,
-          0.014227,
-          0.075246
-        ],
-        "max": [
-          0.76414,
-          0.945327,
-          0.61807
-        ],
-        "centroid": [
-          0.5,
-          0.894704,
-          0.540871
-        ]
-      }
+      "raw_vertices": 766,
+      "local_vertices": 744
     },
     "chin": {
       "target_files": 15,
-      "unique_body_vertices": 11823,
-      "normalized_box": {
-        "min": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "max": [
-          1.0,
-          1.0,
-          1.0
-        ],
-        "centroid": [
-          0.5,
-          0.600546,
-          0.536738
-        ]
-      }
+      "raw_vertices": 11823,
+      "local_vertices": 3720
     },
     "eyebrows": {
       "target_files": 6,
-      "unique_body_vertices": 838,
-      "normalized_box": {
-        "min": [
-          0.432789,
-          0.91859,
-          0.466916
-        ],
-        "max": [
-          0.567211,
-          0.983228,
-          0.603248
-        ],
-        "centroid": [
-          0.5,
-          0.934615,
-          0.555792
-        ]
-      }
+      "raw_vertices": 838,
+      "local_vertices": 838
     },
     "eyes": {
       "target_files": 68,
-      "unique_body_vertices": 1318,
-      "normalized_box": {
-        "min": [
-          0.43565,
-          0.898775,
-          0.498641
-        ],
-        "max": [
-          0.56435,
-          0.945891,
-          0.601215
-        ],
-        "centroid": [
-          0.5,
-          0.926091,
-          0.555394
-        ]
-      }
+      "raw_vertices": 1318,
+      "local_vertices": 1318
     },
     "forehead": {
       "target_files": 8,
-      "unique_body_vertices": 594,
-      "normalized_box": {
-        "min": [
-          0.42089,
-          0.90982,
-          0.147467
-        ],
-        "max": [
-          0.57911,
-          1.0,
-          0.602563
-        ],
-        "centroid": [
-          0.5,
-          0.945576,
-          0.434781
-        ]
-      }
+      "raw_vertices": 594,
+      "local_vertices": 484
     },
     "mouth": {
       "target_files": 44,
-      "unique_body_vertices": 940,
-      "normalized_box": {
-        "min": [
-          0.444002,
-          0.486161,
-          0.502636
-        ],
-        "max": [
-          0.555998,
-          0.909508,
-          0.635777
-        ],
-        "centroid": [
-          0.499972,
-          0.890617,
-          0.586216
-        ]
-      }
+      "raw_vertices": 940,
+      "local_vertices": 939
     },
     "nose": {
       "target_files": 42,
-      "unique_body_vertices": 730,
-      "normalized_box": {
-        "min": [
-          0.447871,
-          0.887346,
-          0.379282
-        ],
-        "max": [
-          0.552129,
-          0.938477,
-          0.637361
-        ],
-        "centroid": [
-          0.500044,
-          0.908639,
-          0.594172
-        ]
-      }
-    },
-    "head": {
-      "target_files": 27,
-      "unique_body_vertices": 4355,
-      "normalized_box": {
-        "min": [
-          0.411409,
-          0.818812,
-          0.147467
-        ],
-        "max": [
-          0.588591,
-          1.0,
-          0.637361
-        ],
-        "centroid": [
-          0.5,
-          0.910958,
-          0.484679
-        ]
-      }
+      "raw_vertices": 730,
+      "local_vertices": 730
     }
   },
   "patch": {
-    "core_target_vertices": 12130,
-    "expanded_two_ring_vertices": 13380,
-    "retained_vertices": 13380,
-    "retained_faces": 13378,
+    "seed_vertices": 4011,
+    "expanded_vertices": 4154,
+    "retained_vertices": 4154,
+    "faces": 4106,
+    "quads": 4106,
     "triangles": 0,
-    "quads": 13378,
     "ngons": 0,
     "quad_ratio": 1.0,
-    "boundary_edges": 0,
-    "connected_components": [
-      13380
+    "boundary_edges": 94,
+    "components_before_largest": [
+      4154
     ],
-    "valence_histogram": {
-      "3": 164,
-      "4": 13060,
-      "5": 156
-    },
     "bbox": {
       "min": [
-        -4.9627,
-        -8.1676,
-        -1.0154
+        -0.928,
+        5.3707,
+        0.0729
       ],
       "max": [
-        4.9627,
+        0.928,
         8.4913,
-        3.2147
+        1.6807
       ]
     },
     "profile_samples_normalized": [
       {
-        "y": 0.354177,
-        "front_z": 0.314342,
-        "x_from_center": -0.07378
+        "y": 0.0,
+        "front_z": 0.500062,
+        "x": -0.05458
       },
       {
-        "y": 0.401263,
-        "front_z": 0.420463,
-        "x_from_center": -0.068561
+        "y": 0.085464,
+        "front_z": 0.388419,
+        "x": 0.0
       },
       {
-        "y": 0.453193,
-        "front_z": 0.480178,
-        "x_from_center": -0.062607
+        "y": 0.131641,
+        "front_z": 0.384874,
+        "x": 0.0
       },
       {
-        "y": 0.49442,
-        "front_z": 0.527269,
-        "x_from_center": 0.0
+        "y": 0.179453,
+        "front_z": 0.396442,
+        "x": 0.0
       },
       {
-        "y": 0.527046,
-        "front_z": 0.566133,
-        "x_from_center": 0.0
+        "y": 0.2247,
+        "front_z": 0.418398,
+        "x": 0.0
       },
       {
-        "y": 0.566934,
-        "front_z": 0.582776,
-        "x_from_center": -0.014911
+        "y": 0.274306,
+        "front_z": 0.859497,
+        "x": 0.0
       },
       {
-        "y": 0.622868,
-        "front_z": 0.584525,
-        "x_from_center": -0.011959
+        "y": 0.306383,
+        "front_z": 0.886988,
+        "x": 0.0
       },
       {
-        "y": 0.666629,
-        "front_z": 0.615352,
-        "x_from_center": -0.013601
+        "y": 0.35679,
+        "front_z": 0.895758,
+        "x": 0.028879
       },
       {
-        "y": 0.682242,
-        "front_z": 0.623106,
-        "x_from_center": -0.01344
+        "y": 0.379927,
+        "front_z": 0.928474,
+        "x": 0.0
       },
       {
-        "y": 0.716548,
-        "front_z": 0.617716,
-        "x_from_center": -0.070486
+        "y": 0.4204,
+        "front_z": 0.950989,
+        "x": 0.0
       },
       {
-        "y": 0.751646,
-        "front_z": 0.562776,
-        "x_from_center": -0.058728
+        "y": 0.428956,
+        "front_z": 0.947008,
+        "x": -0.027748
       },
       {
-        "y": 0.794224,
-        "front_z": 0.487057,
-        "x_from_center": -0.048643
+        "y": 0.49295,
+        "front_z": 1.0,
+        "x": 0.0
       },
       {
-        "y": 0.870069,
-        "front_z": 0.594407,
-        "x_from_center": 0.0
+        "y": 0.502403,
+        "front_z": 0.99944,
+        "x": 0.0
       },
       {
-        "y": 0.905018,
-        "front_z": 0.637361,
-        "x_from_center": 0.0
+        "y": 0.543421,
+        "front_z": 0.954783,
+        "x": 0.0
       },
       {
-        "y": 0.916759,
-        "front_z": 0.614264,
-        "x_from_center": 0.0
+        "y": 0.585016,
+        "front_z": 0.91025,
+        "x": 0.0
       },
       {
-        "y": 0.961474,
-        "front_z": 0.588189,
-        "x_from_center": 0.0
+        "y": 0.615555,
+        "front_z": 0.892275,
+        "x": 0.0
+      },
+      {
+        "y": 0.67157,
+        "front_z": 0.9026,
+        "x": 0.0
+      },
+      {
+        "y": 0.701628,
+        "front_z": 0.908446,
+        "x": 0.0
+      },
+      {
+        "y": 0.716978,
+        "front_z": 0.906954,
+        "x": 0.0
+      },
+      {
+        "y": 0.752548,
+        "front_z": 0.896256,
+        "x": 0.0
+      },
+      {
+        "y": 0.794334,
+        "front_z": 0.870631,
+        "x": 0.0
+      },
+      {
+        "y": 0.847145,
+        "front_z": 0.822179,
+        "x": 0.0
+      },
+      {
+        "y": 0.882811,
+        "front_z": 0.775967,
+        "x": 0.0
+      },
+      {
+        "y": 0.910466,
+        "front_z": 0.734731,
+        "x": 0.0
+      },
+      {
+        "y": 0.935333,
+        "front_z": 0.680557,
+        "x": 0.0
+      },
+      {
+        "y": 0.974075,
+        "front_z": 0.5589,
+        "x": 0.0
       }
     ]
   }
