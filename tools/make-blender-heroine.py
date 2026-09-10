@@ -482,6 +482,7 @@ TH_L=empty('BL_THIGH_L',ROOT);SH_L=empty('BL_SHIN_L',ROOT);FOOT_L=empty('BL_FOOT
 # REFERENCE_V65: reference silhouette limb volume, readable warm skin and overlapping pony foundation mass.
 # REFERENCE_V66: surfaced bust contour, visible white bodice couture and fanned pony flow.
 # REFERENCE_V67: integrated bust contour, upper-chest couture wings, almond gaze and wide high-pony silhouette.
+# REFERENCE_V68: layered porcelain torso shell, narrow black corset centre and natural portrait eye spacing.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
@@ -500,7 +501,7 @@ add_section_mesh(TORSO,'TorsoSuitV58',[
 ],BLACK,56)
 # Shallow soft-tissue support over a continuous ribcage. The outer envelope remains reference-locked.
 for side in(-1,1):
- add_sphere(TORSO,f'BustContourV67_{side}',(side*bust_w*.182,.102,bust_d*.670),(bust_w*.205,.074,bust_d*.112),BLACK_SOFT,44,28)
+ add_sphere(TORSO,f'BustContourV68_{side}',(side*bust_w*.175,.102,bust_d*.676),(bust_w*.155,.058,bust_d*.072),BLACK_SOFT,44,28)
 add_box(TORSO,'UnderBustLine',(0,.020,bust_d*.505),(bust_w*.70,.014,.009),SILVER,.003)
 for side in(-1,1):
  add_box(TORSO,f'WaistContour_{side}',(side*waist_w*.44,-.150,waist_d*.50),(.012,.175,.009),SILVER,.0035,rot=(0,0,-side*.15))
@@ -538,6 +539,14 @@ add_panel(TORSO,'WaistWingV67_L',[(-bust_w*.455,.060,bust_d*.675),(-bust_w*.205,
 add_panel(TORSO,'WaistWingV67_R',[(bust_w*.205,.076,bust_d*.790),(bust_w*.455,.060,bust_d*.675),(waist_w*.545,-.232,waist_d*.655),(waist_w*.235,-.205,waist_d*.760)],.011,WHITE)
 for side in(-1,1):
  add_box(TORSO,f'ChestSeamV67_{side}',(side*bust_w*.245,.120,bust_d*.785),(.010,.205,.010),SILVER,.0032,rot=(0,0,side*.11))
+
+# v6.8 porcelain shell covers the old black capsule; a narrow black centre panel restores the reference couture contrast.
+add_panel(TORSO,'PorcelainShellV68_L',[(-bust_w*.520,.250,bust_d*.485),(-bust_w*.115,.226,bust_d*.690),(-bust_w*.095,.072,bust_d*.875),(-waist_w*.105,-.188,waist_d*.905),(-waist_w*.535,-.238,waist_d*.735),(-bust_w*.500,.058,bust_d*.750)],.013,WHITE)
+add_panel(TORSO,'PorcelainShellV68_R',[(bust_w*.115,.226,bust_d*.690),(bust_w*.520,.250,bust_d*.485),(bust_w*.500,.058,bust_d*.750),(waist_w*.535,-.238,waist_d*.735),(waist_w*.105,-.188,waist_d*.905),(bust_w*.095,.072,bust_d*.875)],.013,WHITE)
+add_panel(TORSO,'CenterCorsetV68',[(-bust_w*.135,.235,bust_d*.730),(bust_w*.135,.235,bust_d*.730),(bust_w*.205,.070,bust_d*.915),(waist_w*.125,-.205,waist_d*.970),(-waist_w*.125,-.205,waist_d*.970),(-bust_w*.205,.070,bust_d*.915)],.014,BLACK)
+add_panel(TORSO,'CenterCorsetInlayV68',[(-bust_w*.045,.215,bust_d*.748),(bust_w*.045,.215,bust_d*.748),(bust_w*.060,.050,bust_d*.935),(waist_w*.038,-.185,waist_d*.990),(-waist_w*.038,-.185,waist_d*.990),(-bust_w*.060,.050,bust_d*.935)],.008,BLACK_SOFT)
+for side in(-1,1):
+ add_box(TORSO,f'CorsetTrimV68_{side}',(side*bust_w*.150,.035,bust_d*.920),(.008,.330,.008),SILVER,.0028,rot=(0,0,side*.055))
 
 # Compact pelvis and high waist: measured 0.123H width and 0.089H depth.
 add_section_mesh(PELVIS,'PelvisSuitV47',[
@@ -588,21 +597,21 @@ for side in(-1,1):add_sphere(HEAD,f'EarV60_{side}',(side*.126,-.018,-.012),(.009
 # Large but adult almond eyes seated directly on the smooth shell.
 face_front=.0974
 eye_y=.0308
-eye_x=.0415
-eye_rx=.0460
-eye_ry=.0144
+eye_x=.0435
+eye_rx=.0415
+eye_ry=.0142
 eye_tilt=.0030
 for side in(-1,1):
  ex=side*eye_x
  add_sphere(HEAD,f'EyeballHiddenV60_{side}',(ex,eye_y,.0835),(.0205,.0160,.0122),SCLERA,46,28)
  add_almond_surface(HEAD,f'EyeOpeningV60_{side}',ex,eye_y,face_front,eye_rx,eye_ry,.00115,SCLERA,64,side,eye_tilt)
- add_ellipse_surface(HEAD,f'IrisV60_{side}',ex,eye_y,face_front+.0014,.0262,.0129,IRIS,48)
- add_ellipse_surface(HEAD,f'IrisInnerV60_{side}',ex,eye_y-.0002,face_front+.0020,.0208,.0101,IRIS_INNER,42)
- add_ellipse_surface(HEAD,f'PupilV60_{side}',ex,eye_y-.0002,face_front+.0026,.0038,.0044,PUPIL,32)
+ add_ellipse_surface(HEAD,f'IrisV60_{side}',ex,eye_y,face_front+.0014,.0210,.0122,IRIS,48)
+ add_ellipse_surface(HEAD,f'IrisInnerV60_{side}',ex,eye_y-.0002,face_front+.0020,.0154,.0091,IRIS_INNER,42)
+ add_ellipse_surface(HEAD,f'PupilV60_{side}',ex,eye_y-.0002,face_front+.0026,.0035,.0042,PUPIL,32)
  add_ellipse_surface(HEAD,f'EyeLightV60_{side}',ex-side*.0052,eye_y+.0052,face_front+.0032,.0016,.0014,SCLERA,18)
  inner=ex-side*eye_rx*.94;outer=ex+side*eye_rx*1.02
- add_strand(HEAD,f'UpperLashV60_{side}',[(inner,eye_y-eye_tilt+.0012,face_front+.0025),(ex,eye_y+.0151,face_front+.0030),(outer,eye_y+eye_tilt+.0011,face_front+.0026)],.00042,HAIR)
- add_strand(HEAD,f'LowerLidV60_{side}',[(inner+side*.004,eye_y-eye_tilt-.0003,face_front+.0018),(ex,eye_y-.0088,face_front+.0021),(outer-side*.004,eye_y+eye_tilt-.0003,face_front+.0018)],.00012,FACE_DARK)
+ add_strand(HEAD,f'UpperLashV60_{side}',[(inner,eye_y-eye_tilt+.0012,face_front+.0025),(ex,eye_y+.0148,face_front+.0030),(outer,eye_y+eye_tilt+.0011,face_front+.0026)],.00042,HAIR)
+ add_strand(HEAD,f'LowerLidV60_{side}',[(inner+side*.004,eye_y-eye_tilt-.0003,face_front+.0018),(ex,eye_y-.0086,face_front+.0021),(outer-side*.004,eye_y+eye_tilt-.0003,face_front+.0018)],.00012,FACE_DARK)
  add_strand(HEAD,f'BrowV60_{side}',[(ex-side*.027,.067,.101),(ex,.075,.103),(ex+side*.032,.064,.1015)],.00052,HAIR)
 
 # v6.1 explicit portrait accents remain shallow; they only make the profile readable.
