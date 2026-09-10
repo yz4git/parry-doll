@@ -32,8 +32,8 @@ for _hair_mat,_spec in ((HAIR,.14),(HAIR_HI,.18)):
   if _ior:_ior.default_value=_spec
   elif _old:_old.default_value=_spec
 SCLERA=material('Sclera',(0.72,0.69,0.67),0,.60)
-IRIS=material('Iris',(0.050,0.032,0.030),.01,.46)
-IRIS_INNER=material('Iris Inner',(0.115,0.066,0.055),.01,.48)
+IRIS=material('Iris',(0.030,0.023,0.024),.01,.48)
+IRIS_INNER=material('Iris Inner',(0.115,0.078,0.070),.01,.50)
 PUPIL=material('Pupil',(0.004,0.005,0.006),0,.30)
 LIP=material('Lip',(0.30,0.105,0.120),0,.68)
 FACE_DARK=material('Face Detail',(0.20,0.075,0.070),0,.68)
@@ -477,6 +477,7 @@ TH_L=empty('BL_THIGH_L',ROOT);SH_L=empty('BL_SHIN_L',ROOT);FOOT_L=empty('BL_FOOT
 # REFERENCE_V60: stable UV portrait head, continuous facial planes and restrained adult profile.
 # REFERENCE_V61: expressive larger eyes, tapered jaw and restrained explicit nose/lip profile.
 # REFERENCE_V62: cinematic almond gaze, warm skin response and subtle readable side-profile nose.
+# REFERENCE_V63: layered grey-brown irises, smaller pupils and fine separated portrait fringe.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
@@ -574,27 +575,27 @@ for side in(-1,1):add_sphere(HEAD,f'EarV60_{side}',(side*.126,-.018,-.012),(.009
 
 # Large but adult almond eyes seated directly on the smooth shell.
 face_front=.0974
-eye_y=.0330
+eye_y=.0315
 eye_x=.0415
-eye_rx=.0445
-eye_ry=.0166
+eye_rx=.0455
+eye_ry=.0161
 eye_tilt=.0030
 for side in(-1,1):
  ex=side*eye_x
  add_sphere(HEAD,f'EyeballHiddenV60_{side}',(ex,eye_y,.0835),(.0205,.0160,.0122),SCLERA,46,28)
  add_almond_surface(HEAD,f'EyeOpeningV60_{side}',ex,eye_y,face_front,eye_rx,eye_ry,.00115,SCLERA,64,side,eye_tilt)
- add_ellipse_surface(HEAD,f'IrisV60_{side}',ex,eye_y,face_front+.0014,.0228,.0141,IRIS,48)
- add_ellipse_surface(HEAD,f'IrisInnerV60_{side}',ex,eye_y-.0002,face_front+.0020,.0147,.0096,IRIS_INNER,42)
- add_ellipse_surface(HEAD,f'PupilV60_{side}',ex,eye_y-.0002,face_front+.0026,.0058,.0068,PUPIL,32)
+ add_ellipse_surface(HEAD,f'IrisV60_{side}',ex,eye_y,face_front+.0014,.0260,.0146,IRIS,48)
+ add_ellipse_surface(HEAD,f'IrisInnerV60_{side}',ex,eye_y-.0002,face_front+.0020,.0200,.0115,IRIS_INNER,42)
+ add_ellipse_surface(HEAD,f'PupilV60_{side}',ex,eye_y-.0002,face_front+.0026,.0048,.0058,PUPIL,32)
  add_ellipse_surface(HEAD,f'EyeLightV60_{side}',ex-side*.0052,eye_y+.0052,face_front+.0032,.0016,.0014,SCLERA,18)
  inner=ex-side*eye_rx*.94;outer=ex+side*eye_rx*1.02
- add_strand(HEAD,f'UpperLashV60_{side}',[(inner,eye_y-eye_tilt+.0012,face_front+.0025),(ex,eye_y+.0172,face_front+.0030),(outer,eye_y+eye_tilt+.0011,face_front+.0026)],.00042,HAIR)
+ add_strand(HEAD,f'UpperLashV60_{side}',[(inner,eye_y-eye_tilt+.0012,face_front+.0025),(ex,eye_y+.0168,face_front+.0030),(outer,eye_y+eye_tilt+.0011,face_front+.0026)],.00042,HAIR)
  add_strand(HEAD,f'LowerLidV60_{side}',[(inner+side*.004,eye_y-eye_tilt-.0003,face_front+.0018),(ex,eye_y-.0100,face_front+.0021),(outer-side*.004,eye_y+eye_tilt-.0003,face_front+.0018)],.00012,FACE_DARK)
  add_strand(HEAD,f'BrowV60_{side}',[(ex-side*.027,.067,.101),(ex,.075,.103),(ex+side*.032,.064,.1015)],.00052,HAIR)
 
 # v6.1 explicit portrait accents remain shallow; they only make the profile readable.
-add_sphere(HEAD,'NoseBridgeV62',(0,-.006,.1030),(.0080,.038,.0062),SKIN,30,20)
-add_sphere(HEAD,'NoseTipV62',(0,-.043,.1103),(.0118,.0112,.0092),SKIN,30,20)
+add_sphere(HEAD,'NoseBridgeV63',(0,-.006,.1040),(.0078,.038,.0061),SKIN,30,20)
+add_sphere(HEAD,'NoseTipV63',(0,-.043,.1122),(.0114,.0110,.0090),SKIN,30,20)
 for side in(-1,1):
  add_sphere(HEAD,f'NoseWingV62_{side}',(side*.0070,-.049,.1060),(.0052,.0062,.0046),SKIN,22,14)
  add_sphere(HEAD,f'NostrilV62_{side}',(side*.0043,-.0540,.1110),(.00038,.00028,.00023),FACE_DARK,10,7)
@@ -630,6 +631,11 @@ add_flow_ribbon(HEAD,'FringeLayerV59_C',[(-.083,.177,.014),(-.059,.153,.049),(-.
 add_flow_ribbon(HEAD,'FringeLayerV59_D',[(-.015,.179,.013),(.010,.153,.049),(.043,.125,.079),(.078,.099,.101),(.105,.082,.108)],[.032,.034,.030,.022,.011],.00112,HAIR)
 add_strand(HEAD,'FringeFineV59_A',[(-.096,.173,.018),(-.057,.137,.074),(.012,.092,.109)],.000085,HAIR_HI)
 add_strand(HEAD,'FringeFineV59_B',[(-.036,.176,.018),(.014,.135,.077),(.091,.087,.108)],.000080,HAIR_HI)
+add_strand(HEAD,'FringeFineV63_C',[(-.116,.170,.017),(-.085,.142,.061),(-.032,.105,.101)],.000070,HAIR_HI)
+add_strand(HEAD,'FringeFineV63_D',[(-.068,.181,.016),(-.026,.143,.063),(.038,.096,.106)],.000072,HAIR_HI)
+add_strand(HEAD,'FringeFineV63_E',[(-.005,.180,.016),(.034,.143,.064),(.095,.087,.107)],.000068,HAIR_HI)
+for side in(-1,1):
+ add_strand(HEAD,f'FaceWispV63_{side}',[(side*.105,.124,.094),(side*.116,.072,.101),(side*.120,.010,.099),(side*.112,-.052,.094)],.00010,HAIR_HI)
 
 for side in(-1,1):
  pts=[(side*head_w*.394,.112,-head_d*.038),(side*head_w*.423,.050,-.013),(side*head_w*.428,-.028,-.016),(side*head_w*.416,-.103,-.044),(side*head_w*.401,-.178,-.064)]
