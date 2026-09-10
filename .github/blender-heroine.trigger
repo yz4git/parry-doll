@@ -1,1 +1,1 @@
-2026-09-11 build Blender heroine v10.1 scalp-tight temporal undercap layered rounded side locks
+2026-09-11 build Blender heroine v10.2 shorter rear-swept temporal lock tips around ear
