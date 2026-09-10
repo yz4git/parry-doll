@@ -1,1 +1,1 @@
-2026-09-10 build Blender heroine v5.6 cleaner adult profile visible almond eyes eyebrow-clear swept fringe
+2026-09-10 build Blender heroine v5.7 expressive realistic-anime eyes tapered lower face filled side-swept hairline
