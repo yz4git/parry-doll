@@ -699,6 +699,7 @@ TH_L=empty('BL_THIGH_L',ROOT);SH_L=empty('BL_SHIN_L',ROOT);FOOT_L=empty('BL_FOOT
 # REFERENCE_V100: adult portrait reset reduces oversized doll eyes and tightens the lower-face silhouette while preserving the established profile and hair.
 # REFERENCE_V101: side hair becomes a scalp-tight undercap plus several rounded swept locks, replacing the large profile-facing leaf plate.
 # REFERENCE_V102: temporal lock tips sweep rearward around the ear instead of dropping into straight claw-like prongs.
+# REFERENCE_V103: adult visible ears sit outside a notched temporal undercap, restoring a natural hairline-to-ear transition in profile.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
@@ -809,7 +810,22 @@ add_cc0_face_patch_v77(HEAD,'FaceQuadPatchV77',SKIN)
 add_cylinder(HEAD,'Neck',(0,-.158,-.008),W('neck')*.33,.084,SKIN,26)
 add_cylinder(HEAD,'Choker',(0,-.139,-.006),W('neck')*.46,.034,BLACK,28)
 add_cylinder(HEAD,'ChokerTrim',(0,-.124,-.006),W('neck')*.47,.009,SILVER,28)
-for side in(-1,1):add_sphere(HEAD,f'EarV78_{side}',(side*.121,-.018,-.012),(.0085,.0205,.0078),SKIN,20,12)
+for side in(-1,1):
+ add_sphere(HEAD,f'EarV103_{side}',(side*.1265,-.020,-.020),(.0120,.0305,.0145),SKIN,28,18)
+ # A restrained helix/concha line is enough to read as an ear at iPhone portrait scale without becoming a dark decal.
+ add_strand(HEAD,f'EarHelixV103_{side}',[
+  (side*.1380,.004,-.021),
+  (side*.1390,-.007,-.012),
+  (side*.1393,-.021,-.010),
+  (side*.1388,-.035,-.016),
+  (side*.1376,-.044,-.025)
+ ],.00028,EAR_SHADOW)
+ add_strand(HEAD,f'EarConchaV103_{side}',[
+  (side*.1385,-.010,-.018),
+  (side*.1390,-.020,-.015),
+  (side*.1384,-.030,-.020)
+ ],.00022,EAR_SHADOW)
+
 
 # v10.0 adult-scale almond eyes: narrower apertures, lower iris coverage and subtler lids remove the child/doll read.
 face_front=.0974
@@ -866,17 +882,19 @@ add_rear_hair_shell(HEAD,'HairRearShellV59',[
 # v10.1: a scalp-tight undercap provides dark root coverage without becoming the visible silhouette.
 # head_w is the full measured head width, so ~0.46*head_w tracks the actual cranium instead of floating far outside it.
 for side in (-1,1):
- add_temporal_leaf_v95(HEAD,f'TemporalUnderCapV101_{side}',side,[
+ add_temporal_leaf_v95(HEAD,f'TemporalUnderCapV103_{side}',side,[
   (.171,head_w*.360, head_d*.030,.003,.0004),
   (.151,head_w*.405, head_d*.022,.018,.0008),
   (.126,head_w*.442, head_d*.012,.032,.0012),
   (.098,head_w*.462, head_d*.000,.041,.0015),
-  (.068,head_w*.468,-head_d*.014,.043,.0016),
-  (.039,head_w*.465,-head_d*.028,.038,.0014),
-  (.014,head_w*.455,-head_d*.041,.028,.0011),
-  (-.004,head_w*.442,-head_d*.050,.016,.0008),
-  (-.014,head_w*.430,-head_d*.055,.004,.0003)
- ],HAIR,15)
+  (.068,head_w*.465,-head_d*.014,.041,.0015),
+  (.043,head_w*.446,-head_d*.031,.034,.0013),
+  (.022,head_w*.421,-head_d*.049,.024,.0010),
+  (.004,head_w*.402,-head_d*.067,.015,.0008),
+  (-.014,head_w*.406,-head_d*.085,.010,.0007),
+  (-.031,head_w*.424,-head_d*.101,.008,.0006),
+  (-.045,head_w*.442,-head_d*.113,.003,.0003)
+ ],HAIR,17)
 
  # Rounded swept locks sit above the undercap. Each covers only a narrow front/back band, so profile reads as layered hair.
  add_smooth_lock(HEAD,f'TemporalLockV101_Front_{side}',[
