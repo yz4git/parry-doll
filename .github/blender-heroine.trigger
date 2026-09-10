@@ -1,1 +1,1 @@
-2026-09-10 build Blender heroine v9.1 fuller upper crown cap wraps buried fringe roots no scalp stripe
+2026-09-10 build Blender heroine v9.2 temporal scalp shells bridge fringe to rear hair above ears
