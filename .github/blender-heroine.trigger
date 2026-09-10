@@ -1,1 +1,1 @@
-2026-09-10 build Blender heroine v8.6 dense Catmull-Clark fringe surfaces reduced crown lift
+2026-09-10 build Blender heroine v8.7 unified two-layer side sweep integrated crown root
