@@ -481,6 +481,7 @@ TH_L=empty('BL_THIGH_L',ROOT);SH_L=empty('BL_SHIN_L',ROOT);FOOT_L=empty('BL_FOOT
 # REFERENCE_V64: readable soft grey-brown gaze and continuous restrained nose-lip-chin profile.
 # REFERENCE_V65: reference silhouette limb volume, readable warm skin and overlapping pony foundation mass.
 # REFERENCE_V66: surfaced bust contour, visible white bodice couture and fanned pony flow.
+# REFERENCE_V67: integrated bust contour, upper-chest couture wings, almond gaze and wide high-pony silhouette.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
@@ -499,7 +500,7 @@ add_section_mesh(TORSO,'TorsoSuitV58',[
 ],BLACK,56)
 # Shallow soft-tissue support over a continuous ribcage. The outer envelope remains reference-locked.
 for side in(-1,1):
- add_sphere(TORSO,f'BustContourV66_{side}',(side*bust_w*.205,.100,bust_d*.655),(bust_w*.245,.092,bust_d*.160),BLACK,44,28)
+ add_sphere(TORSO,f'BustContourV67_{side}',(side*bust_w*.182,.102,bust_d*.670),(bust_w*.205,.074,bust_d*.112),BLACK_SOFT,44,28)
 add_box(TORSO,'UnderBustLine',(0,.020,bust_d*.505),(bust_w*.70,.014,.009),SILVER,.003)
 for side in(-1,1):
  add_box(TORSO,f'WaistContour_{side}',(side*waist_w*.44,-.150,waist_d*.50),(.012,.175,.009),SILVER,.0035,rot=(0,0,-side*.15))
@@ -529,6 +530,14 @@ add_panel(TORSO,'BodiceWhiteV66_R',[(bust_w*.255,.190,bust_d*.640),(bust_w*.455,
 for side in(-1,1):
  add_box(TORSO,f'BodiceEdgeV66_{side}',(side*bust_w*.275,.030,bust_d*.670),(.012,.330,.009),SILVER,.0035,rot=(0,0,side*.08))
  add_box(TORSO,f'UpperArmBandV35_{side}',(side*.205,.215,.000),(.040,.020,.072),BLACK,.004)
+
+# v6.7 upper-chest panels sit on the true front envelope and taper into the narrow waist.
+add_panel(TORSO,'ChestWingV67_L',[(-bust_w*.505,.248,bust_d*.455),(-bust_w*.245,.226,bust_d*.595),(-bust_w*.205,.080,bust_d*.790),(-bust_w*.465,.066,bust_d*.690)],.012,WHITE)
+add_panel(TORSO,'ChestWingV67_R',[(bust_w*.245,.226,bust_d*.595),(bust_w*.505,.248,bust_d*.455),(bust_w*.465,.066,bust_d*.690),(bust_w*.205,.080,bust_d*.790)],.012,WHITE)
+add_panel(TORSO,'WaistWingV67_L',[(-bust_w*.455,.060,bust_d*.675),(-bust_w*.205,.076,bust_d*.790),(-waist_w*.235,-.205,waist_d*.760),(-waist_w*.545,-.232,waist_d*.655)],.011,WHITE)
+add_panel(TORSO,'WaistWingV67_R',[(bust_w*.205,.076,bust_d*.790),(bust_w*.455,.060,bust_d*.675),(waist_w*.545,-.232,waist_d*.655),(waist_w*.235,-.205,waist_d*.760)],.011,WHITE)
+for side in(-1,1):
+ add_box(TORSO,f'ChestSeamV67_{side}',(side*bust_w*.245,.120,bust_d*.785),(.010,.205,.010),SILVER,.0032,rot=(0,0,side*.11))
 
 # Compact pelvis and high waist: measured 0.123H width and 0.089H depth.
 add_section_mesh(PELVIS,'PelvisSuitV47',[
@@ -581,19 +590,19 @@ face_front=.0974
 eye_y=.0308
 eye_x=.0415
 eye_rx=.0460
-eye_ry=.0154
+eye_ry=.0144
 eye_tilt=.0030
 for side in(-1,1):
  ex=side*eye_x
  add_sphere(HEAD,f'EyeballHiddenV60_{side}',(ex,eye_y,.0835),(.0205,.0160,.0122),SCLERA,46,28)
  add_almond_surface(HEAD,f'EyeOpeningV60_{side}',ex,eye_y,face_front,eye_rx,eye_ry,.00115,SCLERA,64,side,eye_tilt)
- add_ellipse_surface(HEAD,f'IrisV60_{side}',ex,eye_y,face_front+.0014,.0262,.0138,IRIS,48)
- add_ellipse_surface(HEAD,f'IrisInnerV60_{side}',ex,eye_y-.0002,face_front+.0020,.0208,.0109,IRIS_INNER,42)
- add_ellipse_surface(HEAD,f'PupilV60_{side}',ex,eye_y-.0002,face_front+.0026,.0038,.0047,PUPIL,32)
+ add_ellipse_surface(HEAD,f'IrisV60_{side}',ex,eye_y,face_front+.0014,.0262,.0129,IRIS,48)
+ add_ellipse_surface(HEAD,f'IrisInnerV60_{side}',ex,eye_y-.0002,face_front+.0020,.0208,.0101,IRIS_INNER,42)
+ add_ellipse_surface(HEAD,f'PupilV60_{side}',ex,eye_y-.0002,face_front+.0026,.0038,.0044,PUPIL,32)
  add_ellipse_surface(HEAD,f'EyeLightV60_{side}',ex-side*.0052,eye_y+.0052,face_front+.0032,.0016,.0014,SCLERA,18)
  inner=ex-side*eye_rx*.94;outer=ex+side*eye_rx*1.02
- add_strand(HEAD,f'UpperLashV60_{side}',[(inner,eye_y-eye_tilt+.0012,face_front+.0025),(ex,eye_y+.0160,face_front+.0030),(outer,eye_y+eye_tilt+.0011,face_front+.0026)],.00042,HAIR)
- add_strand(HEAD,f'LowerLidV60_{side}',[(inner+side*.004,eye_y-eye_tilt-.0003,face_front+.0018),(ex,eye_y-.0094,face_front+.0021),(outer-side*.004,eye_y+eye_tilt-.0003,face_front+.0018)],.00012,FACE_DARK)
+ add_strand(HEAD,f'UpperLashV60_{side}',[(inner,eye_y-eye_tilt+.0012,face_front+.0025),(ex,eye_y+.0151,face_front+.0030),(outer,eye_y+eye_tilt+.0011,face_front+.0026)],.00042,HAIR)
+ add_strand(HEAD,f'LowerLidV60_{side}',[(inner+side*.004,eye_y-eye_tilt-.0003,face_front+.0018),(ex,eye_y-.0088,face_front+.0021),(outer-side*.004,eye_y+eye_tilt-.0003,face_front+.0018)],.00012,FACE_DARK)
  add_strand(HEAD,f'BrowV60_{side}',[(ex-side*.027,.067,.101),(ex,.075,.103),(ex+side*.032,.064,.1015)],.00052,HAIR)
 
 # v6.1 explicit portrait accents remain shallow; they only make the profile readable.
@@ -678,6 +687,22 @@ for i,target in enumerate((-.120,.145,.265)):
  widths=[.038,.070,.090,.098,.094,.078,.048,.008]
  depths=[.024,.038,.045,.046,.042,.034,.022,.006]
  add_smooth_lock(PONY,f'PonyFanV66_{i}',pts,widths,depths,HAIR_HI if i==1 else HAIR,14,7)
+# v6.7 broad high-pony wings: overlapping masses, not isolated strings.
+for i,(target,drop) in enumerate(((-.300,-1.34),(-.205,-1.52),(.195,-1.48),(.295,-1.30))):
+ sign=-1 if target<0 else 1
+ pts=[
+  (sign*.018,.143,-head_d*.550),
+  (sign*.034,.035,-head_d*.620),
+  (sign*.075,-.165,-.270),
+  (target*.48,-.390,-.225),
+  (target*.73,-.650,-.178),
+  (target,-.930,-.135),
+  (target*.90,-1.155,-.108),
+  (target*.72,drop,-.086)
+ ]
+ widths=[.050,.090,.120,.132,.122,.102,.066,.010]
+ depths=[.027,.043,.052,.056,.051,.043,.030,.007]
+ add_smooth_lock(PONY,f'PonyWingV67_{i}',pts,widths,depths,HAIR if i in (0,3) else HAIR_HI,16,8)
 # Eleven broad spline-smoothed locks create one readable hair mass with controlled asymmetry.
 for i in range(11):
  lane=(i-5)/5
