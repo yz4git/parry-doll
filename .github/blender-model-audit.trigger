@@ -1,1 +1,1 @@
-2026-09-10 Blender heroine v8.2 artifact-free cheeks no detached side strands front-visible crown seal dual five-view audit
+2026-09-10 Blender heroine v8.3 +10pct mature almond aperture lower side-swept fringe clean temple silhouette dual five-view audit
