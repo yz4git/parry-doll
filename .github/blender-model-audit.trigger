@@ -1,1 +1,1 @@
-2026-09-10 Blender heroine v6.4 readable soft gaze restrained profile WebGL audit
+2026-09-10 Blender heroine v6.5 reference silhouette warm skin unified pony WebGL audit
