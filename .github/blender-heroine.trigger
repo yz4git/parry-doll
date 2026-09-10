@@ -1,1 +1,1 @@
-2026-09-11 build Blender heroine v10.2 shorter rear-swept temporal lock tips around ear
+2026-09-11 build Blender heroine v10.3 visible adult ears notched temporal undercap
