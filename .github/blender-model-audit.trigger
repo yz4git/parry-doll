@@ -1,1 +1,1 @@
-2026-09-10 Blender heroine v5.1 explicit iris discs asymmetric fringe smooth pony shoulder retarget WebGL audit
+2026-09-10 Blender heroine v5.2 Catmull smooth pony broad swept fringe larger dark brown eyes WebGL audit
