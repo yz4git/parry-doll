@@ -315,6 +315,29 @@ def add_fringe_surface_v85(p,name,pts,widths,lifts,mat,thickness=.0032):
  bpy.context.view_layer.objects.active=o;bpy.ops.object.modifier_apply(modifier=bevel.name)
  return parent(o,p)
 
+def add_temporal_shell_v92(p,name,side,rows,mat,arc_segments=16):
+ # rows: (logical_y, half_width, depth, z_offset).  The shell spans only the side scalp:
+ # front-temple -> true side -> rear-temple, never crossing the cheek or eye region.
+ angles=[-.72+1.46*i/arc_segments for i in range(arc_segments+1)]
+ verts=[]
+ for yy,w,d,zoff in rows:
+  for a in angles:
+   x=side*math.cos(a)*w
+   z=zoff+math.sin(a)*d
+   verts.append(bpos((x,yy,z)))
+ row=len(angles);faces=[]
+ for r in range(len(rows)-1):
+  base=r*row;nxt=(r+1)*row
+  for i in range(row-1):faces.append((base+i,base+i+1,nxt+i+1,nxt+i))
+ mesh=bpy.data.meshes.new(name+'Mesh');mesh.from_pydata(verts,[],faces);mesh.update()
+ o=bpy.data.objects.new(name,mesh);bpy.context.scene.collection.objects.link(o);o.data.materials.append(mat);smooth(o)
+ # Give the scalp patch just enough physical thickness to render consistently from all audit views.
+ solid=o.modifiers.new('temporal_shell_thickness','SOLIDIFY');solid.thickness=.0022;solid.offset=-.35
+ bpy.context.view_layer.objects.active=o;bpy.ops.object.modifier_apply(modifier=solid.name)
+ sub=o.modifiers.new('temporal_shell_smooth','SUBSURF');sub.subdivision_type='CATMULL_CLARK';sub.levels=1;sub.render_levels=1
+ bpy.context.view_layer.objects.active=o;bpy.ops.object.modifier_apply(modifier=sub.name)
+ return parent(o,p)
+
 def add_panel(p,name,points,depth,mat):
  front=[(x,y,z+depth*.5) for x,y,z in points];back=[(x,y,z-depth*.5) for x,y,z in points];verts=[bpos(v) for v in front+back];n=len(points);faces=[tuple(range(n)),tuple(range(2*n-1,n-1,-1))]
  for i in range(n):j=(i+1)%n;faces.append((i,j,n+j,n+i))
@@ -640,6 +663,7 @@ TH_L=empty('BL_THIGH_L',ROOT);SH_L=empty('BL_SHIN_L',ROOT);FOOT_L=empty('BL_FOOT
 # REFERENCE_V89: zero-width fringe roots plus rounded scalp blends remove closed-end fins and the last hairline notch.
 # REFERENCE_V90: crown-buried zero-width roots replace filler blobs and create continuous hair-cap/fringe overlap.
 # REFERENCE_V91: fuller upper crown cap wraps the buried roots and removes the remaining 3/4 scalp stripe.
+# REFERENCE_V92: dedicated scalp-hugging temporal shells bridge fringe to rear hair above the ears without cheek wisps.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
@@ -803,6 +827,18 @@ add_rear_hair_shell(HEAD,'HairRearShellV59',[
  (.194,head_w*.230,head_d*.270,-head_d*.013),
  (.206,head_w*.080,head_d*.105,-head_d*.005)
 ],HAIR,44)
+
+# v9.2 fills the true remaining gap: side scalp between the side-swept fringe and rear shell.
+# It stops above the ears and remains outside the facial plane, avoiding the old on-cheek wisp artifacts.
+for side in (-1,1):
+ add_temporal_shell_v92(HEAD,f'TemporalHairShellV92_{side}',side,[
+  (.176,head_w*.390,head_d*.338,-head_d*.018),
+  (.151,head_w*.455,head_d*.405,-head_d*.024),
+  (.121,head_w*.492,head_d*.455,-head_d*.030),
+  (.090,head_w*.505,head_d*.470,-head_d*.036),
+  (.062,head_w*.474,head_d*.438,-head_d*.041),
+  (.044,head_w*.425,head_d*.392,-head_d*.044)
+ ],HAIR,18)
 
 # v9.0: the fringe is born inside the existing crown cap instead of being patched to it with blobs.
 # The first two samples are narrow and hidden under the cap; width only opens after the path exits the crown.
