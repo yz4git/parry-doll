@@ -1,1 +1,1 @@
-2026-09-11 Blender heroine v10.6 tapered lower face patch under-chin cleanup dual five-view audit
+2026-09-11 Blender heroine v10.7 clean chin-to-neck shell-hugging lower face patch dual five-view audit
