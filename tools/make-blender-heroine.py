@@ -639,6 +639,7 @@ TH_L=empty('BL_THIGH_L',ROOT);SH_L=empty('BL_SHIN_L',ROOT);FOOT_L=empty('BL_FOOT
 # REFERENCE_V88: tapered-root side sweep over a scalp-tight undercap, eliminating the v8.7 crown fin and skin notch.
 # REFERENCE_V89: zero-width fringe roots plus rounded scalp blends remove closed-end fins and the last hairline notch.
 # REFERENCE_V90: crown-buried zero-width roots replace filler blobs and create continuous hair-cap/fringe overlap.
+# REFERENCE_V91: fuller upper crown cap wraps the buried roots and removes the remaining 3/4 scalp stripe.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
@@ -782,14 +783,16 @@ for side in(-1,1):
  add_ellipse_surface(HEAD,f'NostrilTintV76_{side}',side*.0056,-.0570,.1157,.00145,.00052,FACE_DARK,16)
 
 # Hair v5.9: broad layered side sweep with an open eye line, plus a much fuller high pony cascade.
-add_section_mesh(HEAD,'HairTopCapV59',[
+add_section_mesh(HEAD,'HairTopCapV91',[
  (.064,head_w*.452,head_d*.442,head_d*.492,-.018),
- (.098,head_w*.446,head_d*.434,head_d*.482,-.020),
- (.133,head_w*.402,head_d*.392,head_d*.438,-.021),
- (.164,head_w*.312,head_d*.302,head_d*.344,-.018),
- (.189,head_w*.187,head_d*.181,head_d*.209,-.010),
- (.204,head_w*.070,head_d*.070,head_d*.080,-.002)
-],HAIR,56)
+ (.098,head_w*.448,head_d*.436,head_d*.486,-.020),
+ (.133,head_w*.414,head_d*.404,head_d*.452,-.021),
+ # v9.1 keeps crown width longer instead of collapsing into a narrow cone above the forehead.
+ (.164,head_w*.356,head_d*.342,head_d*.390,-.018),
+ (.189,head_w*.258,head_d*.242,head_d*.286,-.010),
+ (.204,head_w*.142,head_d*.126,head_d*.158,-.002),
+ (.213,head_w*.052,head_d*.048,head_d*.060,.002)
+],HAIR,64)
 add_rear_hair_shell(HEAD,'HairRearShellV59',[
  (-.025,head_w*.300,head_d*.410,-head_d*.066),
  (.012,head_w*.430,head_d*.500,-head_d*.058),
