@@ -1,1 +1,1 @@
-2026-09-10 build Blender heroine v6.8 layered porcelain torso shell natural portrait eye spacing
+2026-09-10 build Blender heroine v6.9 sculpted adult-anime portrait tapered jaw calm almond gaze
