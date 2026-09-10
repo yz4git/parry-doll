@@ -9,9 +9,12 @@ if '# REFERENCE_V92' in s:
 if '# REFERENCE_V91' not in s:
     raise SystemExit('REFERENCE_V91 generator required before v9.2')
 
+marker_v91='# REFERENCE_V91: fuller upper crown cap wraps the buried roots and removes the remaining 3/4 scalp stripe.'
+if marker_v91 not in s:
+    raise SystemExit('v9.2 REFERENCE_V91 marker anchor missing')
 s=s.replace(
-    '# REFERENCE_V91: widened upper crown cap wraps the v9.0 buried fringe roots from both 3/4 views.',
-    '# REFERENCE_V91: widened upper crown cap wraps the v9.0 buried fringe roots from both 3/4 views.\n# REFERENCE_V92: dedicated scalp-hugging temporal shells bridge fringe to rear hair above the ears without cheek wisps.',
+    marker_v91,
+    marker_v91+'\n# REFERENCE_V92: dedicated scalp-hugging temporal shells bridge fringe to rear hair above the ears without cheek wisps.',
     1,
 )
 
