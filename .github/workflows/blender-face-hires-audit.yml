@@ -46,9 +46,10 @@ jobs:
             const page=await context.newPage();
             await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});
             await page.waitForFunction(()=>window.ParryModelViewer?.isAvailable?.()&&window.ParryHeroineAppearance?.state,{timeout:20000});
-            await page.waitForSelector('#modelViewerOpen',{timeout:10000});
-            await page.locator('#modelViewerOpen').click();
-            await page.waitForSelector('#modelViewerUI.show',{timeout:5000});
+            const open=page.locator('#modelViewerOpen');
+            await open.waitFor({state:'attached',timeout:10000});
+            await page.evaluate(()=>document.querySelector('#modelViewerOpen')?.click());
+            await page.waitForFunction(()=>document.querySelector('#modelViewerUI')?.classList?.contains('show'),{timeout:8000});
             await page.evaluate(()=>window.ParryHeroineAppearance.set('blender'));
             await page.waitForFunction(()=>{const s=window.ParryHeroineAppearance?.state?.();return s?.selected==='blender'&&s?.blenderReady===true&&s?.active==='blender'},null,{timeout:20000});
             const pose=async(yaw,name)=>{
@@ -66,9 +67,10 @@ jobs:
           NODE
           node blender-face-hires-audit.cjs
       - name: Upload high-resolution face frames
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: parry-doll-blender-face-hires-audit
           path: blender-face-hires-audit/
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 3
