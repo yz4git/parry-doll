@@ -1,1 +1,1 @@
-2026-09-10 Blender heroine v6.5 reference silhouette warm skin unified pony WebGL audit
+2026-09-10 Blender heroine v6.6 surfaced couture chest panel fanned pony WebGL audit
