@@ -1,0 +1,30 @@
+{
+  "version": "7.4",
+  "purpose": "Multiview target profile derived from the PARRY DOLL reference sheets plus CC0 MakeHuman/MPFB continuous-face topology study.",
+  "coordinate_system": "heroine logical coordinates: y up, z forward, x left/right",
+  "profile_curve": [
+    {"landmark":"forehead","y":0.075,"depth_offset":0.0020,"half_width":0.0300},
+    {"landmark":"glabella","y":0.050,"depth_offset":0.0050,"half_width":0.0270},
+    {"landmark":"bridge","y":0.020,"depth_offset":0.0100,"half_width":0.0210},
+    {"landmark":"dorsum","y":-0.010,"depth_offset":0.0170,"half_width":0.0180},
+    {"landmark":"nose_tip","y":-0.045,"depth_offset":0.0290,"half_width":0.0165},
+    {"landmark":"columella","y":-0.058,"depth_offset":0.0160,"half_width":0.0130},
+    {"landmark":"subnasal","y":-0.068,"depth_offset":0.0040,"half_width":0.0180},
+    {"landmark":"upper_lip","y":-0.079,"depth_offset":0.0130,"half_width":0.0320},
+    {"landmark":"lower_lip","y":-0.091,"depth_offset":0.0155,"half_width":0.0340},
+    {"landmark":"labiomental","y":-0.105,"depth_offset":0.0030,"half_width":0.0310},
+    {"landmark":"chin","y":-0.125,"depth_offset":0.0160,"half_width":0.0400},
+    {"landmark":"under_chin","y":-0.145,"depth_offset":0.0060,"half_width":0.0380}
+  ],
+  "eye_target": {
+    "center_x": 0.0475,
+    "center_y": 0.0308,
+    "sclera_half_width": 0.0305,
+    "sclera_half_height": 0.0114,
+    "sclera_edge_z": 0.0980,
+    "sclera_bulge": 0.0044,
+    "iris_half_width": 0.0106,
+    "iris_half_height": 0.0094
+  },
+  "acceptance_views": ["front","left_profile","right_profile","left_three_quarter","right_three_quarter"]
+}
