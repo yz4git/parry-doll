@@ -665,6 +665,7 @@ TH_L=empty('BL_THIGH_L',ROOT);SH_L=empty('BL_SHIN_L',ROOT);FOOT_L=empty('BL_FOOT
 # REFERENCE_V91: fuller upper crown cap wraps the buried roots and removes the remaining 3/4 scalp stripe.
 # REFERENCE_V92: dedicated scalp-hugging temporal shells bridge fringe to rear hair above the ears without cheek wisps.
 # REFERENCE_V93: rear-biased lower temporal shells cover the ear-zone scalp while preserving the cheek and eye silhouette.
+# REFERENCE_V94: smooth elliptical side locks replace the rectangular temporal sheets and cover the ear-zone scalp naturally.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
@@ -829,20 +830,28 @@ add_rear_hair_shell(HEAD,'HairRearShellV59',[
  (.206,head_w*.080,head_d*.105,-head_d*.005)
 ],HAIR,44)
 
-# v9.2 fills the true remaining gap: side scalp between the side-swept fringe and rear shell.
-# It stops above the ears and remains outside the facial plane, avoiding the old on-cheek wisp artifacts.
+# v9.4 replaces the sheet-like side patch with a volumetric, vertically flowing lock.
+# Its radial X thickness stays thin while the logical-Z depth is broad enough to bridge temple to rear hair.
+# The front edge stops well behind the cheek/nose plane, so the face silhouette remains clean.
 for side in (-1,1):
- add_temporal_shell_v92(HEAD,f'TemporalHairShellV93_{side}',side,[
-  (.178,head_w*.405,head_d*.365,-head_d*.020),
-  (.150,head_w*.470,head_d*.430,-head_d*.028),
-  (.118,head_w*.515,head_d*.485,-head_d*.036),
-  (.083,head_w*.542,head_d*.520,-head_d*.044),
-  (.048,head_w*.548,head_d*.535,-head_d*.051),
-  (.014,head_w*.535,head_d*.535,-head_d*.057),
-  (-.018,head_w*.510,head_d*.520,-head_d*.062),
-  (-.046,head_w*.468,head_d*.495,-head_d*.066),
-  (-.066,head_w*.420,head_d*.455,-head_d*.068)
- ],HAIR,22)
+ add_smooth_lock(HEAD,f'SideScalpLockV94_{side}',[
+  (side*head_w*.455,.176,-head_d*.025),
+  (side*head_w*.495,.145,-head_d*.030),
+  (side*head_w*.520,.108,-head_d*.040),
+  (side*head_w*.530,.068,-head_d*.050),
+  (side*head_w*.522,.026,-head_d*.066),
+  (side*head_w*.505,-.014,-head_d*.082),
+  (side*head_w*.478,-.047,-head_d*.098),
+  (side*head_w*.435,-.069,-head_d*.112)
+ ],[.008,.013,.017,.019,.019,.017,.012,.0045],[.020,.036,.050,.058,.060,.056,.044,.014],HAIR,16,6)
+ # A restrained rear-biased highlight breaks up the mass without creating a second hanging panel.
+ add_smooth_lock(HEAD,f'SideScalpAccentV94_{side}',[
+  (side*head_w*.482,.158,-head_d*.105),
+  (side*head_w*.510,.115,-head_d*.125),
+  (side*head_w*.518,.066,-head_d*.142),
+  (side*head_w*.505,.018,-head_d*.155),
+  (side*head_w*.472,-.030,-head_d*.162)
+ ],[.004,.006,.007,.006,.002],[.010,.015,.018,.016,.006],HAIR_HI,12,5)
 
 # v9.0: the fringe is born inside the existing crown cap instead of being patched to it with blobs.
 # The first two samples are narrow and hidden under the cap; width only opens after the path exits the crown.
