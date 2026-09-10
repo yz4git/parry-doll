@@ -1,0 +1,59 @@
+name: CC0 Face Reference Analysis
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/cc0-face-reference.trigger
+
+permissions:
+  contents: write
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Fetch pinned CC0 hm08 facial data
+        run: |
+          set -euxo pipefail
+          PIN=03264788d967bcd33844be70e35db05b231aa017
+          SRC=/tmp/threews-cc0
+          rm -rf "$SRC"
+          git init "$SRC"
+          git -C "$SRC" remote add origin https://github.com/nirholas/three.ws.git
+          git -C "$SRC" config remote.origin.promisor true
+          git -C "$SRC" config remote.origin.partialclonefilter blob:none
+          git -C "$SRC" fetch --depth=1 --filter=blob:none origin "$PIN"
+          git -C "$SRC" sparse-checkout init --cone
+          git -C "$SRC" sparse-checkout set avatar-sources/anny
+          git -C "$SRC" checkout --detach FETCH_HEAD
+          test "$(git -C "$SRC" rev-parse HEAD)" = "$PIN"
+          grep -qi 'CC0' "$SRC/avatar-sources/anny/README.md"
+          grep -qi 'CC0' "$SRC/avatar-sources/anny/LICENSE.md"
+          test -s "$SRC/avatar-sources/anny/3dobjs/base.obj"
+          du -h "$SRC/avatar-sources/anny/3dobjs/base.obj"
+      - name: Analyze topology and extract normalized face patch
+        run: |
+          python tools/analyze-cc0-face-topology.py --source-root /tmp/threews-cc0/avatar-sources/anny
+          python -m json.tool tools/cc0-face-topology-stats.json >/dev/null
+          python -m json.tool tools/cc0-face-topology-template-v1.json >/dev/null
+          test -s docs/CC0_FACE_TOPOLOGY_ANALYSIS.md
+      - name: Commit analysis products
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/CC0_FACE_TOPOLOGY_ANALYSIS.md tools/cc0-face-topology-stats.json tools/cc0-face-topology-template-v1.json
+          if git diff --cached --quiet; then
+            echo 'CC0 face analysis already current'
+            exit 0
+          fi
+          git commit -m 'docs: analyze pinned CC0 hm08 face topology'
+          git push origin main
