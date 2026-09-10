@@ -533,6 +533,12 @@ def add_cc0_face_patch_v77(p,name,mat):
   under_t=max(0.0,min(1.0,(-.078-yy)/.067))
   under_t=under_t*under_t*(3.0-2.0*under_t)
   x*=1.0-.52*under_t
+  # v10.8 feathers only the lower outer CC0 perimeter. The centre chin keeps the measured profile;
+  # outer seam vertices contract a little more so no isolated triangle can protrude past HeadShellV60.
+  edge_t=max(0.0,min(1.0,(abs(vx)-.205)/.095))
+  edge_t=edge_t*edge_t*(3.0-2.0*edge_t)
+  edge_under=edge_t*under_t
+  x*=1.0-.14*edge_under
   # Anime-reference eye spacing: spread the orbital band without widening cheeks/jaw globally.
   orbital=math.exp(-((yy-.031)/.035)**2)
   x+=math.copysign(.0076*orbital*max(0.0,1.0-abs(x)/.119),x) if abs(x)>1e-8 else 0.0
@@ -544,7 +550,10 @@ def add_cc0_face_patch_v77(p,name,mat):
   seam=max(0.0,min(1.0,(.126-abs(x))/.040))
   relief_gain=.62+.38*seam
   # Keep the expressive face patch proud through the cheeks, then settle its lower boundary into the backing shell.
-  z=pz+local_relief*relief_gain+(.0016-.0012*under_t)
+  # At the lower outer perimeter suppress generic relief and pull the seam fractionally rearward;
+  # centre-line chin/lip depth remains untouched because edge_under is zero there.
+  local_relief*=1.0-.62*edge_under
+  z=pz+local_relief*relief_gain+(.0016-.0012*under_t-.00085*edge_under)
   bridge_lat=math.exp(-(x/.030)**2)
   tip_lat=math.exp(-(x/.0215)**2)
   z+=.0024*bridge_lat*math.exp(-((yy+.006)/.052)**2)
@@ -710,6 +719,7 @@ TH_L=empty('BL_THIGH_L',ROOT);SH_L=empty('BL_SHIN_L',ROOT);FOOT_L=empty('BL_FOOT
 # REFERENCE_V105: visible rear-hair geometry expands around ear height while the buried v10.4 undercap returns to the compact v10.3 footprint.
 # REFERENCE_V106: the CC0 face patch lower third tapers into the head shell, removing the collar-like under-chin boundary spikes without changing eyes, nose or cheeks.
 # REFERENCE_V107: the remaining lower patch edge tightens further and settles into the head shell, eliminating the last under-chin sawtooth silhouette.
+# REFERENCE_V108: only the lower CC0 patch perimeter is feathered into the backing head shell, removing residual chin-edge teeth while preserving the centre profile.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
