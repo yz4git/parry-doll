@@ -1,1 +1,1 @@
-2026-09-10 Blender heroine v7.3 CC0-informed continuous profile exposed almond aperture five-view audit
+2026-09-10 Blender heroine v7.4 data-driven single profile flush mouth five-view audit
