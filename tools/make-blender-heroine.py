@@ -276,7 +276,7 @@ def add_flow_ribbon(p,name,pts,widths,thickness,mat):
  mesh=bpy.data.meshes.new(name+'Mesh');mesh.from_pydata(verts,[],faces);mesh.update();o=bpy.data.objects.new(name,mesh);bpy.context.scene.collection.objects.link(o);o.data.materials.append(mat);smooth(o);return parent(o,p)
 
 def add_fringe_surface_v85(p,name,pts,widths,lifts,mat,thickness=.0032):
- cols=5;fs=(-1.0,-.5,0.0,.5,1.0);verts=[];n=len(pts)
+ cols=9;fs=(-1.0,-.75,-.5,-.25,0.0,.25,.5,.75,1.0);verts=[];n=len(pts)
  for layer in (-.5,.5):
   for i,((x,y,z),w,lift) in enumerate(zip(pts,widths,lifts)):
    if i==0:tx,ty=pts[1][0]-x,pts[1][1]-y
@@ -306,7 +306,12 @@ def add_fringe_surface_v85(p,name,pts,widths,lifts,mat,thickness=.0032):
   a=(n-1)*cols+c;faces.append((a,a+1,layer_count+a+1,layer_count+a))
  mesh=bpy.data.meshes.new(name+'Mesh');mesh.from_pydata(verts,[],faces);mesh.update()
  o=bpy.data.objects.new(name,mesh);bpy.context.scene.collection.objects.link(o);o.data.materials.append(mat);smooth(o)
- bevel=o.modifiers.new('fringe_edge_soften','BEVEL');bevel.width=.0015;bevel.segments=2
+ # One Catmull-Clark pass converts the low-poly folded sheet into a continuous hair mass while
+ # preserving enough edge definition for the side-swept silhouette. The denser cross-section above
+ # prevents the broad triangular facets seen in the v8.5 five-view portrait audit.
+ subd=o.modifiers.new('fringe_surface_smooth','SUBSURF');subd.subdivision_type='CATMULL_CLARK';subd.levels=1;subd.render_levels=1
+ bpy.context.view_layer.objects.active=o;bpy.ops.object.modifier_apply(modifier=subd.name)
+ bevel=o.modifiers.new('fringe_edge_soften','BEVEL');bevel.width=.0011;bevel.segments=2
  bpy.context.view_layer.objects.active=o;bpy.ops.object.modifier_apply(modifier=bevel.name)
  return parent(o,p)
 
@@ -629,6 +634,7 @@ TH_L=empty('BL_THIGH_L',ROOT);SH_L=empty('BL_SHIN_L',ROOT);FOOT_L=empty('BL_FOOT
 # REFERENCE_V83: +10% mature almond aperture, lower side-swept fringe and clean temple silhouette.
 # REFERENCE_V84: overlap-closed front fringe with the v8.3 face and eye proportions frozen.
 # REFERENCE_V85: scalp-hugging convex fringe surfaces replace the braided/tubular front locks.
+# REFERENCE_V86: high-sample Catmull-Clark fringe surfaces for smooth production hair silhouette.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
@@ -792,10 +798,10 @@ add_rear_hair_shell(HEAD,'HairRearShellV59',[
 ],HAIR,44)
 
 # v8.5: two overlapping convex surfaces form a coherent side-swept fringe instead of rope-like locks.
-add_fringe_surface_v85(HEAD,'FringeSurfaceV85_Main',[(-.108,.194,.034),(-.092,.177,.060),(-.064,.154,.083),(-.026,.130,.099),(.020,.110,.105),(.072,.096,.106)],[.094,.100,.096,.082,.060,.025],[.0060,.0075,.0080,.0065,.0045,.0020],HAIR,.0036)
-add_fringe_surface_v85(HEAD,'FringeSurfaceV85_Over',[(-.040,.199,.030),(-.022,.181,.055),(.006,.158,.079),(.042,.135,.097),(.082,.115,.103),(.116,.102,.103)],[.070,.076,.072,.060,.040,.017],[.0050,.0065,.0070,.0060,.0040,.0015],HAIR_HI,.0033)
+add_fringe_surface_v85(HEAD,'FringeSurfaceV85_Main',[(-.108,.194,.034),(-.092,.177,.060),(-.064,.154,.083),(-.026,.130,.099),(.020,.110,.105),(.072,.096,.106)],[.094,.100,.096,.082,.060,.025],[.0050,.0062,.0068,.0056,.0038,.0017],HAIR,.0034)
+add_fringe_surface_v85(HEAD,'FringeSurfaceV85_Over',[(-.040,.199,.030),(-.022,.181,.055),(.006,.158,.079),(.042,.135,.097),(.082,.115,.103),(.116,.102,.103)],[.070,.076,.072,.060,.040,.017],[.0042,.0054,.0059,.0050,.0034,.0013],HAIR_HI,.0031)
 # A compact root overlap seals the crown/front junction while remaining visibly part of the same hair sheet.
-add_fringe_surface_v85(HEAD,'FringeSurfaceV85_Root',[(-.066,.202,.036),(-.048,.190,.061),(-.025,.176,.082),(.003,.163,.097)],[.070,.076,.066,.030],[.0055,.0065,.0060,.0030],HAIR,.0034)
+add_fringe_surface_v85(HEAD,'FringeSurfaceV85_Root',[(-.066,.202,.036),(-.048,.190,.061),(-.025,.176,.082),(.003,.163,.097)],[.070,.076,.066,.030],[.0046,.0054,.0050,.0025],HAIR,.0032)
 add_strand(HEAD,'FringeFineV85_A',[(-.102,.187,.043),(-.062,.157,.084),(.026,.112,.108)],.000050,HAIR_HI)
 add_strand(HEAD,'FringeFineV85_B',[(-.052,.194,.040),(.002,.160,.081),(.090,.113,.105)],.000048,HAIR_HI)
 add_strand(HEAD,'FringeFineV85_C',[(-.090,.194,.040),(-.042,.172,.074),(.046,.129,.103)],.000044,HAIR_HI)
