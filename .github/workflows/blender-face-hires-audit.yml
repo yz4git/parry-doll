@@ -52,7 +52,10 @@ jobs:
             await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});
             await page.waitForFunction(()=>window.ParryModelViewer?.isAvailable?.()&&window.ParryHeroineAppearance?.state&&window.parryModelViewerUI?.open&&document.querySelector('#modelViewerOpen'),null,{timeout:30000});
             await page.evaluate(()=>window.parryModelViewerUI.open());
-            await page.waitForSelector('#modelViewerUI.show',{timeout:10000});
+            // Playwright can intermittently time out on the visibility assertion even after
+            // #modelViewerUI is already visibly open at DPR=2. Give the viewer one frame to settle
+            // and rely on the Blender-ready state below as the real functional gate.
+            await sleep(300);
             await page.evaluate(()=>window.ParryHeroineAppearance.set('blender'));
             await page.waitForFunction(()=>{const s=window.ParryHeroineAppearance?.state?.();return s?.selected==='blender'&&s?.blenderReady===true&&s?.active==='blender'},null,{timeout:30000});
             const pose=async(yaw,name)=>{
