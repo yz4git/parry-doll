@@ -592,6 +592,7 @@ TH_L=empty('BL_THIGH_L',ROOT);SH_L=empty('BL_SHIN_L',ROOT);FOOT_L=empty('BL_FOOT
 # REFERENCE_V81: clean cheek silhouette, lifted side wisps and sealed crown root for production portrait readability.
 # REFERENCE_V82: artifact-free cheeks, no detached side strands and a front-visible overlapping crown seal.
 # REFERENCE_V83: +10% mature almond aperture, lower side-swept fringe and clean temple silhouette.
+# REFERENCE_V84: overlap-closed front fringe with the v8.3 face and eye proportions frozen.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
@@ -755,9 +756,9 @@ add_rear_hair_shell(HEAD,'HairRearShellV59',[
 ],HAIR,44)
 
 # v8.0 rounded scalp-following fringe. Broad geometry lives above the forehead, not as flat face cards.
-add_smooth_lock(HEAD,'FringeMassV83_A',[(-.098,.190,.030),(-.084,.173,.056),(-.060,.151,.080),(-.026,.127,.099),(.018,.108,.106),(.066,.094,.107)],[.054,.058,.054,.043,.028,.010],[.019,.020,.018,.014,.009,.004],HAIR,14,6)
-add_smooth_lock(HEAD,'FringeMassV83_B',[(-.040,.194,.026),(-.020,.178,.053),(.010,.156,.078),(.048,.132,.098),(.086,.111,.105),(.118,.098,.104)],[.046,.048,.043,.033,.021,.008],[.017,.018,.016,.012,.007,.003],HAIR,14,6)
-add_smooth_lock(HEAD,'FringeAccentV83',[(-.116,.185,.025),(-.098,.166,.052),(-.072,.145,.077),(-.038,.124,.096),(.002,.110,.104)],[.028,.030,.027,.020,.007],[.011,.011,.010,.007,.003],HAIR_HI,12,5)
+add_smooth_lock(HEAD,'FringeMassV84_A',[(-.098,.190,.030),(-.084,.173,.056),(-.060,.151,.080),(-.026,.127,.101),(.018,.108,.108),(.066,.094,.107)],[.056,.061,.059,.058,.040,.012],[.020,.021,.020,.016,.011,.004],HAIR,14,6)
+add_smooth_lock(HEAD,'FringeMassV84_B',[(-.040,.194,.026),(-.020,.178,.053),(.010,.156,.080),(.044,.132,.102),(.084,.111,.107),(.118,.098,.104)],[.048,.051,.048,.050,.030,.009],[.018,.019,.018,.015,.009,.003],HAIR,14,6)
+add_smooth_lock(HEAD,'FringeAccentV84',[(-.116,.185,.025),(-.098,.166,.052),(-.072,.145,.079),(-.036,.124,.101),(.006,.110,.106)],[.030,.033,.032,.029,.009],[.012,.012,.011,.009,.003],HAIR_HI,12,5)
 # v8.2 overlaps the exact front crown gap visible in the five-view audit. Two small rounded
 # masses sit on the scalp/front transition; neither extends down across the forehead like a card.
 add_smooth_lock(HEAD,'CrownRootSealV82_A',[(-.030,.187,.078),(-.016,.180,.092),(0,.172,.101),(.020,.164,.104)],[.033,.038,.032,.009],[.011,.012,.010,.003],HAIR,14,6)
