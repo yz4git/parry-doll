@@ -1,1 +1,1 @@
-2026-09-11 Blender heroine v9.8 hidden convex temporal root underlay side-scalp continuity dual five-view audit
+2026-09-11 Blender heroine v9.9 extended temporal leaves preserve ear line reduce side-scalp skin dual five-view audit
