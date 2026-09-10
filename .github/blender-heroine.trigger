@@ -1,1 +1,1 @@
-2026-09-10 build Blender heroine v9.4 smooth elliptical side scalp locks replace rectangular temporal sheets
+2026-09-10 build Blender heroine v9.5 layered tapered temporal leaves replace detached ear-pad locks
