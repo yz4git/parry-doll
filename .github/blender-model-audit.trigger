@@ -1,1 +1,1 @@
-2026-09-10 Blender heroine v9.5 layered tapered temporal leaves continuous side-hair flow dual five-view audit
+2026-09-11 Blender heroine v9.6 anatomical ears unified dark temporal leaves dual five-view audit
