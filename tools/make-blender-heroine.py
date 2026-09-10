@@ -3,10 +3,10 @@ import bpy, json, os, math
 ROOT_DIR=os.path.abspath(os.path.join(os.path.dirname(__file__),'..'))
 OUT=os.path.join(ROOT_DIR,'dist','assets','models','heroine-blender.glb')
 REF_PATH=os.path.join(ROOT_DIR,'tools','heroine-reference-proportions.json')
-FACE74_PATH=os.path.join(ROOT_DIR,'tools','heroine-face-profile-v74.json')
+FACE75_PATH=os.path.join(ROOT_DIR,'tools','heroine-face-profile-v75.json')
 os.makedirs(os.path.dirname(OUT),exist_ok=True)
 with open(REF_PATH,'r',encoding='utf-8') as f:REF=json.load(f)
-with open(FACE74_PATH,'r',encoding='utf-8') as f:FACE74=json.load(f)
+with open(FACE75_PATH,'r',encoding='utf-8') as f:FACE75=json.load(f)
 H=float(REF['derived_world_units']['nominal_height'])
 FW=REF['front_width_over_height'];SD=REF['side_depth_over_height'];DW=REF['derived_world_units']
 W=lambda key:float(FW[key])*H
@@ -399,20 +399,20 @@ def add_profile_head_v55(p,name,rows,mat,segments=96):
  return parent(o,p)
 
 
-def sample_face_profile_v74(yy):
- pts=FACE74['profile_curve']
+def sample_face_profile_v75(yy):
+ pts=FACE75['profile_curve']
  if yy>=pts[0]['y']:
-  return pts[0]['depth_offset'],pts[0]['half_width']
+  return pts[0]['front_z'],pts[0]['half_width']
  if yy<=pts[-1]['y']:
-  return pts[-1]['depth_offset'],pts[-1]['half_width']
+  return pts[-1]['front_z'],pts[-1]['half_width']
  for a,b in zip(pts,pts[1:]):
   if a['y']>=yy>=b['y']:
    t=(a['y']-yy)/max(a['y']-b['y'],1e-8)
    t=t*t*(3.0-2.0*t)
-   d=a['depth_offset']*(1-t)+b['depth_offset']*t
+   z=a['front_z']*(1-t)+b['front_z']*t
    w=a['half_width']*(1-t)+b['half_width']*t
-   return d,w
- return 0.0,.03
+   return z,w
+ return .097,.04
 
 def add_anime_head_v60(p,name,mat,segments=96,rings=48):
  # Smooth UV topology replaces row-profile rings that produced horizontal shading bands.
@@ -425,7 +425,7 @@ def add_anime_head_v60(p,name,mat,segments=96,rings=48):
   # Adult/anime silhouette: broad cranium, tapered lower cheek and compact chin.
   lower=max(0.0,min(1.0,(-.030-yy)/.120))
   cheek=math.exp(-((yy+.010)/.060)**2)
-  width=.132*(1.0-.365*lower+.036*cheek)
+  width=.132*(1.0-.320*lower+.040*cheek)
   for i in range(segments):
    phi=2*math.pi*i/segments
    cp=math.cos(phi);sp=math.sin(phi)
@@ -434,14 +434,22 @@ def add_anime_head_v60(p,name,mat,segments=96,rings=48):
    z=depth*sp
    if sp>0:
     fm=sp**2.0
+    # CC0-informed facial plane: distribute the front surface through neighboring vertices instead of
+    # leaving the cheeks on a spherical dome. This stabilizes the same silhouette in front, 3/4 and profile.
+    face_band=math.exp(-((yy+.030)/.125)**4)
+    plane_lat=1.0/(1.0+(abs(x)/.095)**6)
+    front_plane=depth*.985
+    z+=fm*face_band*plane_lat*(front_plane-z)*.62
     # Recess the eye sockets while supporting the zygomatic plane.
     for side in (-1,1):
      ex=side*.0470
      z-=fm*.0058*math.exp(-((x-ex)/.026)**2-((yy-.033)/.022)**2)
      z+=fm*.0044*math.exp(-((x-side*.054)/.035)**2-((yy+.004)/.040)**2)
-    # v7.4: one sampled centre-line profile controls the whole forehead/nose/mouth/chin transition.
-    pd,pw=sample_face_profile_v74(yy)
-    z+=fm*pd*math.exp(-(x/max(pw,1e-5))**2)
+    # v7.5: absolute centre-line target plus a broad CC0-like lateral falloff.
+    # Using an absolute front Z compensates the UV sphere's severe lower-face recession at the chin.
+    pz,pw=sample_face_profile_v75(yy)
+    lateral=1.0/(1.0+(abs(x)/max(pw,1e-5))**4)
+    z+=fm*(pz-depth)*lateral
    verts.append(bpos((x,yy,z)))
  bottom_idx=len(verts);verts.append(bottom)
  faces=[]
@@ -524,6 +532,7 @@ TH_L=empty('BL_THIGH_L',ROOT);SH_L=empty('BL_SHIN_L',ROOT);FOOT_L=empty('BL_FOOT
 # REFERENCE_V72: smooth 3D almond sclera lens, stronger integrated S-profile and three-quarter-safe portrait proportions.
 # REFERENCE_V73: CC0-topology-informed continuous profile depth and fully exposed almond eye aperture.
 # REFERENCE_V74: data-driven single profile spline, flush mouth tint and five-view consistency.
+# REFERENCE_V75: CC0-informed facial plane, absolute profile cage, single iris and flush two-volume lips.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
@@ -644,21 +653,25 @@ eye_ry=.0118
 eye_tilt=.0030
 for side in(-1,1):
  ex=side*eye_x
- add_almond_lens(HEAD,f'EyeScleraV74_{side}',ex,eye_y,.0972,.0315,.0120,.0052,SCLERA,8,64,side,eye_tilt*.66)
+ add_almond_lens(HEAD,f'EyeScleraV75_{side}',ex,eye_y,.1032,.0320,.0118,.0042,SCLERA,8,64,side,eye_tilt*.66)
  # v7.1: the embedded eyeball itself supplies the curved visible sclera; no flat white sticker surface.
- add_sphere(HEAD,f'IrisV74_{side}',(ex,eye_y,.1028),(.0102,.0091,.00155),IRIS_INNER,44,26)
- add_sphere(HEAD,f'IrisInnerV74_{side}',(ex,eye_y-.0001,.1035),(.0061,.0057,.00130),IRIS,38,22)
- add_sphere(HEAD,f'PupilV74_{side}',(ex,eye_y-.0001,.1042),(.00255,.0030,.00105),PUPIL,30,20)
- add_ellipse_surface(HEAD,f'EyeLightV60_{side}',ex-side*.0032,eye_y+.0040,.1047,.00115,.00095,SCLERA,18)
+ add_sphere(HEAD,f'IrisV75_{side}',(ex,eye_y,.1080),(.0110,.0096,.00145),IRIS_INNER,44,26)
+ # v7.5 intentionally uses a single iris field; no concentric inner target ring.
+ add_sphere(HEAD,f'PupilV75_{side}',(ex,eye_y-.0001,.1091),(.00245,.00315,.00100),PUPIL,30,20)
+ add_ellipse_surface(HEAD,f'EyeLightV60_{side}',ex-side*.0035,eye_y+.0041,.1097,.00115,.00095,SCLERA,18)
  inner=ex-side*eye_rx*.94;outer=ex+side*eye_rx*1.02
- add_strand(HEAD,f'UpperLashV74_{side}',[(inner,eye_y-eye_tilt+.0010,.1030),(ex,eye_y+.0131,.1040),(outer,eye_y+eye_tilt+.0010,.1031)],.00072,HAIR)
- add_strand(HEAD,f'LowerLidV74_{side}',[(inner+side*.0038,eye_y-eye_tilt-.0002,.1016),(ex,eye_y-.0090,.1020),(outer-side*.0038,eye_y+eye_tilt-.0002,.1016)],.000090,FACE_DARK)
- add_strand(HEAD,f'BrowV74_{side}',[(ex-side*.025,.064,.1000),(ex,.071,.1016),(ex+side*.029,.061,.1004)],.00058,HAIR)
+ add_strand(HEAD,f'UpperLashV75_{side}',[(inner,eye_y-eye_tilt+.0010,.1070),(ex,eye_y+.0130,.1082),(outer,eye_y+eye_tilt+.0010,.1071)],.00076,HAIR)
+ add_strand(HEAD,f'UpperLidFoldV75_{side}',[(inner+side*.004,eye_y-eye_tilt+.0030,.1058),(ex,eye_y+.0150,.1065),(outer-side*.004,eye_y+eye_tilt+.0030,.1058)],.00018,FACE_DARK)
+ add_strand(HEAD,f'LowerLidV75_{side}',[(inner+side*.0040,eye_y-eye_tilt-.0002,.1052),(ex,eye_y-.0090,.1057),(outer-side*.0040,eye_y+eye_tilt-.0002,.1052)],.000085,FACE_DARK)
+ add_strand(HEAD,f'BrowV75_{side}',[(ex-side*.025,.064,.1010),(ex,.071,.1020),(ex+side*.029,.061,.1012)],.00058,HAIR)
 
 # v7.1 integrated portrait accents: head topology owns all nose/mouth depth.
 # Only a shallow colour patch remains for the lips, following the actual mouth plane instead of floating in front of it.
-add_almond_surface(HEAD,'LipTintV74',0,-.0850,.0962,.0250,.0062,.00028,LIP,72,1,0.0)
-add_strand(HEAD,'MouthSeamV74',[(-.0210,-.0842,.0968),(0,-.0850,.0972),(.0210,-.0842,.0968)],.000065,FACE_DARK)
+add_almond_surface(HEAD,'UpperLipTintV75',0,-.0800,.1091,.0215,.0042,.00014,LIP,72,1,0.0)
+add_almond_surface(HEAD,'LowerLipTintV75',0,-.0900,.1111,.0222,.0046,.00014,LIP,72,1,0.0)
+add_strand(HEAD,'MouthSeamV75',[(-.0205,-.0850,.1100),(0,-.0854,.1104),(.0205,-.0850,.1100)],.000060,FACE_DARK)
+for side in(-1,1):
+ add_ellipse_surface(HEAD,f'NostrilTintV75_{side}',side*.0056,-.0570,.1157,.00155,.00058,FACE_DARK,16)
 
 # Hair v5.9: broad layered side sweep with an open eye line, plus a much fuller high pony cascade.
 add_section_mesh(HEAD,'HairTopCapV59',[
