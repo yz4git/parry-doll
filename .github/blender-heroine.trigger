@@ -1,1 +1,1 @@
-2026-09-10 build Blender heroine v8.1 clean cheek silhouette exterior side wisps sealed crown root
+2026-09-10 build Blender heroine v8.2 artifact-free cheeks no detached side strands front-visible crown seal
