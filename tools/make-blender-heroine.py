@@ -580,11 +580,17 @@ def add_cc0_face_patch_v77(p,name,mat):
 def add_anime_head_v60(p,name,mat,segments=96,rings=48):
  # Smooth UV topology replaces row-profile rings that produced horizontal shading bands.
  verts=[]
- top=bpos((0,.179,0));bottom=bpos((0,-.157,0));verts.append(top)
+ # v11.1 keeps the measured face untouched through the jaw, but shortens the purely structural
+ # UV-sphere tail below it.  The mapped bottom remains overlapped by the neck, avoiding any gap.
+ jaw_anchor=-.118
+ under_chin_scale=.68
+ bottom_y=jaw_anchor+(-.157-jaw_anchor)*under_chin_scale
+ top=bpos((0,.179,0));bottom=bpos((0,bottom_y,0));verts.append(top)
  for r in range(1,rings):
   theta=math.pi*r/rings
   sy=math.cos(theta);rad=math.sin(theta)
   yy=.011+.168*sy
+  render_y=yy if yy>=jaw_anchor else jaw_anchor+(yy-jaw_anchor)*under_chin_scale
   # Adult/anime silhouette: broad cranium, tapered lower cheek and compact chin.
   lower=max(0.0,min(1.0,(-.030-yy)/.120))
   cheek=math.exp(-((yy+.010)/.060)**2)
@@ -617,7 +623,7 @@ def add_anime_head_v60(p,name,mat,segments=96,rings=48):
     patch_y=1.0-max(0.0,min(1.0,abs(yy-.005)/.170))
     patch_x=max(0.0,min(1.0,(.132-abs(x))/.030))
     z-=fm*.0135*patch_y*patch_x
-   verts.append(bpos((x,yy,z)))
+   verts.append(bpos((x,render_y,z)))
  bottom_idx=len(verts);verts.append(bottom)
  faces=[]
  first=1
@@ -735,6 +741,7 @@ TH_L=empty('BL_THIGH_L',ROOT);SH_L=empty('BL_SHIN_L',ROOT);FOOT_L=empty('BL_FOOT
 # REFERENCE_V108: only the lower CC0 patch perimeter is feathered into the backing head shell, removing residual chin-edge teeth while preserving the centre profile.
 # REFERENCE_V109: the CC0 overlay fades behind the backing shell below the mouth; the continuous head shell owns chin and under-chin silhouette with no beard-like patch edge.
 # REFERENCE_V110: fully hidden lower CC0 faces are trimmed after the fade so no intersecting overlay triangles can reappear as chin/neck scallops in three-quarter views.
+# REFERENCE_V111: the closed head shell compresses only below the jaw anchor, replacing the long UV-sphere bottom cone with a compact under-chin transition while all facial landmarks stay fixed.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
