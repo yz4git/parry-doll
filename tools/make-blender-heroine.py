@@ -4,9 +4,15 @@ ROOT_DIR=os.path.abspath(os.path.join(os.path.dirname(__file__),'..'))
 OUT=os.path.join(ROOT_DIR,'dist','assets','models','heroine-blender.glb')
 REF_PATH=os.path.join(ROOT_DIR,'tools','heroine-reference-proportions.json')
 FACE75_PATH=os.path.join(ROOT_DIR,'tools','heroine-face-profile-v75.json')
+CC0_FACE_PATH=os.path.join(ROOT_DIR,'tools','cc0-face-topology-template-v1.json')
+CC0_STATS_PATH=os.path.join(ROOT_DIR,'tools','cc0-face-topology-stats.json')
 os.makedirs(os.path.dirname(OUT),exist_ok=True)
 with open(REF_PATH,'r',encoding='utf-8') as f:REF=json.load(f)
 with open(FACE75_PATH,'r',encoding='utf-8') as f:FACE75=json.load(f)
+with open(CC0_FACE_PATH,'r',encoding='utf-8') as f:CC0_FACE=json.load(f)
+with open(CC0_STATS_PATH,'r',encoding='utf-8') as f:CC0_STATS=json.load(f)
+if CC0_FACE.get('version')!=2 or CC0_FACE.get('license')!='CC0-1.0':
+ raise RuntimeError('v7.7 requires the local CC0 hm08 topology template v2')
 H=float(REF['derived_world_units']['nominal_height'])
 FW=REF['front_width_over_height'];SD=REF['side_depth_over_height'];DW=REF['derived_world_units']
 W=lambda key:float(FW[key])*H
@@ -414,6 +420,43 @@ def sample_face_profile_v75(yy):
    return z,w
  return .097,.04
 
+def sample_cc0_front_v77(yn):
+ pts=CC0_STATS['patch']['profile_samples_normalized']
+ if yn<=pts[0]['y']: return pts[0]['front_z']-.5
+ if yn>=pts[-1]['y']: return pts[-1]['front_z']-.5
+ for a,b in zip(pts,pts[1:]):
+  if a['y']<=yn<=b['y']:
+   t=(yn-a['y'])/max(b['y']-a['y'],1e-8)
+   t=t*t*(3-2*t)
+   return (a['front_z']*(1-t)+b['front_z']*t)-.5
+ return 0.0
+
+def add_cc0_face_patch_v77(p,name,mat):
+ # CC0 supplies only topology/local relief. Heroine reference controls size, eye spacing and centre-line profile.
+ verts=[]
+ for vx,vy,vz in CC0_FACE['vertices']:
+  yn=max(0.0,min(1.0,vy+.5))
+  yy=-.145+yn*.305
+  # 0.245 total mapping gives a slim 0.1225 half-face; taper the lower third into the reference V jaw.
+  jaw_t=max(0.0,min(1.0,(-.025-yy)/.120))
+  x=vx*.245*(1.0-.105*jaw_t)
+  # Anime-reference eye spacing: spread the orbital band without widening cheeks/jaw globally.
+  orbital=math.exp(-((yy-.031)/.035)**2)
+  x+=math.copysign(.0060*orbital*max(0.0,1.0-abs(x)/.122),x) if abs(x)>1e-8 else 0.0
+  # Lock the foremost profile at every height to v7.5+, then transfer only CC0's local rearward relief.
+  pz,_=sample_face_profile_v75(yy)
+  generic_front=sample_cc0_front_v77(yn)
+  local_relief=(vz-generic_front)*.050
+  # Reduce generic relief near the outer seam so it blends gently into the recessed UV cranium.
+  seam=max(0.0,min(1.0,(.126-abs(x))/.040))
+  relief_gain=.62+.38*seam
+  z=pz+local_relief*relief_gain+.0016
+  verts.append(bpos((x,yy,z)))
+ faces=[tuple(f) for f in CC0_FACE['faces']]
+ mesh=bpy.data.meshes.new(name+'Mesh');mesh.from_pydata(verts,[],faces);mesh.update()
+ o=bpy.data.objects.new(name,mesh);bpy.context.scene.collection.objects.link(o);o.data.materials.append(mat);smooth(o)
+ return parent(o,p)
+
 def add_anime_head_v60(p,name,mat,segments=96,rings=48):
  # Smooth UV topology replaces row-profile rings that produced horizontal shading bands.
  verts=[]
@@ -450,6 +493,10 @@ def add_anime_head_v60(p,name,mat,segments=96,rings=48):
     pz,pw=sample_face_profile_v75(yy)
     lateral=1.0/(1.0+(abs(x)/max(pw,1e-5))**4)
     z+=fm*(pz-depth)*lateral
+    # v7.7 hybrid: keep this surface as cranium/backing but place it safely behind the local quad face patch.
+    patch_y=1.0-max(0.0,min(1.0,abs(yy-.005)/.170))
+    patch_x=max(0.0,min(1.0,(.132-abs(x))/.030))
+    z-=fm*.0135*patch_y*patch_x
    verts.append(bpos((x,yy,z)))
  bottom_idx=len(verts);verts.append(bottom)
  faces=[]
@@ -534,6 +581,7 @@ TH_L=empty('BL_THIGH_L',ROOT);SH_L=empty('BL_SHIN_L',ROOT);FOOT_L=empty('BL_FOOT
 # REFERENCE_V74: data-driven single profile spline, flush mouth tint and five-view consistency.
 # REFERENCE_V75: CC0-informed facial plane, absolute profile cage, single iris and flush two-volume lips.
 # REFERENCE_V76: covered hairline, slimmer V-face, wider almond gaze and sculpted Cupid lips.
+# REFERENCE_V77: pinned-CC0 quad topology hybrid face retargeted to the PARRY DOLL multiview profile.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
@@ -640,6 +688,7 @@ add_box(PELVIS,'WaistCenterGem',(0,.102,.184),(.026,.050,.018),SILVER,.005)
 # === HEAD / FACE ===
 # v6.0 uses one dense UV surface. Facial depth is deliberately restrained to avoid the v5.x muzzle/nose blowout.
 add_anime_head_v60(HEAD,'HeadShellV60',SKIN,96,48)
+add_cc0_face_patch_v77(HEAD,'FaceQuadPatchV77',SKIN)
 add_cylinder(HEAD,'Neck',(0,-.158,-.008),W('neck')*.33,.084,SKIN,26)
 add_cylinder(HEAD,'Choker',(0,-.139,-.006),W('neck')*.46,.034,BLACK,28)
 add_cylinder(HEAD,'ChokerTrim',(0,-.124,-.006),W('neck')*.47,.009,SILVER,28)
@@ -695,9 +744,8 @@ add_rear_hair_shell(HEAD,'HairRearShellV59',[
  (.206,head_w*.080,head_d*.105,-head_d*.005)
 ],HAIR,44)
 
-# v7.6 front hairline underlay follows the advanced forehead and prevents skin wedges between fringe ribbons.
-add_flow_ribbon(HEAD,'HairlineUnderlayV76',[(0,.188,.034),(0,.166,.060),(0,.143,.082),(0,.120,.099),(0,.101,.106)],[.118,.205,.232,.216,.176],.00125,HAIR)
-add_flow_ribbon(HEAD,'HairlineSoftEdgeV76',[(-.020,.177,.050),(-.008,.153,.075),(.010,.130,.095),(.026,.111,.106)],[.150,.168,.150,.096],.00095,HAIR_HI)
+# v7.7 single continuous front-scalp veil replaces crossed filler ribbons and closes the last forehead opening.
+add_flow_ribbon(HEAD,'HairlineVeilV77',[(0,.194,.052),(0,.177,.073),(0,.158,.091),(0,.138,.103),(0,.118,.109)],[.090,.174,.220,.226,.198],.00110,HAIR)
 
 # Two wide dark planes establish a natural side-swept fringe instead of repeated finger-like locks.
 add_flow_ribbon(HEAD,'FringeSweepV59_A',[(-.112,.182,.012),(-.096,.160,.045),(-.066,.134,.074),(-.027,.107,.096),(.018,.085,.106),(.060,.071,.110)],[.086,.088,.080,.064,.046,.028],.00145,HAIR)
