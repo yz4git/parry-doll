@@ -521,10 +521,11 @@ def sample_cc0_front_v77(yn):
 
 def add_cc0_face_patch_v77(p,name,mat):
  # CC0 supplies only topology/local relief. Heroine reference controls size, eye spacing and centre-line profile.
- verts=[]
+ verts=[];logical_ys=[]
  for vx,vy,vz in CC0_FACE['vertices']:
   yn=max(0.0,min(1.0,vy+.5))
   yy=-.145+yn*.305
+  logical_ys.append(yy)
   # 0.245 total mapping gives a slim 0.1225 half-face; taper the lower third into the reference V jaw.
   jaw_t=max(0.0,min(1.0,(-.025-yy)/.120))
   x=vx*.238*(1.0-.175*jaw_t)
@@ -564,7 +565,14 @@ def add_cc0_face_patch_v77(p,name,mat):
   z+=.0024*bridge_lat*math.exp(-((yy+.006)/.052)**2)
   z+=.0022*tip_lat*math.exp(-((yy+.045)/.0195)**2)
   verts.append(bpos((x,yy,z)))
- faces=[tuple(f) for f in CC0_FACE['faces']]
+ # v11.0: v10.9 has already moved the lower overlay behind HeadShellV60. Drop faces that
+ # touch the fully hidden under-chin zone so they cannot intersect back through the closed shell.
+ # The cutoff remains below the mouth/labiomental work; the visible chin is owned by HeadShellV60.
+ faces=[]
+ for f in CC0_FACE['faces']:
+  if min(logical_ys[i] for i in f) < -.118:
+   continue
+  faces.append(tuple(f))
  mesh=bpy.data.meshes.new(name+'Mesh');mesh.from_pydata(verts,[],faces);mesh.update()
  o=bpy.data.objects.new(name,mesh);bpy.context.scene.collection.objects.link(o);o.data.materials.append(mat);smooth(o)
  return parent(o,p)
@@ -726,6 +734,7 @@ TH_L=empty('BL_THIGH_L',ROOT);SH_L=empty('BL_SHIN_L',ROOT);FOOT_L=empty('BL_FOOT
 # REFERENCE_V107: the remaining lower patch edge tightens further and settles into the head shell, eliminating the last under-chin sawtooth silhouette.
 # REFERENCE_V108: only the lower CC0 patch perimeter is feathered into the backing head shell, removing residual chin-edge teeth while preserving the centre profile.
 # REFERENCE_V109: the CC0 overlay fades behind the backing shell below the mouth; the continuous head shell owns chin and under-chin silhouette with no beard-like patch edge.
+# REFERENCE_V110: fully hidden lower CC0 faces are trimmed after the fade so no intersecting overlay triangles can reappear as chin/neck scallops in three-quarter views.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
