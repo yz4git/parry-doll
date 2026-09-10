@@ -1,1 +1,1 @@
-2026-09-10 Blender heroine v8.3 +10pct mature almond aperture lower side-swept fringe clean temple silhouette dual five-view audit
+2026-09-10 Blender heroine v8.4 overlap-closed front fringe v8.3 face frozen dual five-view audit
