@@ -408,7 +408,7 @@ def add_anime_head_v60(p,name,mat,segments=96,rings=48):
   # Adult/anime silhouette: broad cranium, tapered lower cheek and compact chin.
   lower=max(0.0,min(1.0,(-.030-yy)/.120))
   cheek=math.exp(-((yy+.010)/.060)**2)
-  width=.132*(1.0-.335*lower+.034*cheek)
+  width=.132*(1.0-.365*lower+.036*cheek)
   for i in range(segments):
    phi=2*math.pi*i/segments
    cp=math.cos(phi);sp=math.sin(phi)
@@ -422,16 +422,16 @@ def add_anime_head_v60(p,name,mat,segments=96,rings=48):
      ex=side*.0470
      z-=fm*.0058*math.exp(-((x-ex)/.026)**2-((yy-.033)/.022)**2)
      z+=fm*.0044*math.exp(-((x-side*.054)/.035)**2-((yy+.004)/.040)**2)
-    # Multiview landmark profile: explicit but continuous forehead -> nose -> lips -> chin S-curve.
-    z+=fm*.0065*math.exp(-(x/.020)**2-((yy+.004)/.060)**2)   # glabella / bridge
-    z+=fm*.0090*math.exp(-(x/.016)**2-((yy+.025)/.034)**2)   # narrow dorsum
-    z+=fm*.0180*math.exp(-(x/.017)**2-((yy+.045)/.018)**2)   # small projected tip
-    z+=fm*.0070*math.exp(-(x/.012)**2-((yy+.058)/.014)**2)   # columella
-    z-=fm*.0028*math.exp(-(x/.018)**2-((yy+.068)/.012)**2)   # philtrum break
-    z+=fm*.0100*math.exp(-(x/.034)**2-((yy+.080)/.012)**2)   # upper lip volume
-    z+=fm*.0110*math.exp(-(x/.036)**2-((yy+.090)/.013)**2)   # lower lip volume
-    z-=fm*.0040*math.exp(-(x/.032)**2-((yy+.104)/.013)**2)   # labiomental crease
-    z+=fm*.0240*math.exp(-(x/.040)**2-((yy+.122)/.025)**2)   # chin support
+    # CC0-informed continuous facial depth field: glabella -> dorsum -> tip -> philtrum -> lips -> chin.
+    z+=fm*.0075*math.exp(-(x/.022)**2-((yy+.003)/.062)**2)   # glabella / root support
+    z+=fm*.0135*math.exp(-(x/.018)**2-((yy+.026)/.038)**2)   # dorsum, spread vertically
+    z+=fm*.0270*math.exp(-(x/.019)**2-((yy+.046)/.020)**2)   # readable but narrow tip
+    z+=fm*.0100*math.exp(-(x/.014)**2-((yy+.059)/.014)**2)   # columella
+    z-=fm*.0052*math.exp(-(x/.020)**2-((yy+.069)/.011)**2)   # subnasal / philtrum setback
+    z+=fm*.0125*math.exp(-(x/.035)**2-((yy+.080)/.012)**2)   # upper lip
+    z+=fm*.0145*math.exp(-(x/.038)**2-((yy+.091)/.013)**2)   # lower lip
+    z-=fm*.0063*math.exp(-(x/.034)**2-((yy+.105)/.013)**2)   # labiomental crease
+    z+=fm*.0220*math.exp(-(x/.043)**2-((yy+.124)/.024)**2)   # compact chin support
    verts.append(bpos((x,yy,z)))
  bottom_idx=len(verts);verts.append(bottom)
  faces=[]
@@ -512,6 +512,7 @@ TH_L=empty('BL_THIGH_L',ROOT);SH_L=empty('BL_SHIN_L',ROOT);FOOT_L=empty('BL_FOOT
 # REFERENCE_V70: volumetric portrait eyes, unified nose form and curved natural lips.
 # REFERENCE_V71: multiview-constrained integrated face surface, embedded eyes and surface-following lip tint.
 # REFERENCE_V72: smooth 3D almond sclera lens, stronger integrated S-profile and three-quarter-safe portrait proportions.
+# REFERENCE_V73: CC0-topology-informed continuous profile depth and fully exposed almond eye aperture.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
@@ -632,21 +633,21 @@ eye_ry=.0118
 eye_tilt=.0030
 for side in(-1,1):
  ex=side*eye_x
- add_almond_lens(HEAD,f'EyeScleraV72_{side}',ex,eye_y,.0920,.0280,.0106,.0072,SCLERA,7,56,side,eye_tilt*.55)
+ add_almond_lens(HEAD,f'EyeScleraV73_{side}',ex,eye_y,.0950,.0305,.0116,.0065,SCLERA,8,64,side,eye_tilt*.62)
  # v7.1: the embedded eyeball itself supplies the curved visible sclera; no flat white sticker surface.
- add_sphere(HEAD,f'IrisV72_{side}',(ex,eye_y,.0998),(.0092,.0088,.00155),IRIS,40,24)
- add_sphere(HEAD,f'IrisInnerV72_{side}',(ex,eye_y-.0001,.1006),(.0067,.0064,.00135),IRIS_INNER,36,22)
- add_sphere(HEAD,f'PupilV72_{side}',(ex,eye_y-.0001,.1013),(.0025,.0030,.00110),PUPIL,28,18)
- add_ellipse_surface(HEAD,f'EyeLightV60_{side}',ex-side*.0031,eye_y+.0038,.1019,.0011,.0009,SCLERA,18)
+ add_sphere(HEAD,f'IrisV73_{side}',(ex,eye_y,.1018),(.0106,.0095,.00165),IRIS,44,26)
+ add_sphere(HEAD,f'IrisInnerV73_{side}',(ex,eye_y-.0001,.1027),(.0074,.0069,.00142),IRIS_INNER,40,24)
+ add_sphere(HEAD,f'PupilV73_{side}',(ex,eye_y-.0001,.1035),(.0028,.0033,.00112),PUPIL,30,20)
+ add_ellipse_surface(HEAD,f'EyeLightV60_{side}',ex-side*.0034,eye_y+.0042,.1040,.0012,.0010,SCLERA,18)
  inner=ex-side*eye_rx*.94;outer=ex+side*eye_rx*1.02
- add_strand(HEAD,f'UpperLashV72_{side}',[(inner,eye_y-eye_tilt+.0010,.1000),(ex,eye_y+.0119,.1010),(outer,eye_y+eye_tilt+.0010,.1001)],.00062,HAIR)
- add_strand(HEAD,f'LowerLidV72_{side}',[(inner+side*.0035,eye_y-eye_tilt-.0003,.0988),(ex,eye_y-.0081,.0992),(outer-side*.0035,eye_y+eye_tilt-.0003,.0988)],.00010,FACE_DARK)
- add_strand(HEAD,f'BrowV72_{side}',[(ex-side*.025,.064,.0995),(ex,.071,.1010),(ex+side*.029,.061,.1000)],.00062,HAIR)
+ add_strand(HEAD,f'UpperLashV73_{side}',[(inner,eye_y-eye_tilt+.0010,.1020),(ex,eye_y+.0128,.1032),(outer,eye_y+eye_tilt+.0010,.1021)],.00070,HAIR)
+ add_strand(HEAD,f'LowerLidV73_{side}',[(inner+side*.0038,eye_y-eye_tilt-.0002,.1001),(ex,eye_y-.0088,.1007),(outer-side*.0038,eye_y+eye_tilt-.0002,.1001)],.000095,FACE_DARK)
+ add_strand(HEAD,f'BrowV73_{side}',[(ex-side*.025,.064,.1000),(ex,.071,.1016),(ex+side*.029,.061,.1004)],.00060,HAIR)
 
 # v7.1 integrated portrait accents: head topology owns all nose/mouth depth.
 # Only a shallow colour patch remains for the lips, following the actual mouth plane instead of floating in front of it.
-add_almond_surface(HEAD,'LipTintV72',0,-.0845,.1017,.0228,.0060,.00045,LIP,64,1,0.0)
-add_strand(HEAD,'MouthSeamV72',[(-.0195,-.0837,.1023),(0,-.0845,.1027),(.0195,-.0837,.1023)],.000075,FACE_DARK)
+add_almond_surface(HEAD,'LipTintV73',0,-.0850,.1080,.0235,.0064,.00042,LIP,68,1,0.0)
+add_strand(HEAD,'MouthSeamV73',[(-.0200,-.0842,.1086),(0,-.0850,.1091),(.0200,-.0842,.1086)],.000070,FACE_DARK)
 
 # Hair v5.9: broad layered side sweep with an open eye line, plus a much fuller high pony cascade.
 add_section_mesh(HEAD,'HairTopCapV59',[
