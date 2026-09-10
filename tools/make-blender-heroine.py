@@ -425,25 +425,26 @@ TH_L=empty('BL_THIGH_L',ROOT);SH_L=empty('BL_SHIN_L',ROOT);FOOT_L=empty('BL_FOOT
 # REFERENCE_V55: single closed profile head, recessed orbits and scalp-covered swept hair.
 # REFERENCE_V56: cleaner adult profile, visible almond eyes and eyebrow-clear swept fringe.
 # REFERENCE_V57: expressive realistic-anime eyes, tapered lower face and filled side-swept hairline.
+# REFERENCE_V58: reference body volume, layered rounded fringe and larger portrait eyes.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
-add_section_mesh(TORSO,'TorsoSuitV47',[
- (-.340,waist_w*.455,waist_d*.47,waist_d*.54,-.006),
- (-.285,waist_w*.440,waist_d*.46,waist_d*.55,-.004),
- (-.220,waist_w*.470,waist_d*.45,waist_d*.58,-.001),
- (-.150,bust_w*.355,bust_d*.40,bust_d*.51,.005),
- (-.075,bust_w*.430,bust_d*.41,bust_d*.59,.014),
- (.000,bust_w*.490,bust_d*.43,bust_d*.675,.027),
- (.075,bust_w*.525,bust_d*.45,bust_d*.735,.039),
- (.135,bust_w*.515,bust_d*.45,bust_d*.705,.037),
- (.195,bust_w*.455,bust_d*.42,bust_d*.585,.023),
- (.255,bust_w*.375,bust_d*.37,bust_d*.455,.010),
+add_section_mesh(TORSO,'TorsoSuitV58',[
+ (-.340,waist_w*.430,waist_d*.46,waist_d*.54,-.006),
+ (-.285,waist_w*.415,waist_d*.45,waist_d*.55,-.004),
+ (-.220,waist_w*.455,waist_d*.45,waist_d*.58,-.001),
+ (-.150,bust_w*.350,bust_d*.40,bust_d*.52,.005),
+ (-.075,bust_w*.445,bust_d*.41,bust_d*.61,.015),
+ (.000,bust_w*.515,bust_d*.43,bust_d*.705,.030),
+ (.075,bust_w*.555,bust_d*.45,bust_d*.770,.044),
+ (.135,bust_w*.540,bust_d*.45,bust_d*.735,.041),
+ (.195,bust_w*.480,bust_d*.42,bust_d*.610,.026),
+ (.255,bust_w*.392,bust_d*.37,bust_d*.470,.011),
  (.315,bust_w*.300,bust_d*.31,bust_d*.350,.000)
 ],BLACK,56)
 # Shallow soft-tissue support over a continuous ribcage. The outer envelope remains reference-locked.
 for side in(-1,1):
- add_sphere(TORSO,f'BustSoft_{side}',(side*bust_w*.205,.105,bust_d*.330),(bust_w*.205,.082,bust_d*.180),BLACK,36,22)
+ add_sphere(TORSO,f'BustSoftV58_{side}',(side*bust_w*.215,.105,bust_d*.350),(bust_w*.235,.090,bust_d*.205),BLACK,40,24)
 add_box(TORSO,'UnderBustLine',(0,.020,bust_d*.505),(bust_w*.70,.014,.009),SILVER,.003)
 for side in(-1,1):
  add_box(TORSO,f'WaistContour_{side}',(side*waist_w*.44,-.150,waist_d*.50),(.012,.175,.009),SILVER,.0035,rot=(0,0,-side*.15))
@@ -545,38 +546,38 @@ add_cylinder(HEAD,'Neck',(0,-.158,-.008),W('neck')*.33,.084,SKIN,26)
 add_cylinder(HEAD,'Choker',(0,-.139,-.006),W('neck')*.46,.034,BLACK,28)
 add_cylinder(HEAD,'ChokerTrim',(0,-.124,-.006),W('neck')*.47,.009,SILVER,28)
 for side in(-1,1):add_sphere(HEAD,f'Ear_{side}',(side*head_w*.445,-.018,-.014),(.010,.023,.009),SKIN,18,10)
-# Anatomy v5.7: wider realistic-anime almond eyes and compact natural mouth.
-face_front=.0923
-eye_y=.0325
+# Anatomy v5.8: larger dark portrait eyes with stronger lashes and the v5.7 tapered lower face.
+face_front=.0925
+eye_y=.0328
 eye_x=head_w*.146
-eye_rx=head_w*.126
-eye_ry=.0148
-eye_tilt=.0034
+eye_rx=head_w*.138
+eye_ry=.0162
+eye_tilt=.0036
 for side in(-1,1):
  ex=side*eye_x
- add_sphere(HEAD,f'EyeballHiddenV57_{side}',(ex,eye_y,.0785),(head_w*.078,.0150,.0118),SCLERA,44,26)
- add_almond_surface(HEAD,f'EyeOpeningV57_{side}',ex,eye_y,face_front,eye_rx,eye_ry,.00130,SCLERA,64,side,eye_tilt)
- add_ellipse_surface(HEAD,f'IrisV57_{side}',ex,eye_y,face_front+.00145,head_w*.058,.0107,IRIS,48)
- add_ellipse_surface(HEAD,f'IrisInnerV57_{side}',ex,eye_y-.0001,face_front+.00205,head_w*.036,.0070,IRIS_INNER,42)
- add_ellipse_surface(HEAD,f'PupilV57_{side}',ex,eye_y-.0001,face_front+.00270,head_w*.0145,.0040,PUPIL,32)
- add_ellipse_surface(HEAD,f'EyeLightV57A_{side}',ex-side*head_w*.0105,eye_y+.0042,face_front+.00330,head_w*.0037,.00185,SCLERA,18)
- add_ellipse_surface(HEAD,f'EyeLightV57B_{side}',ex+side*head_w*.0060,eye_y+.0015,face_front+.00335,head_w*.0016,.00085,SCLERA,14)
+ add_sphere(HEAD,f'EyeballHiddenV58_{side}',(ex,eye_y,.0785),(head_w*.082,.0155,.0122),SCLERA,46,28)
+ add_almond_surface(HEAD,f'EyeOpeningV58_{side}',ex,eye_y,face_front,eye_rx,eye_ry,.00135,SCLERA,66,side,eye_tilt)
+ add_ellipse_surface(HEAD,f'IrisV58_{side}',ex,eye_y,face_front+.0015,head_w*.066,.0118,IRIS,50)
+ add_ellipse_surface(HEAD,f'IrisInnerV58_{side}',ex,eye_y-.0001,face_front+.0021,head_w*.041,.0077,IRIS_INNER,44)
+ add_ellipse_surface(HEAD,f'PupilV58_{side}',ex,eye_y-.0001,face_front+.0028,head_w*.0160,.0045,PUPIL,34)
+ add_ellipse_surface(HEAD,f'EyeLightV58A_{side}',ex-side*head_w*.0120,eye_y+.0048,face_front+.0034,head_w*.0041,.0020,SCLERA,18)
+ add_ellipse_surface(HEAD,f'EyeLightV58B_{side}',ex+side*head_w*.0070,eye_y+.0017,face_front+.00345,head_w*.0017,.0009,SCLERA,14)
  inner=ex-side*eye_rx*.95;outer=ex+side*eye_rx*1.02
  inner_y=eye_y-eye_tilt;outer_y=eye_y+eye_tilt
- add_strand(HEAD,f'UpperLidV57_{side}',[(inner,inner_y+.0010,face_front+.0022),(ex,eye_y+.0151,face_front+.0029),(outer,outer_y+.0010,face_front+.0023)],.00033,FACE_DARK)
- add_strand(HEAD,f'UpperLashV57_{side}',[(inner,inner_y+.0013,face_front+.0029),(ex,eye_y+.0157,face_front+.0034),(outer,outer_y+.0013,face_front+.0030)],.00047,HAIR)
- add_strand(HEAD,f'LashWingV57_{side}',[(outer,outer_y+.0013,face_front+.0030),(outer+side*head_w*.012,outer_y+.0048,face_front+.0030)],.00028,HAIR)
- add_strand(HEAD,f'LowerLidV57_{side}',[(inner+side*eye_rx*.12,inner_y-.0002,face_front+.0019),(ex,eye_y-.0090,face_front+.00225),(outer-side*eye_rx*.12,outer_y-.0002,face_front+.0019)],.00013,FACE_DARK)
- add_strand(HEAD,f'BrowV57_{side}',[(ex-side*eye_rx*.78,.0668,.1018),(ex,.0757,.1035),(ex+side*eye_rx*.98,.0638,.1022)],.00058,HAIR)
+ add_strand(HEAD,f'UpperLidV58_{side}',[(inner,inner_y+.0010,face_front+.00225),(ex,eye_y+.0165,face_front+.0030),(outer,outer_y+.0010,face_front+.00235)],.00034,FACE_DARK)
+ add_strand(HEAD,f'UpperLashV58_{side}',[(inner,inner_y+.0014,face_front+.0030),(ex,eye_y+.0171,face_front+.0035),(outer,outer_y+.0014,face_front+.0031)],.00052,HAIR)
+ add_strand(HEAD,f'LashWingV58_{side}',[(outer,outer_y+.0014,face_front+.0031),(outer+side*head_w*.015,outer_y+.0054,face_front+.0031)],.00030,HAIR)
+ add_strand(HEAD,f'LowerLidV58_{side}',[(inner+side*eye_rx*.12,inner_y-.0002,face_front+.00195),(ex,eye_y-.0097,face_front+.0023),(outer-side*eye_rx*.12,outer_y-.0002,face_front+.00195)],.00013,FACE_DARK)
+ add_strand(HEAD,f'BrowV58_{side}',[(ex-side*eye_rx*.78,.0672,.1018),(ex,.0764,.1035),(ex+side*eye_rx*.98,.0640,.1022)],.00060,HAIR)
 
 for side in(-1,1):
- add_sphere(HEAD,f'NostrilV57_{side}',(side*.0042,-.0540,.1164),(.00044,.00031,.00028),FACE_DARK,10,7)
-add_almond_surface(HEAD,'UpperLipV57',0,-.0760,.1084,.0270,.0040,.00090,LIP,54,1,0.0)
-add_almond_surface(HEAD,'LowerLipV57',0,-.0835,.1092,.0263,.0045,.00100,LIP,54,1,0.0)
-add_strand(HEAD,'MouthSeamV57',[(-.0230,-.0802,.1100),(0,-.0812,.1105),(.0230,-.0802,.1100)],.00013,FACE_DARK)
+ add_sphere(HEAD,f'NostrilV58_{side}',(side*.0042,-.0540,.1162),(.00042,.00030,.00027),FACE_DARK,10,7)
+add_almond_surface(HEAD,'UpperLipV58',0,-.0760,.1084,.0275,.0040,.00092,LIP,54,1,0.0)
+add_almond_surface(HEAD,'LowerLipV58',0,-.0835,.1093,.0268,.0046,.00102,LIP,54,1,0.0)
+add_strand(HEAD,'MouthSeamV58',[(-.0235,-.0802,.1101),(0,-.0812,.1106),(.0235,-.0802,.1101)],.00013,FACE_DARK)
 
-# Hair v5.7: dark forehead underlay removes the pale scalp gaps while preserving an open eye line.
-add_section_mesh(HEAD,'HairTopCapV57',[
+# Hair v5.8: rounded layered fringe instead of a flat visor; crown/rear shell and smooth pony remain.
+add_section_mesh(HEAD,'HairTopCapV58',[
  (.066,head_w*.448,head_d*.438,head_d*.486,-.018),
  (.100,head_w*.442,head_d*.430,head_d*.476,-.020),
  (.134,head_w*.398,head_d*.388,head_d*.432,-.021),
@@ -584,7 +585,7 @@ add_section_mesh(HEAD,'HairTopCapV57',[
  (.188,head_w*.184,head_d*.178,head_d*.205,-.010),
  (.203,head_w*.068,head_d*.068,head_d*.078,-.002)
 ],HAIR,56)
-add_rear_hair_shell(HEAD,'HairRearShellV57',[
+add_rear_hair_shell(HEAD,'HairRearShellV58',[
  (-.024,head_w*.288,head_d*.396,-head_d*.065),
  (.012,head_w*.416,head_d*.486,-head_d*.057),
  (.052,head_w*.490,head_d*.534,-head_d*.049),
@@ -594,56 +595,60 @@ add_rear_hair_shell(HEAD,'HairRearShellV57',[
  (.194,head_w*.222,head_d*.260,-head_d*.012),
  (.205,head_w*.076,head_d*.100,-head_d*.005)
 ],HAIR,44)
-# A shallow dark underlay sits only above the brows; the visible skin below remains untouched.
-add_panel(HEAD,'HairlineUnderlayV57',[(-.111,.137,.101),(-.071,.169,.101),(-.015,.181,.101),(.052,.173,.101),(.111,.135,.101),(.102,.099,.103),(.048,.109,.104),(-.016,.101,.104),(-.080,.098,.103)],.0010,HAIR)
 
-add_flow_ribbon(HEAD,'FringeSweepV57_A',[(-.110,.181,.011),(-.093,.160,.045),(-.062,.135,.074),(-.022,.109,.095),(.024,.087,.104),(.066,.073,.107)],[.074,.076,.070,.057,.041,.025],.00130,HAIR)
-add_flow_ribbon(HEAD,'FringeSweepV57_B',[(-.041,.183,.011),(-.019,.159,.047),(.015,.133,.076),(.051,.107,.097),(.086,.086,.105),(.113,.072,.107)],[.062,.061,.055,.044,.031,.019],.00125,HAIR)
-add_flow_ribbon(HEAD,'FringeAccentV57',[(.014,.177,.012),(.040,.153,.049),(.072,.127,.078),(.100,.102,.098),(.120,.084,.104)],[.036,.034,.029,.021,.013],.00115,HAIR_HI)
-add_strand(HEAD,'FringeEdgeV57_A',[(-.100,.174,.015),(-.061,.139,.071),(.016,.096,.103)],.00009,HAIR_HI)
-add_strand(HEAD,'FringeEdgeV57_B',[(-.033,.175,.015),(.020,.137,.074),(.098,.090,.104)],.000085,HAIR_HI)
+bangs=[
+ ([(-.105,.179,.018),(-.094,.153,.054),(-.078,.124,.083),(-.058,.097,.102),(-.044,.083,.107)],[.030,.034,.031,.020,.0080],[.008,.009,.008,.005,.0028],HAIR),
+ ([(-.072,.184,.016),(-.057,.156,.054),(-.032,.126,.084),(-.005,.099,.103),(.018,.084,.108)],[.034,.038,.034,.022,.0085],[.0085,.0095,.0085,.0052,.0028],HAIR),
+ ([(-.030,.186,.014),(-.011,.158,.054),(.018,.128,.085),(.049,.100,.104),(.071,.082,.108)],[.034,.038,.034,.021,.0080],[.0085,.0095,.0085,.0050,.0026],HAIR_HI),
+ ([(.012,.183,.014),(.034,.154,.053),(.063,.124,.083),(.090,.097,.102),(.108,.079,.106)],[.032,.036,.032,.019,.0075],[.008,.009,.008,.0048,.0025],HAIR),
+ ([(.052,.176,.015),(.073,.149,.052),(.096,.120,.080),(.116,.094,.099),(.127,.077,.104)],[.026,.030,.027,.016,.0065],[.007,.008,.007,.0043,.0023],HAIR),
+]
+for i,(pts,widths,depths,mat) in enumerate(bangs):
+ add_smooth_lock(HEAD,f'BangLockV58_{i}',pts,widths,depths,mat,10,5)
+add_strand(HEAD,'BangFineV58_A',[(-.092,.171,.022),(-.054,.129,.079),(.008,.089,.107)],.000085,HAIR_HI)
+add_strand(HEAD,'BangFineV58_B',[(-.028,.177,.020),(.020,.132,.080),(.090,.085,.105)],.000080,HAIR_HI)
 
 for side in(-1,1):
  pts=[(side*head_w*.390,.111,-head_d*.036),(side*head_w*.418,.048,-.012),(side*head_w*.422,-.029,-.015),(side*head_w*.410,-.101,-.042),(side*head_w*.395,-.171,-.061)]
- add_smooth_lock(HEAD,f'FaceLockV57_{side}',pts,[.0085,.0108,.0090,.0052,.0022],[.0070,.0080,.0062,.0040,.0020],HAIR,10,5)
+ add_smooth_lock(HEAD,f'FaceLockV58_{side}',pts,[.0085,.0108,.0090,.0052,.0022],[.0070,.0080,.0062,.0040,.0020],HAIR,10,5)
 
-add_box(HEAD,'HairTieV57',(.014,.136,-head_d*.526),(.066,.015,.024),SILVER,.003)
+add_box(HEAD,'HairTieV58',(.014,.136,-head_d*.526),(.066,.015,.024),SILVER,.003)
 PONY=empty('BL_PONY_DYNAMIC',HEAD)
 for i in range(9):
  lane=(i-4)/4
  dz=lane*.034+((i%3)-1)*.010
- sway=.020*math.sin((i+1)*1.7)
+ sway=.024*math.sin((i+1)*1.7)
  pts=[
   (lane*.020+.014,.136,-head_d*.538+dz*.20),
-  (lane*.028+.018+sway*.20,.020,-head_d*.602+dz*.75),
-  (lane*.040+.022+sway*.55,-.245,-.232+dz),
-  (lane*.052+.027+sway,-.555,-.186+dz*1.20),
-  (lane*.063+.032+sway*.70,-.890,-.143+dz*1.25),
-  (lane*.073+.038+sway*.35,-1.210,-.112+dz*1.15),
-  (lane*.082+.043,-1.445-(i%3)*.018,-.091+dz)
+  (lane*.030+.018+sway*.20,.020,-head_d*.602+dz*.75),
+  (lane*.044+.022+sway*.58,-.245,-.232+dz),
+  (lane*.058+.027+sway,-.555,-.186+dz*1.20),
+  (lane*.071+.032+sway*.72,-.890,-.143+dz*1.25),
+  (lane*.082+.038+sway*.38,-1.210,-.112+dz*1.15),
+  (lane*.092+.043,-1.445-(i%3)*.018,-.091+dz)
  ]
- base=.043-.006*abs(lane)
- widths=[base*.70,base,base*.94,base*.80,base*.59,base*.31,.0044]
- depths=[.022,.029,.029,.025,.019,.011,.0036]
- add_smooth_lock(PONY,f'PonyMassV57_{i}',pts,widths,depths,HAIR,10,6)
+ base=.046-.006*abs(lane)
+ widths=[base*.70,base,base*.96,base*.82,base*.61,base*.33,.0046]
+ depths=[.023,.031,.031,.027,.020,.012,.0038]
+ add_smooth_lock(PONY,f'PonyMassV58_{i}',pts,widths,depths,HAIR,10,6)
 for i in range(5):
  lane=(i-2)/2
- add_strand(PONY,f'PonyWispV57_{i}',[(lane*.022+.014,.134,-head_d*.543),(lane*.031+.020,-.030,-head_d*.607),(lane*.044+.026,-.345,-.214),(lane*.061+.034,-.810,-.147),(lane*.078+.045,-1.450-(i%2)*.020,-.087)],.00020+(i%2)*.00003,HAIR_HI if i in(1,3) else HAIR)
+ add_strand(PONY,f'PonyWispV58_{i}',[(lane*.022+.014,.134,-head_d*.543),(lane*.032+.020,-.030,-head_d*.607),(lane*.046+.026,-.345,-.214),(lane*.065+.034,-.810,-.147),(lane*.084+.045,-1.450-(i%2)*.020,-.087)],.00020+(i%2)*.00003,HAIR_HI if i in(1,3) else HAIR)
 
 # === LIMBS ===
 # Diameters come directly from the front sheet; side depth comes from the side view.
-ua=W('upper_arm')*.50;fa=W('forearm')*.50;th=W('thigh_each')*.58;kn=W('knee_each')*.54;calf=W('calf_each')*.53;ank=W('ankle_each')*.48
+ua=W('upper_arm')*.56;fa=W('forearm')*.54;th=W('thigh_each')*.64;kn=W('knee_each')*.58;calf=W('calf_each')*.56;ank=W('ankle_each')*.49
 ua_d=ua*.78;fa_d=fa*.80;th_d=D('thigh')*.50;calf_d=D('calf')*.50;ank_d=D('ankle')*.50
 for group,name,r1,r2,d1,d2,mat in[
- (UA_L,'UpperArmL',ua*.98,ua*.78,ua_d,ua_d*.82,SKIN),(UA_R,'UpperArmR',ua*.98,ua*.78,ua_d,ua_d*.82,SKIN),
+ (UA_L,'UpperArmL',ua*1.02,ua*.80,ua_d*1.02,ua_d*.84,SKIN),(UA_R,'UpperArmR',ua*1.02,ua*.80,ua_d*1.02,ua_d*.84,SKIN),
  (FA_L,'ForearmL',fa*.92,fa*.68,fa_d,fa_d*.72,BLACK),(FA_R,'ForearmR',fa*.92,fa*.68,fa_d,fa_d*.72,BLACK),
- (TH_L,'ThighL',th*1.08,kn*.90,th_d,th_d*.78,SKIN),(TH_R,'ThighR',th*1.08,kn*.90,th_d,th_d*.78,SKIN),
+ (TH_L,'ThighL',th*1.10,kn*.92,th_d*1.04,th_d*.80,SKIN),(TH_R,'ThighR',th*1.10,kn*.92,th_d*1.04,th_d*.80,SKIN),
  (SH_L,'ShinL',calf*.93,ank*.90,calf_d,ank_d,BLACK),(SH_R,'ShinR',calf*.93,ank*.90,calf_d,ank_d,BLACK)]:add_taper(group,name,r1,r2,d1,d2,mat)
 # Soft junction volumes remove the detached mannequin-arm/thigh look while staying inside measured widths.
 for group,name in[(UA_L,'L'),(UA_R,'R')]:
- add_sphere(group,'DeltoidBlend'+name,(0,-.430,0),(ua*.94,.075,ua_d*.96),SKIN,24,16)
+ add_sphere(group,'DeltoidBlendV58'+name,(0,-.430,0),(ua*1.08,.088,ua_d*1.06),SKIN,28,18)
 for group,name in[(TH_L,'L'),(TH_R,'R')]:
- add_sphere(group,'HipThighBlend'+name,(0,-.430,0),(th*1.02,.082,th_d*.98),SKIN,26,16)
+ add_sphere(group,'HipThighBlendV58'+name,(0,-.430,0),(th*1.08,.092,th_d*1.04),SKIN,28,18)
 # Upper-arm straps + forearm gauntlets; narrow armor follows the limb instead of becoming the limb.
 for group,name in[(UA_L,'L'),(UA_R,'R')]:
  add_cylinder(group,'UpperArmBand'+name,(0,-.26,0),ua*1.07,.070,BLACK,24);add_cylinder(group,'UpperArmBand2'+name,(0,-.13,0),ua*1.04,.045,SILVER,24)
