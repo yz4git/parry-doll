@@ -1,1 +1,1 @@
-2026-09-10 rebuild Blender heroine v5.0 after rear hair helper syntax fix
+2026-09-10 build Blender heroine v5.1 explicit iris discs asymmetric fringe smooth pony shoulder retarget
