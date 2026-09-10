@@ -1,1 +1,1 @@
-2026-09-10 build Blender heroine v6.4 readable soft grey-brown gaze restrained nose lip chin profile
+2026-09-10 build Blender heroine v6.5 reference silhouette limb volume readable warm skin overlapping pony foundation
