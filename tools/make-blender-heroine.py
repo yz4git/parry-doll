@@ -554,6 +554,11 @@ def add_cc0_face_patch_v77(p,name,mat):
   # centre-line chin/lip depth remains untouched because edge_under is zero there.
   local_relief*=1.0-.62*edge_under
   z=pz+local_relief*relief_gain+(.0016-.0012*under_t-.00085*edge_under)
+  # The CC0 patch is an expression/topology overlay, not the final under-chin shell. Fade it behind
+  # HeadShellV60 after the mouth so the closed UV head owns the chin silhouette continuously.
+  chin_hide=max(0.0,min(1.0,(-.094-yy)/.051))
+  chin_hide=chin_hide*chin_hide*(3.0-2.0*chin_hide)
+  z-=.0190*chin_hide
   bridge_lat=math.exp(-(x/.030)**2)
   tip_lat=math.exp(-(x/.0215)**2)
   z+=.0024*bridge_lat*math.exp(-((yy+.006)/.052)**2)
@@ -720,6 +725,7 @@ TH_L=empty('BL_THIGH_L',ROOT);SH_L=empty('BL_SHIN_L',ROOT);FOOT_L=empty('BL_FOOT
 # REFERENCE_V106: the CC0 face patch lower third tapers into the head shell, removing the collar-like under-chin boundary spikes without changing eyes, nose or cheeks.
 # REFERENCE_V107: the remaining lower patch edge tightens further and settles into the head shell, eliminating the last under-chin sawtooth silhouette.
 # REFERENCE_V108: only the lower CC0 patch perimeter is feathered into the backing head shell, removing residual chin-edge teeth while preserving the centre profile.
+# REFERENCE_V109: the CC0 overlay fades behind the backing shell below the mouth; the continuous head shell owns chin and under-chin silhouette with no beard-like patch edge.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
