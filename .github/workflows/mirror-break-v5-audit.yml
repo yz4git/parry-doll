@@ -1,0 +1,91 @@
+name: MIRROR BREAK v5 Behavior Audit
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - dist/mirror-break-v5.js
+      - dist/mirror-break-final-adapter.js
+      - .github/mirror-break-v5.trigger
+      - .github/workflows/mirror-break-v5-audit.yml
+
+permissions:
+  contents: read
+
+jobs:
+  behavior:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate behavior layer
+        run: |
+          node --check dist/mirror-break-v5.js
+          node --check dist/mirror-break-final-adapter.js
+      - name: Install browser stack
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Serve game
+        run: |
+          python3 -m http.server 4173 --directory dist > /tmp/parry-v5-http.log 2>&1 &
+          for i in {1..30}; do curl -fsS http://127.0.0.1:4173/ >/dev/null && exit 0; sleep 1; done
+          cat /tmp/parry-v5-http.log; exit 1
+      - name: Break bosses and verify tactic shifts
+        run: |
+          mkdir -p mirror-break-v5-audit
+          cat > v5-audit.cjs <<'NODE'
+          const { chromium } = require('playwright');
+          const fs = require('fs');
+          const sleep = ms => new Promise(r=>setTimeout(r,ms));
+          (async()=>{
+            const browser=await chromium.launch({headless:true,args:['--enable-webgl','--ignore-gpu-blocklist','--enable-unsafe-swiftshader','--use-gl=angle','--use-angle=swiftshader-webgl','--disable-dev-shm-usage']});
+            const page=await browser.newPage({viewport:{width:852,height:393},isMobile:true,hasTouch:true,userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 26_6 like Mac OS X) AppleWebKit/605.1.15 Version/26.0 Mobile/15E148 Safari/604.1'});
+            const errors=[];page.on('pageerror',e=>errors.push('pageerror: '+e.message));page.on('console',m=>{if(m.type()==='error'&&!m.text().includes('Failed to load resource'))errors.push('console: '+m.text())});page.on('response',r=>{if(r.status()>=400&&!r.url().includes('/version.json'))errors.push(`HTTP ${r.status()} ${r.url()}`)});
+            await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});
+            await page.waitForFunction(()=>window.parryMirrorBreakDiagnostics?.().v5===true,null,{timeout:60000,polling:100});
+            await page.evaluate(()=>document.getElementById('start')?.click());await sleep(260);
+            const picks=[1,1,2,0,0],results=[];
+            for(let l=0;l<5;l++){
+              const r=await page.evaluate(({l,pick})=>{
+                level=l;boss=new Doll(bosses[l]);boss.stun=0;boss.wind=0;boss.strike=0;boss.ai=0;boss.invuln=0;player.hp=100;player.invuln=10;player.stun=0;player.down=0;player.cool=0;player.comboWindow=0;player.counter=0;player.swing=null;player.pos=V(0,0,3);player.vel=V();
+                for(let i=0;i<3;i++)step(1/60);
+                player.pos.x=boss.pos.x;player.pos.z=boss.pos.z+1.65;player.vel=V();boss.vel=V();boss.stun=0;boss.wind=0;boss.strike=0;boss.invuln=0;player.parry=.50;player.parryCool=0;enemyImpact(null);for(let i=0;i<2;i++)step(1/60);
+                player.cool=0;player.comboWindow=0;player.pos.x=boss.pos.x;player.pos.z=boss.pos.z+1.45;playerAttack();player.swingClock=0;resolveSwing();for(let i=0;i<4;i++)step(1/60);
+                boss.stun=0;boss.ai=0;boss.wind=0;boss.strike=0;boss.pattern=null;boss.vel=V();player.pos=V(boss.pos.x,0,boss.pos.z+4.4);player.invuln=10;
+                if(l===4){window.__mirrorBreakState.cores.EDGE=1;window.__mirrorBreakState.cores.MIRROR=1;window.__mirrorBreakState.cores.PULSE=1}
+                const source=ENEMY_MOVES[l][pick];startEnemyAttack(source);step(1/60);
+                const first={name:boss.pattern?.name||'',kind:boss.pattern?.kind||'',wind:boss.wind,diag:window.parryMirrorBreakDiagnostics()};
+                const modes=[];
+                if(l===4){modes.push(first.diag.coreOverload);for(let k=1;k<3;k++){boss.stun=0;boss.ai=0;boss.wind=0;boss.strike=0;boss.pattern=null;startEnemyAttack(ENEMY_MOVES[4][k]);step(1/60);modes.push(window.parryMirrorBreakDiagnostics().coreOverload)}}
+                return{level:l,name:boss.spec.name,source:source.name,first,modes,finite:[player,boss].every(d=>d.nodes.every(n=>Object.values(n.p).every(Number.isFinite)))};
+              },{l,pick:picks[l]});
+              results.push(r);await sleep(220);await page.screenshot({path:`mirror-break-v5-audit/0${l+1}-boss-${l}-tactic.png`});
+            }
+            fs.writeFileSync('mirror-break-v5-audit/result.json',JSON.stringify({results,errors},null,2));
+            if(errors.length)throw new Error(errors.join(' | '));
+            for(const r of results)if(!r.finite||!r.first.diag.v5||!r.first.diag.tacticShift||r.first.diag.adaptedAttacks<1)throw new Error('v5 inactive '+JSON.stringify(r));
+            if(!results[0].first.name.includes('断剣')||results[0].first.kind==='thrust')throw new Error('duelist did not lose sword language '+JSON.stringify(results[0]));
+            if(['leap'].includes(results[1].first.kind)||!results[1].first.name.includes('傷脚'))throw new Error('hound still leaps '+JSON.stringify(results[1]));
+            if(results[2].first.kind==='leap'||!results[2].first.name.includes('断脚'))throw new Error('spider still uses aerial leg '+JSON.stringify(results[2]));
+            if(results[3].first.kind!=='stomp'||!results[3].first.name.includes('片腕'))throw new Error('giant did not switch to stomp bias '+JSON.stringify(results[3]));
+            if(results[1].first.diag.mobilityScale>=1||results[2].first.diag.mobilityScale>=1)throw new Error('leg break did not reduce mobility');
+            if(results[4].modes.join(',')!=='EDGE,MIRROR,PULSE')throw new Error('core overload did not rotate '+JSON.stringify(results[4].modes));
+            console.log(JSON.stringify(results,null,2));await browser.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+          node v5-audit.cjs
+      - name: Upload behavior frames
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: parry-doll-mirror-break-v5-audit
+          path: mirror-break-v5-audit/
+          if-no-files-found: error
+          retention-days: 3
