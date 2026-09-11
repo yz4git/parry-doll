@@ -8,15 +8,21 @@
  const brokenNow=()=>!!(boss&&state.boss===boss&&state.broken&&state.part);
  const clone=m=>({...m,hits:[...(m?.hits||[])]});
  const cap=(x,a,b)=>Math.max(a,Math.min(b,x));
- const profiles=[
-  'KICK STANCE · BLADE LOST',
-  'LIMP HUNT · LEAP LOST',
-  'FIVE-LEG STANCE · AERIAL LOST',
-  'FOOTWORK SHIFT · STOMP BIAS',
-  'CORE ERROR · COPY OVERLOAD'
- ];
- function resetLocal(){s.bossRef=boss;s.adapted=0;s.postBreakAttacks=0;s.profile=profiles[level]||'';s.coreMode=null;s.coreCycles=0;s.lastPattern=null;s.lastSource='';s.mobilityScale=1}
- function armLost(move,l){
+ const profiles=['KICK STANCE · BLADE LOST','LIMP HUNT · LEAP LOST','FIVE-LEG STANCE · AERIAL LOST','FOOTWORK SHIFT · STOMP BIAS','CORE ERROR · COPY OVERLOAD'];
+ const tacticNames=['KICK STANCE','LIMP HUNT','FIVE-LEG STANCE','STOMP BIAS','COPY OVERLOAD'];
+ const lossNames=['SWORD ARM LOST','FORELEG LOST','SPEAR LEG LOST','BELL ARM LOST','CORE SHATTERED'];
+ const tacticStyle=document.createElement('style');tacticStyle.textContent=`
+ #mbBreakHud.mb-tactic{left:max(14px,env(safe-area-inset-left));top:27%;transform:none!important;min-width:0;text-align:left;opacity:.9;padding:5px 8px;border-left:2px solid #d5b66f99;background:linear-gradient(90deg,#071018b8,transparent);text-shadow:0 2px 8px #000}
+ #mbBreakHud.mb-tactic span{display:block;color:#9daaa7;font-size:7px;letter-spacing:2px;white-space:nowrap}
+ #mbBreakHud.mb-tactic b{display:block;margin-top:2px;color:#f0d798!important;font-size:10px;letter-spacing:2.4px;text-decoration:none!important;white-space:nowrap}
+ #mbBreakHud.mb-tactic.core-error{border-left-color:#9fe7dcaa;background:linear-gradient(90deg,#06141bcc,transparent)}
+ #mbBreakHud.mb-tactic.core-error b{color:#cffff3!important;text-shadow:0 0 12px #64e5d766,0 2px 8px #000}
+ @media(max-height:500px){#mbBreakHud.mb-tactic{top:28%;font-size:7px;padding:4px 7px}#mbBreakHud.mb-tactic b{font-size:9px}}
+ @media(orientation:portrait){#mbBreakHud.mb-tactic{left:12px;top:31%}}
+ `;document.head.appendChild(tacticStyle);
+ function clearHudMode(){const hud=document.getElementById('mbBreakHud');hud?.classList.remove('mb-tactic','core-error')}
+ function resetLocal(){s.bossRef=boss;s.adapted=0;s.postBreakAttacks=0;s.profile=profiles[level]||'';s.coreMode=null;s.coreCycles=0;s.lastPattern=null;s.lastSource='';s.mobilityScale=1;clearHudMode()}
+ function armLost(move){
   const m=clone(move),n=String(m.name||'');
   if(m.kind==='thrust'||n.includes('片腕・灰突き')){m.name='断剣・肩穿ち';m.kind='rush';m.shape='line';m.wind*=1.05;m.active=.38;m.hits=[.16];m.range=Math.min(3.45,m.range||3.45);m.width=.84;m.speed=cap(m.speed||3.8,3.5,4.35);m.damage*=.90;m.force*=.88;m.recover*=1.22;m.motion=1}
   else if(m.kind==='slam'){m.name='断剣・踵落とし';m.kind='slam';m.shape='cone';m.wind*=1.10;m.active=.43;m.hits=[.18];m.range=Math.min(3.05,m.range||3.05);m.arc=Math.min(1.14,m.arc||1.14);m.speed=.55;m.damage*=.88;m.force*=.92;m.recover*=1.28;m.motion=2}
@@ -52,7 +58,7 @@
   return m;
  }
  function adapt(move){if(!move||move.__mbV5||!brokenNow())return move;let m;
-  if(level===0)m=armLost(move,level);else if(level===1)m=houndLeg(move);else if(level===2)m=spiderLeg(move);else if(level===3)m=giantArm(move);else m=overload(move);
+  if(level===0)m=armLost(move);else if(level===1)m=houndLeg(move);else if(level===2)m=spiderLeg(move);else if(level===3)m=giantArm(move);else m=overload(move);
   Object.defineProperty(m,'__mbV5',{value:true,enumerable:false});s.adapted++;s.postBreakAttacks++;s.lastSource=move.name||move.kind||'';return m;
  }
  function adaptCurrentAttack(){
@@ -69,13 +75,14 @@
   if(level===3&&boss.wind<=0&&boss.strike<=0&&boss.down<=0){boss.vel.x*=scale;boss.vel.z*=scale}
  }
  function syncHud(){
-  if(!brokenNow())return;const hud=document.getElementById('mbBreakHud'),span=hud?.querySelector('span');if(!span)return;
-  if(level===4)span.textContent=`CORE ERROR · ${s.coreMode||'UNSTABLE'}`;else span.textContent=s.profile||profiles[level]||'TACTIC SHIFT';
+  const hud=document.getElementById('mbBreakHud');if(!brokenNow()){hud?.classList.remove('mb-tactic','core-error');return}
+  const span=hud?.querySelector('span'),label=hud?.querySelector('b');if(!span||!label)return;hud.classList.add('mb-tactic');hud.classList.toggle('core-error',level===4);
+  span.textContent=lossNames[level]||'BODY BROKEN';label.textContent=level===4?`${s.coreMode||'UNSTABLE'} OVERLOAD`:(tacticNames[level]||'TACTIC SHIFT');
  }
  const v5Start=startEnemyAttack;startEnemyAttack=function(move){const out=v5Start(move);adaptCurrentAttack();syncHud();return out};
  const v5UpdateEnemy=updateEnemy;updateEnemy=function(dt){const out=v5UpdateEnemy(dt);adaptCurrentAttack();mobility();return out};
  const v5Step=step;step=function(dt){const out=v5Step(dt);if(boss!==s.bossRef||state.level!==level){resetLocal()}adaptCurrentAttack();mobility();syncHud();return out};
  const v5Reset=reset;reset=function(l=0){const out=v5Reset(l);resetLocal();return out};
- const priorDiag=window.parryMirrorBreakDiagnostics;window.parryMirrorBreakDiagnostics=()=>{const d=priorDiag?priorDiag():{};return{...d,v5:true,tacticShift:brokenNow(),behaviorProfile:s.profile||profiles[level]||'',adaptedAttacks:s.adapted,postBreakAttacks:s.postBreakAttacks,adaptedPattern:boss?.pattern?.__mbV5?boss.pattern.name:null,adaptedKind:boss?.pattern?.__mbV5?boss.pattern.kind:null,coreOverload:s.coreMode,mobilityScale:s.mobilityScale,lastAdaptedSource:s.lastSource}};
+ const priorDiag=window.parryMirrorBreakDiagnostics;window.parryMirrorBreakDiagnostics=()=>{const d=priorDiag?priorDiag():{};return{...d,v5:true,tacticShift:brokenNow(),behaviorProfile:s.profile||profiles[level]||'',adaptedAttacks:s.adapted,postBreakAttacks:s.postBreakAttacks,adaptedPattern:boss?.pattern?.__mbV5?boss.pattern.name:null,adaptedKind:boss?.pattern?.__mbV5?boss.pattern.kind:null,coreOverload:s.coreMode,mobilityScale:s.mobilityScale,lastAdaptedSource:s.lastSource,tacticHud:document.getElementById('mbBreakHud')?.classList.contains('mb-tactic')||false}};
  resetLocal();
 })();
