@@ -9,8 +9,6 @@
  if(help){const rows=help.querySelectorAll('p');if(rows[2])rows[2].innerHTML='<b>弾く</b> PERFECTで弱点露出 → 反撃でBODY BREAK';if(rows[3])rows[3].textContent='敵撃破後にDOLL COREを選択。取得した力は最終戦の傀儡零式にもコピーされる。'}
  const badge=document.createElement('div');badge.id='mbRunBadge';badge.textContent='MIRROR BREAK';Object.assign(badge.style,{position:'absolute',left:'50%',bottom:'max(8px, env(safe-area-inset-bottom))',transform:'translateX(-50%)',zIndex:'25',pointerEvents:'none',fontSize:'8px',letterSpacing:'3px',color:'#b9a97f',opacity:'.62',textShadow:'0 2px 8px #000'});document.body.appendChild(badge);
 
- // Exposure is already carried by the persistent BODY BREAK HUD. Suppress the older transient warning strip
- // for the whole exposure window instead of hiding it for one frame and allowing prior step wrappers to re-show it.
  const cleanStyle=document.createElement('style');cleanStyle.textContent=`
  body:has(#mbBreakHud.exposed) #pbDanger{opacity:0!important;transform:translateX(-50%) scale(.96)!important}
  #mbBreakHud.exposed~#pbDanger{opacity:0!important}
@@ -19,8 +17,6 @@
  const baseAnnounce=announce;announce=function(text,duration){if(String(text||'').replace(/\s/g,'').includes('弱点露出'))return;return baseAnnounce(text,duration)};
  function simplifyParryLabels(){
   const danger=document.getElementById('pbDanger');if(danger?.textContent?.includes('BREAK CHANCE'))danger.classList.remove('show');
-  // Older counter cards append PERFECT PARRY under COUNTER READY. The large PERFECT toast already says it,
-  // so remove only that subtitle and keep the actionable COUNTER READY label.
   for(const el of document.querySelectorAll('body *')){
    const text=(el.textContent||'').trim();if(!text.includes('COUNTER READY')||!text.includes('PERFECT PARRY'))continue;
    const child=[...el.querySelectorAll('small,span,em')].find(n=>(n.textContent||'').trim()==='PERFECT PARRY');if(child)child.textContent='';
@@ -34,6 +30,6 @@
  const priorDiag=window.parryMirrorBreakDiagnostics;window.parryMirrorBreakDiagnostics=()=>{const d=priorDiag?priorDiag():{};return {...d,mirrorDominant:dominant(state.cores),finalAdapter:true,uiSimplified:true,perfectFxTrimmed:true}};
 })();
 
-// V2/V3/V4/V5/UI/V6 deliberately load after every v1/final wrapper so the newest
-// presentation, persistent-damage, post-break behavior and DOLL CORE styles compose last.
-(()=>{if(window.__parryMirrorBreakV2Queued)return;window.__parryMirrorBreakV2Queued=true;const src=document.currentScript?.src||'',q=src.includes('?')?'?'+src.split('?').slice(1).join('?'):'',s=document.createElement('script');s.src='./mirror-break-v2.js'+q;s.onload=()=>{if(window.__parryMirrorBreakV3Queued)return;window.__parryMirrorBreakV3Queued=true;const v3=document.createElement('script');v3.src='./mirror-break-v3.js'+q;v3.onload=()=>{if(window.__parryMirrorBreakV4Queued)return;window.__parryMirrorBreakV4Queued=true;const v4=document.createElement('script');v4.src='./mirror-break-v4.js'+q;v4.onload=()=>{if(window.__parryMirrorBreakV5Queued)return;window.__parryMirrorBreakV5Queued=true;const v5=document.createElement('script');v5.src='./mirror-break-v5.js'+q;v5.onload=()=>{if(window.__parryMirrorBreakV5UiQueued)return;window.__parryMirrorBreakV5UiQueued=true;const ui=document.createElement('script');ui.src='./mirror-break-v5-ui.js'+q;ui.onload=()=>{if(window.__parryMirrorBreakV6Queued)return;window.__parryMirrorBreakV6Queued=true;const v6=document.createElement('script');v6.src='./mirror-break-v6.js'+q;document.body.appendChild(v6)};document.body.appendChild(ui)};document.body.appendChild(v5)};document.body.appendChild(v4)};document.body.appendChild(v3)};document.body.appendChild(s)})();
+// V2/V3/V4/V5/UI/V6/V7 deliberately load after every v1/final wrapper so the newest
+// presentation, persistent damage, DOLL CORE styles and final CORE ECHO doctrine compose last.
+(()=>{if(window.__parryMirrorBreakV2Queued)return;window.__parryMirrorBreakV2Queued=true;const src=document.currentScript?.src||'',q=src.includes('?')?'?'+src.split('?').slice(1).join('?'):'',s=document.createElement('script');s.src='./mirror-break-v2.js'+q;s.onload=()=>{if(window.__parryMirrorBreakV3Queued)return;window.__parryMirrorBreakV3Queued=true;const v3=document.createElement('script');v3.src='./mirror-break-v3.js'+q;v3.onload=()=>{if(window.__parryMirrorBreakV4Queued)return;window.__parryMirrorBreakV4Queued=true;const v4=document.createElement('script');v4.src='./mirror-break-v4.js'+q;v4.onload=()=>{if(window.__parryMirrorBreakV5Queued)return;window.__parryMirrorBreakV5Queued=true;const v5=document.createElement('script');v5.src='./mirror-break-v5.js'+q;v5.onload=()=>{if(window.__parryMirrorBreakV5UiQueued)return;window.__parryMirrorBreakV5UiQueued=true;const ui=document.createElement('script');ui.src='./mirror-break-v5-ui.js'+q;ui.onload=()=>{if(window.__parryMirrorBreakV6Queued)return;window.__parryMirrorBreakV6Queued=true;const v6=document.createElement('script');v6.src='./mirror-break-v6.js'+q;v6.onload=()=>{if(window.__parryMirrorBreakV7Queued)return;window.__parryMirrorBreakV7Queued=true;const v7=document.createElement('script');v7.src='./mirror-break-v7.js'+q;document.body.appendChild(v7)};document.body.appendChild(v6)};document.body.appendChild(ui)};document.body.appendChild(v5)};document.body.appendChild(v4)};document.body.appendChild(v3)};document.body.appendChild(s)})();
