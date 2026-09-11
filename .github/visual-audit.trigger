@@ -1,1 +1,1 @@
-Parry Doll MIRROR BREAK v1 final visual audit: attack readability + simplified perfect parry UI 2026-09-11
+Parry Doll MIRROR BREAK v1 final decluttered PERFECT frame visual audit 2026-09-11
