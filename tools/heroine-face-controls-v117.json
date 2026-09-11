@@ -1,0 +1,33 @@
+{
+  "version": 2,
+  "source_design": "yz4git/model-editor frontal/profile parameter separation plus local RBF deformation fields",
+  "notes": "v11.7 visual refinement of the independent single-shell face. No model-editor or MakeHuman program code is embedded; values and facial deformations are authored for Parry Doll.",
+  "frontal": {
+    "faceWidth": 1.0,
+    "jaw": 0.975,
+    "eyeSpacing": 1.0,
+    "eyeSize": 1.035,
+    "mouthWidth": 1.12,
+    "cheekVolume": 1.045
+  },
+  "profile": {
+    "noseProjection": 1.0,
+    "noseWidth": 0.985,
+    "foreheadDepth": 1.0,
+    "mouthProjection": 1.015,
+    "chinProjection": 1.0,
+    "chinLength": 0.985
+  },
+  "surface": {
+    "orbitalDepth": 1.10,
+    "malarSupport": 1.06,
+    "lowerCheekHollow": 1.06,
+    "lipThickness": 1.20,
+    "upperLidThickness": 1.10,
+    "nostrilScale": 1.24,
+    "alarVolume": 1.0,
+    "philtrumDepth": 1.0,
+    "mouthCornerDepth": 1.0,
+    "labiomentalDepth": 1.0
+  }
+}
