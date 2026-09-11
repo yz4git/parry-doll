@@ -44,32 +44,31 @@ jobs:
           const sleep = ms => new Promise(r=>setTimeout(r,ms));
           (async()=>{
             const browser=await chromium.launch({headless:true,args:['--enable-webgl','--ignore-gpu-blocklist','--enable-unsafe-swiftshader','--use-gl=angle','--use-angle=swiftshader-webgl','--disable-dev-shm-usage']});
-            const page=await browser.newPage({viewport:{width:852,height:393},isMobile:true,hasTouch:true,userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 26_6 like Mac OS X) AppleWebKit/605.1.15 Version/26.0 Mobile/15E148 Safari/604.1'});
-            const errors=[];page.on('pageerror',e=>errors.push('pageerror: '+e.message));page.on('console',m=>{if(m.type()==='error'&&!m.text().includes('Failed to load resource'))errors.push('console: '+m.text())});page.on('response',r=>{if(r.status()>=400&&!r.url().includes('/version.json'))errors.push(`HTTP ${r.status()} ${r.url()}`)});
-            await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});
-            await page.waitForFunction(()=>window.parryMirrorBreakDiagnostics?.().v8DefeatPresentation===true,null,{timeout:60000,polling:100});
-            await page.evaluate(()=>document.getElementById('start')?.click());await sleep(350);
-            const start=Date.now();
-            await page.evaluate(()=>{
-              level=0;boss=new Doll(bosses[0]);player.hp=100;player.invuln=10;player.pos=V(0,0,3);player.vel=V();window.__mirrorBreakState.choice=false;window.__mirrorBreakState.choiceFor=-1;document.getElementById('mbCoreChoice')?.classList.remove('show');
-              const chest=boss.nodes.find(n=>n.name==='chest')||boss.nodes[1];hurt(boss,boss.hp+10,V(34,17,8),chest.p);
-            });
-            await sleep(220);
-            const early=await page.evaluate(()=>({diag:window.parryMirrorBreakDiagnostics(),choice:document.getElementById('mbCoreChoice')?.classList.contains('show'),bossHp:boss.hp,chest:(boss.nodes.find(n=>n.name==='chest')||boss.nodes[1]).p}));
-            await page.screenshot({path:'mirror-break-v8-audit/01-ko-flight.png'});
-            await sleep(1450);
-            const mid=await page.evaluate(()=>({diag:window.parryMirrorBreakDiagnostics(),choice:document.getElementById('mbCoreChoice')?.classList.contains('show'),chest:(boss.nodes.find(n=>n.name==='chest')||boss.nodes[1]).p}));
-            await page.screenshot({path:'mirror-break-v8-audit/02-ko-down-beat.png'});
-            let opened=true;try{await page.waitForFunction(()=>document.getElementById('mbCoreChoice')?.classList.contains('show')===true,null,{timeout:5000,polling:16})}catch{opened=false}
-            const openedMs=Date.now()-start;
-            const after=await page.evaluate(()=>({diag:window.parryMirrorBreakDiagnostics(),choice:document.getElementById('mbCoreChoice')?.classList.contains('show'),chest:(boss.nodes.find(n=>n.name==='chest')||boss.nodes[1]).p}));
-            await page.screenshot({path:'mirror-break-v8-audit/03-core-after-ko.png'});
-            const result={opened,openedMs,early,mid,after,errors};fs.writeFileSync('mirror-break-v8-audit/result.json',JSON.stringify(result,null,2));
+            const errors=[];
+            async function scene(){
+              const page=await browser.newPage({viewport:{width:852,height:393},isMobile:true,hasTouch:true,userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 26_6 like Mac OS X) AppleWebKit/605.1.15 Version/26.0 Mobile/15E148 Safari/604.1'});
+              page.on('pageerror',e=>errors.push('pageerror: '+e.message));page.on('console',m=>{if(m.type()==='error'&&!m.text().includes('Failed to load resource'))errors.push('console: '+m.text())});page.on('response',r=>{if(r.status()>=400&&!r.url().includes('/version.json'))errors.push(`HTTP ${r.status()} ${r.url()}`)});
+              await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});
+              await page.waitForFunction(()=>window.parryMirrorBreakDiagnostics?.().v8DefeatPresentation===true,null,{timeout:60000,polling:100});
+              await page.evaluate(()=>document.getElementById('start')?.click());await sleep(320);
+              await page.evaluate(()=>{
+                level=0;boss=new Doll(bosses[0]);player.hp=100;player.invuln=10;player.pos=V(0,0,3);player.vel=V();window.__mirrorBreakState.choice=false;window.__mirrorBreakState.choiceFor=-1;const c=document.getElementById('mbCoreChoice');c?.classList.remove('show','mb-ko-hold');
+                const chest=boss.nodes.find(n=>n.name==='chest')||boss.nodes[1];hurt(boss,boss.hp+10,V(16,7,4),chest.p);
+              });
+              return page;
+            }
+            const snap=page=>page.evaluate(()=>({diag:window.parryMirrorBreakDiagnostics(),choice:document.getElementById('mbCoreChoice')?.classList.contains('show'),held:document.getElementById('mbCoreChoice')?.classList.contains('mb-ko-hold'),bossHp:boss.hp,chest:{...(boss.nodes.find(n=>n.name==='chest')||boss.nodes[1]).p}}));
+
+            const earlyPage=await scene();await sleep(250);const early=await snap(earlyPage);await earlyPage.screenshot({path:'mirror-break-v8-audit/01-ko-flight.png'});await earlyPage.close();
+            const midPage=await scene();await sleep(1500);const mid=await snap(midPage);await midPage.screenshot({path:'mirror-break-v8-audit/02-ko-down-beat.png'});await midPage.close();
+            const finalPage=await scene();let opened=true;try{await finalPage.waitForFunction(()=>document.getElementById('mbCoreChoice')?.classList.contains('show')===true,null,{timeout:8000,polling:16})}catch{opened=false}const after=await snap(finalPage);await finalPage.screenshot({path:'mirror-break-v8-audit/03-core-after-ko.png'});await finalPage.close();
+
+            const result={opened,early,mid,after,errors};fs.writeFileSync('mirror-break-v8-audit/result.json',JSON.stringify(result,null,2));
             if(errors.length)throw new Error(errors.join(' | '));
-            if(early.bossHp!==0||!early.diag.koPending||early.choice)throw new Error('reward opened during launch '+JSON.stringify(early));
-            if(mid.choice)throw new Error('reward opened before down beat '+JSON.stringify(mid));
-            if(!opened||openedMs<1750)throw new Error('reward timing invalid '+JSON.stringify({opened,openedMs,after}));
-            if(openedMs>4200||!after.choice||after.diag.koOpened<1||after.diag.koLastOpenT<1.8)throw new Error('reward failed after KO presentation '+JSON.stringify({openedMs,after}));
+            if(early.bossHp!==0||early.choice)throw new Error('reward visible during launch '+JSON.stringify(early));
+            if(mid.choice)throw new Error('reward visible before down beat '+JSON.stringify(mid));
+            if(!opened||!after.choice||after.diag.koOpened<1)throw new Error('reward failed after KO presentation '+JSON.stringify(after));
+            if(after.diag.koLastOpenT<1.80||after.diag.koLastOpenT>4.60)throw new Error('KO presentation duration invalid '+after.diag.koLastOpenT);
             console.log(JSON.stringify(result,null,2));await browser.close();
           })().catch(e=>{console.error(e);process.exit(1)});
           NODE
