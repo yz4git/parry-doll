@@ -1,0 +1,41 @@
+{
+  "version": 3,
+  "source_design": "Parry Doll key-art portrait lock: compact V-line lower face, large outlined almond eyes, stronger adult profile and layered asymmetric bangs",
+  "notes": "v11.9 is a visual-audit-driven pass. It intentionally increases portrait readability at iPhone gameplay distance: shorter chin, narrower jaw, larger outlined eyes/irises, fuller mouth and substantially stronger nose/chin silhouette.",
+  "frontal": {
+    "faceWidth": 0.93,
+    "jaw": 0.82,
+    "eyeSpacing": 0.98,
+    "eyeSize": 1.20,
+    "mouthWidth": 1.12,
+    "cheekVolume": 1.12
+  },
+  "profile": {
+    "noseProjection": 1.45,
+    "noseWidth": 0.91,
+    "foreheadDepth": 1.02,
+    "mouthProjection": 1.15,
+    "chinProjection": 1.13,
+    "chinLength": 0.82
+  },
+  "surface": {
+    "orbitalDepth": 1.22,
+    "malarSupport": 1.14,
+    "lowerCheekHollow": 1.18,
+    "lipThickness": 1.32,
+    "upperLidThickness": 1.15,
+    "nostrilScale": 1.14,
+    "alarVolume": 1.10,
+    "philtrumDepth": 1.10,
+    "mouthCornerDepth": 1.15,
+    "labiomentalDepth": 1.10,
+    "glabellaRelief": 1.05,
+    "bridgeRelief": 1.18,
+    "tipRelief": 1.20,
+    "columellaRelief": 1.12,
+    "infraorbitalSoftness": 1.05,
+    "nasolabialDepth": 1.05,
+    "irisScale": 1.18,
+    "eyeContrast": 1.22
+  }
+}
