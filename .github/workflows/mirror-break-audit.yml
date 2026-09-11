@@ -53,6 +53,7 @@ jobs:
 
             const broken=await page.evaluate(()=>{player.cool=0;player.comboWindow=0;player.pos.x=boss.pos.x;player.pos.z=boss.pos.z+1.55;const attackStarted=playerAttack(),attackVisualStart=window.parryMirrorBreakDiagnostics().attackVisual;player.swingClock=0;resolveSwing();for(let i=0;i<2;i++)step(1/60);return{...window.parryMirrorBreakDiagnostics(),attackStarted,attackVisualStart}});
             await sleep(100);await page.screenshot({path:'mirror-break-audit/02-broken.png'});
+            await sleep(300);await page.evaluate(()=>{player.pos.x=boss.pos.x-1.0;player.pos.z=boss.pos.z+3.0;player.vel=V();boss.vel=V();boss.stun=Math.max(boss.stun,.6)});await sleep(60);await page.screenshot({path:'mirror-break-audit/02b-broken-settled.png'});
 
             const mid=await page.evaluate(()=>{boss.invuln=0;hurt(boss,999,V(0,8,-30),boss.nodes[1].p);for(let i=0;i<3;i++)step(1/60);const choiceOpen=document.getElementById('mbCoreChoice')?.classList.contains('show'),buttons=[...document.querySelectorAll('.mb-core')].map(b=>b.textContent.trim());document.querySelector('.mb-core')?.click();for(let i=0;i<30;i++)step(1/60);return{choiceOpen,buttons,afterChoice:window.parryMirrorBreakDiagnostics(),nextLevel:level,nextBoss:boss?.spec?.name||''}});
 
