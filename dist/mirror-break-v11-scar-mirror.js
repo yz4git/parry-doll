@@ -6,8 +6,15 @@
  const s={history:[],lastSerial:0,bossRef:null,attackCalls:0,scarIndex:0,scarEchoes:0,lastScar:null,pulseT:0};window.__mirrorBreakV11State=s;
  const LABEL=['BLADELESS','HOLLOW','THREADLESS','BELL TOWER'],COLOR=['#ffb36b','#8ce4d3','#d0a6ff','#abd9ff'];
  const clone=m=>({...m,hits:[...(m?.hits||[])]});
- const hud=document.createElement('div');hud.id='mbScarMemory';Object.assign(hud.style,{position:'absolute',right:'max(24px,env(safe-area-inset-right))',top:'112px',zIndex:'30',pointerEvents:'none',textAlign:'right',fontSize:'8px',letterSpacing:'1.8px',lineHeight:'1.45',color:'#aab7b5',textShadow:'0 2px 8px #000',opacity:'0',transition:'opacity .16s'});document.body.appendChild(hud);
- function refreshHud(proc=null){if(level!==4){hud.style.opacity='0';return}hud.style.opacity='.88';const count=s.history.length;hud.innerHTML=`<b style="display:block;color:#e0c68d;letter-spacing:2.4px">SCAR MEMORY ${count}/4</b>${proc?`<span style="color:#f0e4c8">ECHO · ${proc}</span>`:'<span>DESTRUCTION HISTORY</span>'}`}
+ const hud=document.createElement('div');hud.id='mbScarMemory';Object.assign(hud.style,{position:'absolute',right:'max(22px,env(safe-area-inset-right))',top:'114px',zIndex:'30',pointerEvents:'none',textAlign:'right',fontSize:'7px',letterSpacing:'1.7px',lineHeight:'1.2',color:'#aab7b5',textShadow:'0 2px 8px #000',opacity:'0',transformOrigin:'100% 50%',transition:'opacity .14s,transform .14s'});document.body.appendChild(hud);
+ function refreshHud(proc=null){
+  // Once the mirror core is shattered the scar system has yielded to COPY OVERLOAD; hide it immediately
+  // instead of leaving a stale ECHO label beside the new phase UI.
+  if(level!==4||state.broken){hud.style.opacity='0';hud.style.transform='scale(.96)';hud.innerHTML='';return}
+  const count=s.history.length,pips=[0,1,2,3].map(i=>`<i style="font-style:normal;color:${i<count?COLOR[i]:'#3d474a'};margin-left:3px">${i<count?'◆':'◇'}</i>`).join('');
+  hud.innerHTML=`<b style="font-weight:600;color:#c8bbb0;letter-spacing:1.6px">SCAR MEMORY</b><span style="margin-left:6px;white-space:nowrap">${pips}</span>`;
+  hud.style.opacity=proc?'.82':'.56';hud.style.transform=proc?'scale(1.025)':'scale(1)';
+ }
  function record(hit){if(!hit||hit.level<0||hit.level>3||!hit.serial||hit.serial<=s.lastSerial)return;s.lastSerial=hit.serial;const e={level:hit.level,style:hit.style||'',part:hit.part||null,kind:hit.kind||null,label:hit.label||null};const old=s.history.findIndex(x=>x.level===e.level);if(old>=0)s.history[old]=e;else s.history.push(e);s.history.sort((a,b)=>a.level-b.level);refreshHud()}
  function scarMove(entry){
   const l=entry.level;
@@ -25,7 +32,7 @@
   const entry=s.history[s.scarIndex++%s.history.length],scar=scarMove(entry),out=forceScar(scar,entry);s.scarEchoes++;s.lastScar=LABEL[entry.level];scarBeat(entry);return out;
  };
  const baseReset=reset;reset=function(l=0){const prev=typeof level==='number'?level:-1,out=baseReset(l);if(l===0&&prev>=4){s.history.length=0;s.lastSerial=0}s.bossRef=boss;s.attackCalls=0;s.scarIndex=0;s.pulseT=0;refreshHud();return out};
- function frame(){const hit=window.__mirrorBreakV9State?.stageHit;if(hit)record(hit);s.pulseT=Math.max(0,s.pulseT-1/60);if(level===4&&s.pulseT<=0)refreshHud();else if(level!==4)hud.style.opacity='0';requestAnimationFrame(frame)}requestAnimationFrame(frame);
+ function frame(){const hit=window.__mirrorBreakV9State?.stageHit;if(hit)record(hit);s.pulseT=Math.max(0,s.pulseT-1/60);if(level!==4||state.broken)refreshHud();else if(s.pulseT<=0)refreshHud();requestAnimationFrame(frame)}requestAnimationFrame(frame);
  const priorDiag=window.parryMirrorBreakDiagnostics;window.parryMirrorBreakDiagnostics=()=>{const d=priorDiag?priorDiag():{};return{...d,v11:true,scarMirror:true,destructionHistory:s.history.map(x=>({...x})),scarMemoryCount:s.history.length,scarAttackCalls:s.attackCalls,scarEchoes:s.scarEchoes,lastScarEcho:s.lastScar,scarEchoSuppressed:level===4&&!!state.broken}};
  refreshHud();
 })();
