@@ -1,0 +1,82 @@
+name: MIRROR BREAK v4 Severing Audit
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - dist/mirror-break-v4.js
+      - dist/mirror-break-final-adapter.js
+      - .github/mirror-break-v4.trigger
+      - .github/workflows/mirror-break-v4-audit.yml
+
+permissions:
+  contents: read
+
+jobs:
+  severing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate severing layer
+        run: |
+          node --check dist/mirror-break-v4.js
+          node --check dist/mirror-break-final-adapter.js
+      - name: Install browser stack
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Serve game
+        run: |
+          python3 -m http.server 4173 --directory dist > /tmp/parry-v4-http.log 2>&1 &
+          for i in {1..30}; do curl -fsS http://127.0.0.1:4173/ >/dev/null && exit 0; sleep 1; done
+          cat /tmp/parry-v4-http.log; exit 1
+      - name: Break every boss and capture persistent damage
+        run: |
+          mkdir -p mirror-break-v4-audit
+          cat > v4-audit.cjs <<'NODE'
+          const { chromium } = require('playwright');
+          const fs = require('fs');
+          const sleep = ms => new Promise(r=>setTimeout(r,ms));
+          (async()=>{
+            const browser=await chromium.launch({headless:true,args:['--enable-webgl','--ignore-gpu-blocklist','--enable-unsafe-swiftshader','--use-gl=angle','--use-angle=swiftshader-webgl','--disable-dev-shm-usage']});
+            const page=await browser.newPage({viewport:{width:852,height:393},isMobile:true,hasTouch:true,userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 26_6 like Mac OS X) AppleWebKit/605.1.15 Version/26.0 Mobile/15E148 Safari/604.1'});
+            const errors=[];page.on('pageerror',e=>errors.push('pageerror: '+e.message));page.on('console',m=>{if(m.type()==='error'&&!m.text().includes('Failed to load resource'))errors.push('console: '+m.text())});page.on('response',r=>{if(r.status()>=400&&!r.url().includes('/version.json'))errors.push(`HTTP ${r.status()} ${r.url()}`)});
+            await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});
+            await page.waitForFunction(()=>window.parryMirrorBreakDiagnostics?.().v4===true,{timeout:60000,polling:100});
+            await page.evaluate(()=>document.getElementById('start')?.click());await sleep(300);
+            const results=[];
+            for(let l=0;l<5;l++){
+              const r=await page.evaluate(l=>{
+                level=l;boss=new Doll(bosses[l]);boss.stun=0;boss.wind=0;boss.strike=0;boss.ai=0;boss.invuln=0;player.hp=100;player.stun=0;player.down=0;player.cool=0;player.comboWindow=0;player.counter=0;player.swing=null;player.pos=V(0,0,3);player.vel=V();
+                for(let i=0;i<3;i++)step(1/60);
+                player.pos.x=boss.pos.x;player.pos.z=boss.pos.z+1.65;player.vel=V();boss.vel=V();boss.stun=0;boss.wind=0;boss.strike=0;boss.invuln=0;player.parry=.50;player.parryCool=0;enemyImpact(null);for(let i=0;i<2;i++)step(1/60);
+                player.cool=0;player.comboWindow=0;player.pos.x=boss.pos.x;player.pos.z=boss.pos.z+1.45;const attackStarted=playerAttack();player.swingClock=0;resolveSwing();for(let i=0;i<4;i++)step(1/60);
+                return{level:l,name:boss.spec.name,attackStarted,diag:window.parryMirrorBreakDiagnostics(),finite:[player,boss].every(d=>d.nodes.every(n=>Object.values(n.p).every(Number.isFinite)))};
+              },l);
+              results.push(r);await sleep(340);await page.screenshot({path:`mirror-break-v4-audit/0${l+1}-boss-${l}-broken.png`});
+            }
+            fs.writeFileSync('mirror-break-v4-audit/result.json',JSON.stringify({results,errors},null,2));
+            if(errors.length)throw new Error(errors.join(' | '));
+            if(results.length!==5)throw new Error('missing boss captures');
+            for(const r of results){if(!r.attackStarted||!r.finite||!r.diag.v4||!r.diag.persistentDamage||!r.diag.visibleSever||r.diag.breakDebris<1)throw new Error('v4 break failed '+JSON.stringify(r));}
+            for(const r of results.slice(0,4))if(r.diag.hiddenNodes.length<2)throw new Error('limb was not visually removed '+JSON.stringify(r));
+            if(results[0].diag.visualBreakKind!=='ARM'||results[1].diag.visualBreakKind!=='LEG'||results[2].diag.visualBreakKind!=='LEG'||results[3].diag.visualBreakKind!=='ARM'||results[4].diag.visualBreakKind!=='CORE')throw new Error('wrong break kinds '+JSON.stringify(results.map(r=>r.diag.visualBreakKind)));
+            console.log(JSON.stringify(results,null,2));await browser.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+          node v4-audit.cjs
+      - name: Upload severing frames
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: parry-doll-mirror-break-v4-audit
+          path: mirror-break-v4-audit/
+          if-no-files-found: error
+          retention-days: 3
