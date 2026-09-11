@@ -1,0 +1,72 @@
+name: Boss Destruction Scar Mirror Audit
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - dist/mirror-break-v9-boss-destruction.js
+      - dist/mirror-break-v11-scar-mirror.js
+      - dist/mirror-break-final-adapter.js
+      - .github/workflows/boss-destruction-v11-scar-mirror-audit.yml
+      - .github/boss-destruction-v11.trigger
+
+permissions:
+  contents: read
+
+jobs:
+  scar-mirror:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate Scar Mirror
+        run: |
+          node --check dist/mirror-break-v11-scar-mirror.js
+          node --check dist/mirror-break-v9-boss-destruction.js
+      - name: Install browser stack
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Serve game
+        run: |
+          python3 -m http.server 4173 --directory dist > /tmp/parry-v11-http.log 2>&1 &
+          for i in {1..30}; do curl -fsS http://127.0.0.1:4173/ >/dev/null && exit 0; sleep 1; done
+          cat /tmp/parry-v11-http.log; exit 1
+      - name: Verify destruction history becomes final-boss attacks
+        run: |
+          mkdir -p boss-destruction-v11-audit
+          cat > v11-audit.cjs <<'NODE'
+          const { chromium }=require('playwright');const fs=require('fs');const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+          (async()=>{
+            const browser=await chromium.launch({headless:true,args:['--enable-webgl','--ignore-gpu-blocklist','--enable-unsafe-swiftshader','--use-gl=angle','--use-angle=swiftshader-webgl','--disable-dev-shm-usage']});
+            const page=await browser.newPage({viewport:{width:852,height:393},isMobile:true,hasTouch:true,userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 26_6 like Mac OS X) AppleWebKit/605.1.15 Version/26.0 Mobile/15E148 Safari/604.1'});
+            const errors=[];page.on('pageerror',e=>errors.push('pageerror: '+e.message));page.on('console',m=>{if(m.type()==='error'&&!m.text().includes('Failed to load resource'))errors.push('console: '+m.text())});page.on('response',r=>{if(r.status()>=400&&!r.url().includes('/version.json'))errors.push(`HTTP ${r.status()} ${r.url()}`)});
+            await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>window.parryMirrorBreakDiagnostics?.().v11===true,null,{timeout:60000,polling:100});await page.evaluate(()=>document.getElementById('start')?.click());await sleep(300);
+            const styles=['BLADELESS SPIN CRASH','HOLLOW TUMBLE','FIVE-LEG CARTWHEEL','BELL TOWER COLLAPSE'],parts=['swordArm','foreLeg','spearLeg','bellArm'],kinds=['ARM','LEG','LEG','ARM'];
+            for(let i=0;i<4;i++){await page.evaluate(({i,style,part,kind})=>{window.__mirrorBreakV9State.stageHitSerial=100+i;window.__mirrorBreakV9State.stageHit={serial:100+i,level:i,style,part,kind,label:part,x:i*.3,z:-2-i*.2,power:1.5,time:performance.now()}},{i,style:styles[i],part:parts[i],kind:kinds[i]});await sleep(80)}
+            let before=await page.evaluate(()=>window.parryMirrorBreakDiagnostics());if(before.scarMemoryCount!==4)throw new Error('history not recorded '+JSON.stringify(before.destructionHistory));
+            await page.evaluate(()=>{reset(4);mode='play';transition=0;player.hp=100;const st=window.__mirrorBreakState;st.boss=boss;st.level=4;st.broken=false;st.choice=false;st.cores={EDGE:1,MIRROR:1,PULSE:1};boss.hp=Math.max(1,boss.hp);boss.ai=0});await sleep(180);
+            const seen=[];
+            for(let i=1;i<=16;i++){await page.evaluate(()=>{boss.wind=0;boss.strike=0;boss.pattern=null;boss.ai=0;startEnemyAttack(ENEMY_MOVES[4][0])});if(i%4===0){await sleep(80);seen.push(await page.evaluate(()=>({diag:window.parryMirrorBreakDiagnostics(),pattern:boss.pattern?.name||''})))}}
+            await page.screenshot({path:'boss-destruction-v11-audit/01-scar-mirror.png'});
+            const labels=seen.map(x=>x.diag.lastScarEcho),expected=['BLADELESS','HOLLOW','THREADLESS','BELL TOWER'];if(JSON.stringify(labels)!==JSON.stringify(expected))throw new Error('scar sequence mismatch '+JSON.stringify({labels,seen}));
+            const count=seen.at(-1).diag.scarEchoes;if(count!==4)throw new Error('scar count mismatch '+count);
+            await page.evaluate(()=>{window.__mirrorBreakState.broken=true;for(let i=0;i<5;i++){boss.wind=0;boss.strike=0;boss.pattern=null;startEnemyAttack(ENEMY_MOVES[4][0])}});await sleep(100);const afterBreak=await page.evaluate(()=>window.parryMirrorBreakDiagnostics());if(afterBreak.scarEchoes!==count||!afterBreak.scarEchoSuppressed)throw new Error('scar did not yield after mirror break '+JSON.stringify(afterBreak));
+            await page.screenshot({path:'boss-destruction-v11-audit/02-after-core-break.png'});if(errors.length)throw new Error(errors.join(' | '));fs.writeFileSync('boss-destruction-v11-audit/result.json',JSON.stringify({success:true,labels,seen,afterBreak,errors},null,2));console.log(JSON.stringify({success:true,labels,scarEchoes:count,suppressed:afterBreak.scarEchoSuppressed},null,2));await browser.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+          node v11-audit.cjs
+      - name: Upload Scar Mirror frames
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: parry-doll-boss-destruction-v11-audit
+          path: boss-destruction-v11-audit/
+          if-no-files-found: error
+          retention-days: 3
