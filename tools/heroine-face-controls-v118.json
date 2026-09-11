@@ -1,0 +1,41 @@
+{
+  "version": 3,
+  "source_design": "Parry Doll reference-locked feminine portrait controls with independent frontal/profile dimensions and local RBF facial planes",
+  "notes": "v11.8 narrows the lower face, strengthens adult profile landmarks, deepens the eye socket/cheek transition and scales the eye/iris treatment toward the current Parry Doll key art while keeping one continuous head shell.",
+  "frontal": {
+    "faceWidth": 0.945,
+    "jaw": 0.875,
+    "eyeSpacing": 0.985,
+    "eyeSize": 1.105,
+    "mouthWidth": 1.075,
+    "cheekVolume": 1.085
+  },
+  "profile": {
+    "noseProjection": 1.18,
+    "noseWidth": 0.93,
+    "foreheadDepth": 1.025,
+    "mouthProjection": 1.095,
+    "chinProjection": 1.08,
+    "chinLength": 1.025
+  },
+  "surface": {
+    "orbitalDepth": 1.18,
+    "malarSupport": 1.12,
+    "lowerCheekHollow": 1.15,
+    "lipThickness": 1.24,
+    "upperLidThickness": 1.08,
+    "nostrilScale": 1.10,
+    "alarVolume": 1.08,
+    "philtrumDepth": 1.08,
+    "mouthCornerDepth": 1.12,
+    "labiomentalDepth": 1.07,
+    "glabellaRelief": 1.0,
+    "bridgeRelief": 1.0,
+    "tipRelief": 1.0,
+    "columellaRelief": 1.0,
+    "infraorbitalSoftness": 1.0,
+    "nasolabialDepth": 1.0,
+    "irisScale": 1.10,
+    "eyeContrast": 1.0
+  }
+}
