@@ -45,4 +45,4 @@
 })();
 
 // MIRROR BREAK is deliberately loaded last so its UI and combat readability rules win over earlier additive passes.
-(()=>{if(window.__parryMirrorBreakLoadQueued)return;window.__parryMirrorBreakLoadQueued=true;const s=document.createElement('script'),src=document.currentScript?.src||'',q=src.includes('?')?'?'+src.split('?').slice(1).join('?'):'';s.src='./mirror-break-v1.js'+q;document.body.appendChild(s)})();
+(()=>{if(window.__parryMirrorBreakLoadQueued)return;window.__parryMirrorBreakLoadQueued=true;const src=document.currentScript?.src||'',q=src.includes('?')?'?'+src.split('?').slice(1).join('?'):'',s=document.createElement('script');s.src='./mirror-break-v1.js'+q;s.onload=()=>{const a=document.createElement('script');a.src='./mirror-break-final-adapter.js'+q;document.body.appendChild(a)};document.body.appendChild(s)})();
