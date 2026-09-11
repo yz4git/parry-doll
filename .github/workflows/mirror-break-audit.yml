@@ -1,0 +1,83 @@
+name: MIRROR BREAK Gameplay Audit
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - dist/mirror-break-v1.js
+      - dist/parry-cinematic-v3.js
+      - .github/mirror-break.trigger
+      - .github/workflows/mirror-break-audit.yml
+
+permissions:
+  contents: read
+
+jobs:
+  gameplay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install browser stack
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Serve game
+        run: |
+          python3 -m http.server 4173 --directory dist > /tmp/parry-mb-http.log 2>&1 &
+          for i in {1..30}; do curl -fsS http://127.0.0.1:4173/ >/dev/null && exit 0; sleep 1; done
+          cat /tmp/parry-mb-http.log; exit 1
+      - name: Exercise BODY BREAK and DOLL CORE loop
+        run: |
+          mkdir -p mirror-break-audit
+          cat > mb-audit.cjs <<'NODE'
+          const { chromium } = require('playwright');
+          const fs = require('fs');
+          const sleep = ms => new Promise(r => setTimeout(r, ms));
+          (async()=>{
+            const browser=await chromium.launch({headless:true,args:['--enable-webgl','--ignore-gpu-blocklist','--enable-unsafe-swiftshader','--use-gl=angle','--use-angle=swiftshader-webgl','--disable-dev-shm-usage']});
+            const page=await browser.newPage({viewport:{width:852,height:393},isMobile:true,hasTouch:true,userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 26_6 like Mac OS X) AppleWebKit/605.1.15 Version/26.0 Mobile/15E148 Safari/604.1'});
+            const errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text())});
+            await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});
+            await page.waitForFunction(()=>typeof window.parryMirrorBreakDiagnostics==='function',{timeout:15000});
+            await page.evaluate(()=>document.getElementById('start')?.click());await sleep(350);
+            const result=await page.evaluate(async()=>{
+              const tick=(n=1)=>{for(let i=0;i<n;i++)step(1/60)};
+              player.pos.x=boss.pos.x;player.pos.z=boss.pos.z+1.8;player.vel=V();boss.vel=V();boss.stun=0;boss.wind=0;boss.strike=0;boss.invuln=0;
+              player.parry=.50;player.parryCool=0;enemyImpact(null);tick(2);
+              const exposed=window.parryMirrorBreakDiagnostics();
+              player.cool=0;player.comboWindow=0;player.pos.x=boss.pos.x;player.pos.z=boss.pos.z+1.55;playerAttack();player.swingClock=0;resolveSwing();tick(2);
+              const broken=window.parryMirrorBreakDiagnostics();
+              boss.invuln=0;hurt(boss,999,V(0,8,-30),boss.nodes[1].p);tick(3);
+              const choiceOpen=document.getElementById('mbCoreChoice')?.classList.contains('show');
+              const buttons=[...document.querySelectorAll('.mb-core')].map(b=>b.textContent.trim());
+              document.querySelector('.mb-core')?.click();tick(30);
+              const afterChoice=window.parryMirrorBreakDiagnostics();
+              return {exposed,broken,choiceOpen,buttons,afterChoice,level,boss:boss?.spec?.name,mode};
+            });
+            await page.screenshot({path:'mirror-break-audit/result.png'});
+            fs.writeFileSync('mirror-break-audit/result.json',JSON.stringify({result,errors},null,2));
+            if(errors.length)throw new Error('browser errors: '+errors.join(' | '));
+            if(!(result.exposed.expose>0))throw new Error('PERFECT did not expose a break target');
+            if(!result.broken.broken||result.broken.breaks<1)throw new Error('counter did not BODY BREAK');
+            if(!result.choiceOpen||result.buttons.length!==3)throw new Error('DOLL CORE choice did not open');
+            if(result.afterChoice.cores.EDGE!==1)throw new Error('EDGE core was not acquired');
+            if(result.level!==1)throw new Error('run did not advance to boss 2 after core choice');
+            console.log(JSON.stringify(result,null,2));await browser.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+          node mb-audit.cjs
+      - name: Upload MIRROR BREAK audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: parry-doll-mirror-break-audit
+          path: mirror-break-audit/
+          if-no-files-found: error
+          retention-days: 3
