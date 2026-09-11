@@ -644,12 +644,12 @@ def add_reference_head_v113(p,name,mat,segments=112):
  # full three-dimensional cheeks instead of creating a centre-line ridge.
  sections=[
   (.164,.071,.078,.080,-.010),(.150,.101,.084,.086,-.008),(.132,.119,.089,.091,-.006),
-  (.108,.128,.094,.095,-.003),(.082,.131,.098,.097,-.001),(.058,.129,.100,.098,.001),
-  (.036,.125,.101,.099,.002),(.014,.128,.102,.099,.003),(-.008,.127,.102,.100,.003),
-  (-.030,.123,.102,.101,.002),(-.052,.118,.101,.102,.001),(-.072,.110,.100,.103,.000),
-  (-.089,.102,.098,.103,-.001),(-.103,.094,.096,.102,-.003),(-.115,.085,.094,.101,-.004),
-  (-.126,.075,.091,.098,-.006),(-.135,.062,.087,.093,-.008),(-.141,.047,.081,.086,-.009),
-  (-.145,.030,.072,.078,-.010)
+  (.108,.128,.094,.095,-.003),(.082,.130,.098,.097,-.001),(.058,.128,.100,.098,.001),
+  (.036,.124,.101,.099,.002),(.014,.126,.102,.099,.003),(-.008,.125,.102,.100,.003),
+  (-.030,.120,.102,.101,.002),(-.052,.114,.101,.102,.001),(-.072,.105,.100,.103,.000),
+  (-.089,.096,.098,.103,-.001),(-.103,.087,.096,.102,-.003),(-.115,.078,.094,.101,-.004),
+  (-.126,.068,.091,.098,-.006),(-.135,.056,.087,.093,-.008),(-.141,.042,.081,.086,-.009),
+  (-.145,.026,.072,.078,-.010)
  ]
  profile=[
   (.090,.0990),(.060,.1000),(.035,.1030),(.015,.1080),(-.005,.1140),(-.025,.1240),
@@ -695,11 +695,12 @@ def add_reference_head_v113(p,name,mat,segments=112):
     for side in (-1,1):
      ex=side*.0465
      # Eye socket is shallow enough that the existing almond eye can sit inside it rather than hover.
-     z-=fm*.0017*math.exp(-((x-ex)/.0265)**2-((yy-.033)/.0190)**2)
-     # Brow/zygomatic bridge and adult cheek break.
-     z+=fm*.0022*math.exp(-((x-ex)/.031)**2-((yy-.061)/.022)**2)
-     z+=fm*.0048*math.exp(-((x-side*.057)/.033)**2-((yy+.004)/.035)**2)
-     z-=fm*.0021*math.exp(-((x-side*.068)/.029)**2-((yy+.053)/.034)**2)
+     z-=fm*.0027*math.exp(-((x-ex)/.0265)**2-((yy-.033)/.0195)**2)
+     # Brow/zygomatic bridge and adult cheek break.  The malar peak sits slightly below/outside
+     # the eye, then falls into a shallow lower-cheek hollow instead of one flat side plane.
+     z+=fm*.0025*math.exp(-((x-ex)/.031)**2-((yy-.061)/.022)**2)
+     z+=fm*.0062*math.exp(-((x-side*.057)/.034)**2-((yy+.004)/.036)**2)
+     z-=fm*.0027*math.exp(-((x-side*.069)/.030)**2-((yy+.054)/.035)**2)
      z-=fm*.0016*math.exp(-((x-side*.087)/.025)**2-((yy-.040)/.041)**2)
      # Alar wing / nasolabial transition remains part of the shell.
      z+=fm*.0028*math.exp(-((x-side*.0105)/.0110)**2-((yy+.055)/.0135)**2)
@@ -835,6 +836,7 @@ TH_L=empty('BL_THIGH_L',ROOT);SH_L=empty('BL_SHIN_L',ROOT);FOOT_L=empty('BL_FOOT
 # REFERENCE_V112: public-model study reset; one independently generated continuous adult-anime head shell replaces HeadShellV60 plus the CC0 overlay patch.
 # REFERENCE_V113: the new single shell gains an explicit adult S-profile and seated orbital surfaces after five-view validation exposed the v11.2 flat side silhouette.
 # REFERENCE_V114: stronger public-basemesh-scale facial projection gives the clean shell a readable nose/lip/chin silhouette and retargets surface accents to it.
+# REFERENCE_V115: the clean shell gains a tapered adult jaw, deeper orbital seating, stronger malar transition and a naturally wider mouth after five-view review.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
@@ -976,18 +978,18 @@ for side in(-1,1):
  add_ellipse_surface(HEAD,f'PupilV113_{side}',ex,eye_y-.00015,.10302,.00285,.00345,PUPIL,30)
  add_ellipse_surface(HEAD,f'EyeLightV113_{side}',ex-side*.0030,eye_y+.0028,.10318,.00090,.00072,SCLERA,16)
  inner=ex-side*eye_rx*.96;outer=ex+side*eye_rx*1.03
- add_strand(HEAD,f'UpperLashV100_{side}',[(inner,eye_y-eye_tilt+.0006,.10395),(ex,eye_y+.0101,.10450),(outer,eye_y+eye_tilt+.0006,.10400)],.00054,HAIR)
- add_strand(HEAD,f'UpperLidFoldV100_{side}',[(inner+side*.0035,eye_y-eye_tilt+.0025,.10350),(ex,eye_y+.0124,.10392),(outer-side*.0035,eye_y+eye_tilt+.0025,.10350)],.00014,FACE_DARK)
- add_strand(HEAD,f'LowerLidV100_{side}',[(inner+side*.0035,eye_y-eye_tilt-.0001,.10342),(ex,eye_y-.0072,.10368),(outer-side*.0035,eye_y+eye_tilt-.0001,.10342)],.000052,FACE_DARK)
+ add_strand(HEAD,f'UpperLashV115_{side}',[(inner,eye_y-eye_tilt+.0006,.10255),(ex,eye_y+.0101,.10305),(outer,eye_y+eye_tilt+.0006,.10260)],.00048,HAIR)
+ add_strand(HEAD,f'UpperLidFoldV115_{side}',[(inner+side*.0035,eye_y-eye_tilt+.0025,.10215),(ex,eye_y+.0124,.10255),(outer-side*.0035,eye_y+eye_tilt+.0025,.10215)],.00011,FACE_DARK)
+ add_strand(HEAD,f'LowerLidV115_{side}',[(inner+side*.0035,eye_y-eye_tilt-.0001,.10205),(ex,eye_y-.0072,.10227),(outer-side*.0035,eye_y+eye_tilt-.0001,.10205)],.000045,FACE_DARK)
  add_strand(HEAD,f'BrowV100_{side}',[(ex-side*.0235,.0645,.1018),(ex,.0698,.1023),(ex+side*.0255,.0630,.1019)],.00038,HAIR)
 
 # v7.1 integrated portrait accents: head topology owns all nose/mouth depth.
 # Only a shallow colour patch remains for the lips, following the actual mouth plane instead of floating in front of it.
 # v11.4 surface accents follow the rebuilt shell instead of the retired v8 face depth.
-add_panel(HEAD,'UpperLipV114_L',[(-.0230,-.0848,.1195),(-.0112,-.0802,.1206),(0,-.0832,.1221),(0,-.0867,.1224),(-.0098,-.0860,.1213),(-.0215,-.0880,.1200)],.00028,LIP)
-add_panel(HEAD,'UpperLipV114_R',[(0,-.0832,.1221),(.0112,-.0802,.1206),(.0230,-.0848,.1195),(.0215,-.0880,.1200),(.0098,-.0860,.1213),(0,-.0867,.1224)],.00028,LIP)
-add_panel(HEAD,'LowerLipV114',[(-.0215,-.0883,.1201),(0,-.0877,.1222),(.0215,-.0883,.1201),(.0180,-.0944,.1198),(0,-.0970,.1208),(-.0180,-.0944,.1198)],.00032,LIP)
-add_strand(HEAD,'MouthSeamV114',[(-.0218,-.0868,.1200),(-.0102,-.0863,.1212),(0,-.0871,.1225),(.0102,-.0863,.1212),(.0218,-.0868,.1200)],.000040,FACE_DARK)
+add_panel(HEAD,'UpperLipV115_L',[(-.0265,-.0849,.1189),(-.0130,-.0801,.1205),(0,-.0831,.1222),(0,-.0868,.1225),(-.0110,-.0860,.1213),(-.0250,-.0882,.1195)],.00027,LIP)
+add_panel(HEAD,'UpperLipV115_R',[(0,-.0831,.1222),(.0130,-.0801,.1205),(.0265,-.0849,.1189),(.0250,-.0882,.1195),(.0110,-.0860,.1213),(0,-.0868,.1225)],.00027,LIP)
+add_panel(HEAD,'LowerLipV115',[(-.0250,-.0884,.1196),(0,-.0878,.1222),(.0250,-.0884,.1196),(.0210,-.0945,.1194),(0,-.0971,.1208),(-.0210,-.0945,.1194)],.00031,LIP)
+add_strand(HEAD,'MouthSeamV115',[(-.0255,-.0869,.1196),(-.0118,-.0863,.1211),(0,-.0872,.1226),(.0118,-.0863,.1211),(.0255,-.0869,.1196)],.000038,FACE_DARK)
 for side in(-1,1):
  add_ellipse_surface(HEAD,f'NostrilTintV114_{side}',side*.0062,-.0570,.1250,.00165,.00058,FACE_DARK,18)
 
