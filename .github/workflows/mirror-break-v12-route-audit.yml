@@ -48,22 +48,22 @@ jobs:
             await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>window.parryMirrorBreakDiagnostics?.().v12===true,null,{timeout:60000,polling:100});await page.evaluate(()=>document.getElementById('start')?.click());await sleep(250);
             const names=['ASH GATE','CAGE BREACH','BROKEN SPINE','ALTAR RIFT'],styles=['BLADELESS SPIN CRASH','HOLLOW TUMBLE','FIVE-LEG CARTWHEEL','BELL TOWER COLLAPSE'];const routes=[];
             for(let source=0;source<4;source++){
-              const d=await page.evaluate(({source,style})=>{
+              await page.evaluate(({source,style})=>{
                 const hit={serial:200+source,level:source,style,part:['swordArm','foreLeg','spearLeg','bellArm'][source],kind:['ARM','LEG','LEG','ARM'][source],label:'route',x:(source-1.5)*.55,z:-1.8-source*.25,power:1.55+source*.2,time:performance.now()};
                 window.__mirrorBreakV9State.stageHitSerial=hit.serial;window.__mirrorBreakV9State.stageHit=hit;
-                reset(source+1);mode='play';transition=0;player.hp=100;player.invuln=10;player.stun=0;boss.hp=Math.max(1,boss.hp);boss.ai=999;boss.wind=0;boss.strike=0;boss.pattern=null;
-                return window.parryMirrorBreakDiagnostics();
+                reset(source+1);mode='play';transition=0;player.hp=100;player.invuln=10;player.stun=0;boss.hp=Math.max(1,boss.hp);boss.ai=999;boss.wind=0;boss.strike=0;boss.pattern=null;boss.stun=0;boss.down=0;
               },{source,style:styles[source]});
-              await sleep(260);
+              await sleep(320);
               const diag=await page.evaluate(()=>window.parryMirrorBreakDiagnostics());
               if(diag.routeName!==names[source]||diag.routeLevel!==source+1||diag.routeSource!==source)throw new Error('route identity mismatch '+JSON.stringify({source,diag}));
               if(diag.routeMeshes<8)throw new Error('route geometry too small '+JSON.stringify({source,diag}));
-              routes.push({source,name:diag.routeName,meshes:diag.routeMeshes,history:diag.routeHistoryCount});
+              if(!diag.routePressureTicks||diag.routePressure?.source!==source||!diag.routePressure?.tag)throw new Error('route movement pressure missing '+JSON.stringify({source,pressure:diag.routePressure,ticks:diag.routePressureTicks}));
+              routes.push({source,name:diag.routeName,meshes:diag.routeMeshes,history:diag.routeHistoryCount,pressure:diag.routePressure.tag,amount:diag.routePressure.amount});
               await page.screenshot({path:`mirror-break-v12-audit/0${source+1}-${names[source].toLowerCase().replaceAll(' ','-')}.png`});
             }
             const final=await page.evaluate(()=>window.parryMirrorBreakDiagnostics());if(final.routeHistoryCount!==4||final.routeName!=='ALTAR RIFT')throw new Error('route history did not accumulate '+JSON.stringify(final));
             const finite=await page.evaluate(()=>[player,boss].every(d=>d.nodes.every(n=>Object.values(n.p).every(Number.isFinite))));if(!finite)throw new Error('non-finite route state');if(errors.length)throw new Error(errors.join(' | '));
-            fs.writeFileSync('mirror-break-v12-audit/result.json',JSON.stringify({success:true,routes,final:{name:final.routeName,history:final.routeHistoryCount,meshes:final.routeMeshes},finite,errors},null,2));console.log(JSON.stringify({success:true,routes,final:final.routeName},null,2));await browser.close();
+            fs.writeFileSync('mirror-break-v12-audit/result.json',JSON.stringify({success:true,routes,final:{name:final.routeName,history:final.routeHistoryCount,meshes:final.routeMeshes,pressure:final.routePressure},finite,errors},null,2));console.log(JSON.stringify({success:true,routes,final:final.routeName},null,2));await browser.close();
           })().catch(e=>{console.error(e);process.exit(1)});
           NODE
           node v12-audit.cjs
