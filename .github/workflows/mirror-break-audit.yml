@@ -53,10 +53,9 @@ jobs:
             const browser=await chromium.launch({headless:true,args:['--enable-webgl','--ignore-gpu-blocklist','--enable-unsafe-swiftshader','--use-gl=angle','--use-angle=swiftshader-webgl','--disable-dev-shm-usage']});
             const page=await browser.newPage({viewport:{width:852,height:393},isMobile:true,hasTouch:true,userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 26_6 like Mac OS X) AppleWebKit/605.1.15 Version/26.0 Mobile/15E148 Safari/604.1'});
             const errors=[];page.on('pageerror',e=>errors.push('pageerror: '+e.message));page.on('console',m=>{if(m.type()==='error'&&!m.text().includes('Failed to load resource'))errors.push('console: '+m.text())});page.on('response',r=>{if(r.status()>=400&&!r.url().includes('/version.json'))errors.push(`HTTP ${r.status()} ${r.url()}`)});
-            await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});await sleep(1800);
-            const boot=await page.evaluate(()=>({v1:!!window.__parryMirrorBreakV1Loaded,final:!!window.__parryMirrorBreakFinalAdapterLoaded,v2:!!window.__parryMirrorBreakV2Loaded,v3:!!window.__parryMirrorBreakV3Loaded,diag:window.parryMirrorBreakDiagnostics?.()||null,scripts:[...document.scripts].map(s=>s.src).filter(Boolean)}));
-            console.log('BOOT '+JSON.stringify({boot,errors},null,2));
-            if(!boot.v3)throw new Error('MIRROR BREAK v3 boot failed: '+JSON.stringify({boot,errors}));
+            await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});
+            try{await page.waitForFunction(()=>window.parryMirrorBreakDiagnostics?.().v3===true,{timeout:60000,polling:100})}catch(e){const boot=await page.evaluate(()=>({v1:!!window.__parryMirrorBreakV1Loaded,final:!!window.__parryMirrorBreakFinalAdapterLoaded,v2:!!window.__parryMirrorBreakV2Loaded,v3:!!window.__parryMirrorBreakV3Loaded,diag:window.parryMirrorBreakDiagnostics?.()||null,scripts:[...document.scripts].map(s=>s.src).filter(Boolean)}));throw new Error('MIRROR BREAK load timeout: '+JSON.stringify({boot,errors}))}
+            const boot=await page.evaluate(()=>({v1:!!window.__parryMirrorBreakV1Loaded,final:!!window.__parryMirrorBreakFinalAdapterLoaded,v2:!!window.__parryMirrorBreakV2Loaded,v3:!!window.__parryMirrorBreakV3Loaded,diag:window.parryMirrorBreakDiagnostics?.()||null}));
             await page.evaluate(()=>document.getElementById('start')?.click());await sleep(350);
 
             const exposed=await page.evaluate(()=>{for(let i=0;i<2;i++)step(1/60);player.pos.x=boss.pos.x;player.pos.z=boss.pos.z+1.8;player.vel=V();boss.vel=V();boss.stun=0;boss.wind=0;boss.strike=0;boss.invuln=0;player.parry=.50;player.parryCool=0;enemyImpact(null);for(let i=0;i<2;i++)step(1/60);return window.parryMirrorBreakDiagnostics()});
