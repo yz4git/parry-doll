@@ -60,13 +60,15 @@ jobs:
                 player.cool=0;player.comboWindow=0;player.pos.x=boss.pos.x;player.pos.z=boss.pos.z+1.45;const attackStarted=playerAttack();player.swingClock=0;resolveSwing();for(let i=0;i<4;i++)step(1/60);
                 return{level:l,name:boss.spec.name,attackStarted,diag:window.parryMirrorBreakDiagnostics(),finite:[player,boss].every(d=>d.nodes.every(n=>Object.values(n.p).every(Number.isFinite)))};
               },l);
-              results.push(r);await sleep(340);await page.screenshot({path:`mirror-break-v4-audit/0${l+1}-boss-${l}-broken.png`});
+              results.push(r);await sleep(220);await page.screenshot({path:`mirror-break-v4-audit/0${l+1}-boss-${l}-impact.png`});
+              await page.evaluate(()=>{boss.stun=Math.max(boss.stun,2.2);player.stun=Math.max(player.stun,2.2);boss.wind=0;boss.strike=0;boss.pattern=null;boss.vel=V();player.vel=V()});
+              await sleep(720);await page.screenshot({path:`mirror-break-v4-audit/0${l+1}-boss-${l}-settled.png`});
             }
             fs.writeFileSync('mirror-break-v4-audit/result.json',JSON.stringify({results,errors},null,2));
             if(errors.length)throw new Error(errors.join(' | '));
             if(results.length!==5)throw new Error('missing boss captures');
             for(const r of results){if(!r.attackStarted||!r.finite||!r.diag.v4||!r.diag.persistentDamage||!r.diag.visibleSever||r.diag.breakDebris<1)throw new Error('v4 break failed '+JSON.stringify(r));}
-            for(const r of results.slice(0,4))if(r.diag.hiddenNodes.length<2)throw new Error('limb was not visually removed '+JSON.stringify(r));
+            for(const r of results.slice(0,4)){if(r.diag.hiddenNodes.length<2)throw new Error('limb was not visually removed '+JSON.stringify(r));if(r.diag.detachedParts<1)throw new Error('detached limb/weapon missing '+JSON.stringify(r))}
             if(results[0].diag.visualBreakKind!=='ARM'||results[1].diag.visualBreakKind!=='LEG'||results[2].diag.visualBreakKind!=='LEG'||results[3].diag.visualBreakKind!=='ARM'||results[4].diag.visualBreakKind!=='CORE')throw new Error('wrong break kinds '+JSON.stringify(results.map(r=>r.diag.visualBreakKind)));
             console.log(JSON.stringify(results,null,2));await browser.close();
           })().catch(e=>{console.error(e);process.exit(1)});
