@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - dist/mirror-break-v1.js
+      - dist/mirror-break-final-adapter.js
       - dist/parry-cinematic-v3.js
       - .github/mirror-break.trigger
       - .github/workflows/mirror-break-audit.yml
@@ -33,7 +34,7 @@ jobs:
           python3 -m http.server 4173 --directory dist > /tmp/parry-mb-http.log 2>&1 &
           for i in {1..30}; do curl -fsS http://127.0.0.1:4173/ >/dev/null && exit 0; sleep 1; done
           cat /tmp/parry-mb-http.log; exit 1
-      - name: Exercise BODY BREAK and DOLL CORE loop
+      - name: Exercise BODY BREAK, DOLL CORE and final mirror loop
         run: |
           mkdir -p mirror-break-audit
           cat > mb-audit.cjs <<'NODE'
@@ -45,7 +46,7 @@ jobs:
             const page=await browser.newPage({viewport:{width:852,height:393},isMobile:true,hasTouch:true,userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 26_6 like Mac OS X) AppleWebKit/605.1.15 Version/26.0 Mobile/15E148 Safari/604.1'});
             const errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text())});
             await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});
-            await page.waitForFunction(()=>typeof window.parryMirrorBreakDiagnostics==='function',{timeout:15000});
+            await page.waitForFunction(()=>typeof window.parryMirrorBreakDiagnostics==='function'&&window.parryMirrorBreakDiagnostics()?.finalAdapter===true,{timeout:15000});
             await page.evaluate(()=>document.getElementById('start')?.click());await sleep(350);
             const result=await page.evaluate(async()=>{
               const tick=(n=1)=>{for(let i=0;i<n;i++)step(1/60)};
@@ -59,7 +60,15 @@ jobs:
               const buttons=[...document.querySelectorAll('.mb-core')].map(b=>b.textContent.trim());
               document.querySelector('.mb-core')?.click();tick(30);
               const afterChoice=window.parryMirrorBreakDiagnostics();
-              return {exposed,broken,choiceOpen,buttons,afterChoice,level,boss:boss?.spec?.name,mode};
+              const nextLevel=level,nextBoss=boss?.spec?.name||'';
+
+              // Verify the secret duel receives the run build even when its adaptive AI replaces the requested move.
+              window.__mirrorBreakState.cores.EDGE=2;window.__mirrorBreakState.cores.MIRROR=0;window.__mirrorBreakState.cores.PULSE=0;
+              level=4;boss=new Doll(bosses[4]);boss.stun=0;boss.wind=0;boss.strike=0;boss.ai=0;boss.invuln=0;
+              startEnemyAttack(ENEMY_MOVES[4][0]);
+              const finalPattern=boss.pattern?.name||'';
+              const finalDiag=window.parryMirrorBreakDiagnostics();
+              return {exposed,broken,choiceOpen,buttons,afterChoice,nextLevel,nextBoss,finalPattern,finalDiag,mode};
             });
             await page.screenshot({path:'mirror-break-audit/result.png'});
             fs.writeFileSync('mirror-break-audit/result.json',JSON.stringify({result,errors},null,2));
@@ -68,7 +77,9 @@ jobs:
             if(!result.broken.broken||result.broken.breaks<1)throw new Error('counter did not BODY BREAK');
             if(!result.choiceOpen||result.buttons.length!==3)throw new Error('DOLL CORE choice did not open');
             if(result.afterChoice.cores.EDGE!==1)throw new Error('EDGE core was not acquired');
-            if(result.level!==1)throw new Error('run did not advance to boss 2 after core choice');
+            if(result.nextLevel!==1)throw new Error('run did not advance to boss 2 after core choice');
+            if(!result.finalDiag.finalAdapter||result.finalDiag.mirrorDominant!=='EDGE')throw new Error('final adapter/core diagnostics missing');
+            if(!result.finalPattern.includes('写刃・'))throw new Error('THE PARRY DOLL did not copy EDGE core: '+result.finalPattern);
             console.log(JSON.stringify(result,null,2));await browser.close();
           })().catch(e=>{console.error(e);process.exit(1)});
           NODE
