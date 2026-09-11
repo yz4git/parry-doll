@@ -1,0 +1,75 @@
+name: MIRROR BREAK v15 Ruin Target Audit
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - dist/mirror-break-v15-ruin-target.js
+      - dist/mirror-break-v14-ruin-finisher.js
+      - .github/workflows/mirror-break-v15-ruin-target-audit.yml
+
+permissions:
+  contents: read
+
+jobs:
+  ruin-target:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate v15
+        run: |
+          node --check dist/mirror-break-v14-ruin-finisher.js
+          node --check dist/mirror-break-v15-ruin-target.js
+      - name: Install iPhone WebKit stack
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install playwright@1.55.0
+          npx playwright install --with-deps webkit
+      - name: Serve game
+        run: |
+          python3 -m http.server 4173 --directory dist > /tmp/parry-v15-http.log 2>&1 &
+          for i in {1..30}; do curl -fsS http://127.0.0.1:4173/ >/dev/null && exit 0; sleep 1; done
+          cat /tmp/parry-v15-http.log; exit 1
+      - name: Verify ruin target and execution-ready handoff
+        run: |
+          mkdir -p mirror-break-v15-audit
+          cat > v15-audit.cjs <<'NODE'
+          const { webkit }=require('playwright');const fs=require('fs');const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+          (async()=>{
+            const browser=await webkit.launch({headless:true});
+            const page=await browser.newPage({viewport:{width:852,height:393},isMobile:true,hasTouch:true,deviceScaleFactor:1,userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 26_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1'});
+            const errors=[];page.on('pageerror',e=>errors.push('pageerror: '+e.message));page.on('console',m=>{if(m.type()==='error'&&!m.text().includes('Failed to load resource'))errors.push('console: '+m.text())});page.on('response',r=>{if(r.status()>=400&&!r.url().includes('/version.json'))errors.push(`HTTP ${r.status()} ${r.url()}`)});
+            await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>window.parryMirrorBreakDiagnostics?.().v15===true,null,{timeout:60000,polling:100});await page.evaluate(()=>document.getElementById('start')?.click());await sleep(350);
+            const names=['ASH GATE','CAGE BREACH','BROKEN SPINE','ALTAR RIFT'],styles=['BLADELESS SPIN CRASH','HOLLOW TUMBLE','FIVE-LEG CARTWHEEL','BELL TOWER COLLAPSE'],damage=[8,11,14,17],rows=[];
+            for(let source=0;source<4;source++){
+              await page.evaluate(({source,style,hp})=>{const hit={serial:1900+source,level:source,style,part:['swordArm','foreLeg','spearLeg','bellArm'][source],kind:['ARM','LEG','LEG','ARM'][source],label:'v15-target',x:(source-1.5)*.7,z:-2.2-source*.2,power:2.4+source*.2,time:performance.now()};window.__mirrorBreakV9State.stageHitSerial=hit.serial;window.__mirrorBreakV9State.stageHit=hit;reset(source+1);mode='play';transition=0;player.hp=100;player.invuln=10;player.stun=0;boss.hp=hp;boss.invuln=0;boss.ai=999;boss.wind=0;boss.strike=0;boss.stun=0;boss.down=0;boss.pattern=null;window.__mirrorBreakState.broken=true;window.__mirrorBreakState.boss=boss},{source,style:styles[source],hp:source===0?60:damage[source]+4});
+              await page.waitForFunction(expected=>{const d=window.parryMirrorBreakDiagnostics?.();return d?.v15===true&&d.routeName===expected&&(d.routeMeshes||0)>=8},names[source],{timeout:5000,polling:50});
+              if(source===0){
+                await page.waitForFunction(()=>{const d=window.parryMirrorBreakDiagnostics?.();return d?.ruinTargetVisible===true&&d?.ruinExecutionReady===false},null,{timeout:5000,polling:50});
+                const chain=await page.evaluate(()=>{const el=document.getElementById('mbRuinTarget'),r=el?.getBoundingClientRect();return{d:window.parryMirrorBreakDiagnostics(),text:el?.textContent||'',opacity:el?Number(getComputedStyle(el).opacity):0,rect:r?{x:r.x,y:r.y,w:r.width,h:r.height}:null}});if(!chain.text.includes('CHAIN ZONE')||chain.opacity<.5||!chain.rect)throw new Error('chain-zone guidance missing '+JSON.stringify(chain));await page.screenshot({path:'mirror-break-v15-audit/00-chain-zone.png'});await page.evaluate(()=>boss.hp=12);
+              }
+              await page.waitForFunction(expected=>{const d=window.parryMirrorBreakDiagnostics?.();return d?.ruinTargetVisible===true&&d?.ruinExecutionReady===true&&d?.ruinTargetRoute===expected},names[source],{timeout:6500,polling:50});
+              await sleep(150);
+              const ready=await page.evaluate(()=>{const el=document.getElementById('mbRuinTarget'),r=el?.getBoundingClientRect();return{d:window.parryMirrorBreakDiagnostics(),text:el?.textContent||'',opacity:el?Number(getComputedStyle(el).opacity):0,rect:r?{x:r.x,y:r.y,w:r.width,h:r.height}:null}});if(!ready.text.includes('EXECUTION READY')||!ready.text.includes('LAUNCH HERE')||!ready.text.includes(names[source])||ready.opacity<.9||!ready.rect)throw new Error('execution target unreadable '+JSON.stringify({source,ready}));if(ready.rect.x<0||ready.rect.y<0||ready.rect.x+ready.rect.w>852||ready.rect.y+ready.rect.h>393)throw new Error('target marker offscreen '+JSON.stringify({source,rect:ready.rect}));await page.screenshot({path:`mirror-break-v15-audit/0${source+1}-ready-${names[source].toLowerCase().replaceAll(' ','-')}.png`});
+              await page.evaluate(source=>{const t=source===3?{x:0,z:-4.05}:{x:(source%2?1:-1)*3.6,z:-5.35},ch=boss.nodes.find(n=>n.name==='chest')||boss.nodes[0];boss.invuln=0;hurt(boss,1,V(31+source*2,4,-3),ch.p);const dx=t.x-ch.p.x,dz=t.z-ch.p.z;boss.pos.x+=dx;boss.pos.z+=dz;for(const n of boss.nodes){n.p.x+=dx;n.prev.x+=dx;n.p.z+=dz;n.prev.z+=dz}step(1/60)},source);
+              await page.waitForFunction(expected=>{const d=window.parryMirrorBreakDiagnostics?.();return d?.ruinFinisherLast?.source===expected&&d?.ruinFinisherActive===true&&d?.ruinTargetVisible===false},source,{timeout:3000,polling:25});
+              const handoff=await page.evaluate(()=>({d:window.parryMirrorBreakDiagnostics(),targetOpacity:Number(getComputedStyle(document.getElementById('mbRuinTarget')).opacity),finisherOpacity:Number(getComputedStyle(document.getElementById('mbRuinFinisher')).opacity)}));if(handoff.targetOpacity>.01||handoff.finisherOpacity<.5)throw new Error('target did not yield to finisher '+JSON.stringify({source,handoff}));rows.push({source,route:names[source],threshold:ready.d.ruinTargetThreshold,target:ready.d.ruinTarget,markerOpacity:ready.opacity,handoff:true});await sleep(90);
+            }
+            const finite=await page.evaluate(()=>[player,boss].every(d=>d.nodes.every(n=>Object.values(n.p).every(Number.isFinite))));if(!finite||errors.length)throw new Error(JSON.stringify({finite,errors}));fs.writeFileSync('mirror-break-v15-audit/result.json',JSON.stringify({success:true,rows,finite,errors},null,2));console.log(JSON.stringify({success:true,rows,finite},null,2));await browser.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+          node v15-audit.cjs
+      - name: Upload ruin target frames
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: parry-doll-mirror-break-v15-ruin-target-audit
+          path: mirror-break-v15-audit/
+          if-no-files-found: error
+          retention-days: 3
