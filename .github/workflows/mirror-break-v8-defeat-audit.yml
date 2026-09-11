@@ -57,19 +57,19 @@ jobs:
             await sleep(220);
             const early=await page.evaluate(()=>({diag:window.parryMirrorBreakDiagnostics(),choice:document.getElementById('mbCoreChoice')?.classList.contains('show'),bossHp:boss.hp,chest:(boss.nodes.find(n=>n.name==='chest')||boss.nodes[1]).p}));
             await page.screenshot({path:'mirror-break-v8-audit/01-ko-flight.png'});
-            await sleep(820);
+            await sleep(1450);
             const mid=await page.evaluate(()=>({diag:window.parryMirrorBreakDiagnostics(),choice:document.getElementById('mbCoreChoice')?.classList.contains('show'),chest:(boss.nodes.find(n=>n.name==='chest')||boss.nodes[1]).p}));
-            await page.screenshot({path:'mirror-break-v8-audit/02-ko-down.png'});
-            await page.waitForFunction(()=>document.getElementById('mbCoreChoice')?.classList.contains('show')===true,null,{timeout:3500,polling:16});
+            await page.screenshot({path:'mirror-break-v8-audit/02-ko-down-beat.png'});
+            let opened=true;try{await page.waitForFunction(()=>document.getElementById('mbCoreChoice')?.classList.contains('show')===true,null,{timeout:5000,polling:16})}catch{opened=false}
             const openedMs=Date.now()-start;
             const after=await page.evaluate(()=>({diag:window.parryMirrorBreakDiagnostics(),choice:document.getElementById('mbCoreChoice')?.classList.contains('show'),chest:(boss.nodes.find(n=>n.name==='chest')||boss.nodes[1]).p}));
             await page.screenshot({path:'mirror-break-v8-audit/03-core-after-ko.png'});
-            const result={openedMs,early,mid,after,errors};fs.writeFileSync('mirror-break-v8-audit/result.json',JSON.stringify(result,null,2));
+            const result={opened,openedMs,early,mid,after,errors};fs.writeFileSync('mirror-break-v8-audit/result.json',JSON.stringify(result,null,2));
             if(errors.length)throw new Error(errors.join(' | '));
             if(early.bossHp!==0||!early.diag.koPending||early.choice)throw new Error('reward opened during launch '+JSON.stringify(early));
             if(mid.choice)throw new Error('reward opened before down beat '+JSON.stringify(mid));
-            if(openedMs<1450)throw new Error('reward opened too early '+openedMs);
-            if(openedMs>3100||!after.choice||after.diag.koOpened<1)throw new Error('reward failed to open after KO '+JSON.stringify({openedMs,after}));
+            if(!opened||openedMs<1750)throw new Error('reward timing invalid '+JSON.stringify({opened,openedMs,after}));
+            if(openedMs>4200||!after.choice||after.diag.koOpened<1||after.diag.koLastOpenT<1.8)throw new Error('reward failed after KO presentation '+JSON.stringify({openedMs,after}));
             console.log(JSON.stringify(result,null,2));await browser.close();
           })().catch(e=>{console.error(e);process.exit(1)});
           NODE
