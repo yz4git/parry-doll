@@ -1,0 +1,70 @@
+name: MIRROR BREAK v16 Core Fusion Audit
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - dist/mirror-break-v16-core-fusion.js
+      - dist/mirror-break-v15-ruin-target.js
+      - .github/workflows/mirror-break-v16-core-fusion-audit.yml
+
+permissions:
+  contents: read
+
+jobs:
+  core-fusion:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate v16
+        run: |
+          node --check dist/mirror-break-v15-ruin-target.js
+          node --check dist/mirror-break-v16-core-fusion.js
+      - name: Install iPhone WebKit stack
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install playwright@1.55.0
+          npx playwright install --with-deps webkit
+      - name: Serve game
+        run: |
+          python3 -m http.server 4173 --directory dist > /tmp/parry-v16-http.log 2>&1 &
+          for i in {1..30}; do curl -fsS http://127.0.0.1:4173/ >/dev/null && exit 0; sleep 1; done
+          cat /tmp/parry-v16-http.log; exit 1
+      - name: Verify mixed core combat and final copy
+        run: |
+          mkdir -p mirror-break-v16-audit
+          cat > v16-audit.cjs <<'NODE'
+          const {webkit}=require('playwright');const fs=require('fs');const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+          let browser,page;const errors=[];
+          const failSnap=async()=>{if(!page)return null;try{return await page.evaluate(()=>({diag:window.parryMirrorBreakDiagnostics?.(),fusion:window.parryCoreFusionDiagnostics?.(),mode,level,bossHp:boss?.hp,playerHp:player?.hp,bossPos:boss?.pos,playerPos:player?.pos,bossPattern:boss?.pattern?.name||null}))}catch(e){return{snapshotError:e.message}}};
+          (async()=>{
+            browser=await webkit.launch({headless:true});page=await browser.newPage({viewport:{width:852,height:393},isMobile:true,hasTouch:true,deviceScaleFactor:1,userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 26_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1'});
+            page.on('pageerror',e=>errors.push('pageerror: '+e.message));page.on('console',m=>{if(m.type()==='error'&&!m.text().includes('Failed to load resource'))errors.push('console: '+m.text())});page.on('response',r=>{if(r.status()>=400&&!r.url().includes('/version.json'))errors.push(`HTTP ${r.status()} ${r.url()}`)});
+            await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>window.parryMirrorBreakDiagnostics?.().v16===true,null,{timeout:60000,polling:100});await page.evaluate(()=>document.getElementById('start')?.click());await sleep(300);
+            const prepare=async cores=>page.evaluate(cores=>{reset(0);mode='play';transition=0;player.hp=100;player.invuln=5;player.stun=0;player.cool=0;player.parryCool=0;boss.hp=boss.spec.hp;boss.invuln=0;boss.stun=0;boss.down=0;boss.ai=999;boss.wind=0;boss.strike=0;boss.pattern=null;const dx=player.pos.x-boss.pos.x,dz=(player.pos.z-1.55)-boss.pos.z;boss.pos.x+=dx;boss.pos.z+=dz;for(const n of boss.nodes){n.p.x+=dx;n.prev.x+=dx;n.p.z+=dz;n.prev.z+=dz}Object.assign(window.__mirrorBreakState.cores,cores);window.__mirrorBreakState.boss=boss;window.__mirrorBreakState.level=level;window.__mirrorBreakState.broken=false;window.__mirrorBreakState.exposeT=0;step(1/60)},cores);
+            const perfect=async()=>page.evaluate(()=>{boss.stun=0;boss.invuln=0;boss.wind=0;boss.strike=0;boss.pattern=null;player.parry=.50;player.parryCool=0;enemyImpact(null);return window.parryMirrorBreakDiagnostics()});
+            const counterHit=async()=>page.evaluate(()=>{boss.stun=0;boss.invuln=0;player.cool=0;player.counter=Math.max(player.counter,1);const ok=playerAttack();const move=player.swing?{name:player.swing.name,force:player.swing.force,damage:player.swing.damage,fusion:player.swing.__mbFusion||null}:null;resolveSwing();return{ok,move,diag:window.parryMirrorBreakDiagnostics()}});
+            const rows=[];
+            await prepare({EDGE:1,MIRROR:1,PULSE:0});let d=await perfect();if(d.coreFusion!=='REFLECT EDGE'||d.coreFusionArmed!=='REFLECT_EDGE')throw new Error('REFLECT EDGE did not arm '+JSON.stringify(d));let hit=await counterHit();await sleep(150);d=await page.evaluate(()=>window.parryMirrorBreakDiagnostics());if(d.reflectEdgeHits<1||d.reflectEdgeEchoes<1)throw new Error('REFLECT EDGE did not echo '+JSON.stringify({hit,d}));rows.push({fusion:'REFLECT EDGE',hits:d.reflectEdgeHits,echoes:d.reflectEdgeEchoes});await page.screenshot({path:'mirror-break-v16-audit/01-reflect-edge.png'});
+            await prepare({EDGE:1,MIRROR:0,PULSE:1});d=await perfect();if(d.coreFusion!=='RUPTURE DRIVE'||d.coreFusionArmed!=='RUPTURE_DRIVE')throw new Error('RUPTURE DRIVE did not arm '+JSON.stringify(d));hit=await counterHit();d=await page.evaluate(()=>window.parryMirrorBreakDiagnostics());if(d.ruptureDriveHits<1||!(hit.move?.force>24))throw new Error('RUPTURE DRIVE lacked launch force '+JSON.stringify({hit,d}));rows.push({fusion:'RUPTURE DRIVE',hits:d.ruptureDriveHits,force:hit.move.force});await page.screenshot({path:'mirror-break-v16-audit/02-rupture-drive.png'});
+            await prepare({EDGE:0,MIRROR:1,PULSE:1});d=await perfect();await page.evaluate(()=>{boss.stun=0;boss.invuln=0;player.parry=.50;player.parryCool=0;enemyImpact(null)});d=await page.evaluate(()=>window.parryMirrorBreakDiagnostics());if(d.coreFusion!=='RESONANT MIRROR'||d.resonantMirrorProcs<1)throw new Error('RESONANT MIRROR did not pulse '+JSON.stringify(d));rows.push({fusion:'RESONANT MIRROR',procs:d.resonantMirrorProcs});await page.screenshot({path:'mirror-break-v16-audit/03-resonant-mirror.png'});
+            await prepare({EDGE:1,MIRROR:1,PULSE:1});d=await perfect();if(d.coreFusion!=='ZERO TRACE'||d.zeroTraceCharges<1)throw new Error('ZERO TRACE did not charge '+JSON.stringify(d));hit=await counterHit();d=await page.evaluate(()=>window.parryMirrorBreakDiagnostics());if(d.zeroTraceFusionProcs<1)throw new Error('ZERO TRACE did not release '+JSON.stringify({hit,d}));rows.push({fusion:'ZERO TRACE',charges:d.zeroTraceCharges,releases:d.zeroTraceFusionProcs});await page.screenshot({path:'mirror-break-v16-audit/04-zero-trace.png'});
+            const final=await page.evaluate(()=>{reset(4);mode='play';transition=0;player.hp=100;player.invuln=5;boss.invuln=0;boss.stun=0;boss.down=0;boss.ai=999;window.__mirrorBreakState.boss=boss;window.__mirrorBreakState.level=4;window.__mirrorBreakState.broken=false;Object.assign(window.__mirrorBreakState.cores,{EDGE:1,MIRROR:1,PULSE:1});for(let i=0;i<4;i++){boss.wind=0;boss.strike=0;boss.pattern=null;boss.stun=0;startEnemyAttack(ENEMY_MOVES[4][0])}return{pattern:boss.pattern?.name||'',diag:window.parryMirrorBreakDiagnostics()}});if(final.diag.finalFusionAttacks<1||final.diag.lastFinalFusion!=='ZERO TRACE'||!final.pattern.includes('CORE FUSION'))throw new Error('final boss did not copy fusion '+JSON.stringify(final));rows.push({finalCopy:final.diag.lastFinalFusion,pattern:final.pattern});await page.screenshot({path:'mirror-break-v16-audit/05-final-zero-trace-copy.png'});
+            const finite=await page.evaluate(()=>[player,boss].every(d=>d.nodes.every(n=>Object.values(n.p).every(Number.isFinite))));if(!finite||errors.length)throw new Error('runtime errors '+JSON.stringify({finite,errors}));const result={success:true,rows,finite,errors,diag:await page.evaluate(()=>window.parryMirrorBreakDiagnostics())};fs.writeFileSync('mirror-break-v16-audit/result.json',JSON.stringify(result,null,2));console.log(JSON.stringify(result,null,2));await browser.close();
+          })().catch(async e=>{const diagnostic=await failSnap();fs.writeFileSync('mirror-break-v16-audit/failure.json',JSON.stringify({error:e.stack||String(e),diagnostic,errors},null,2));try{await page?.screenshot({path:'mirror-break-v16-audit/failure.png'})}catch{}try{await browser?.close()}catch{}console.error(e);process.exit(1)});
+          NODE
+          node v16-audit.cjs
+      - name: Upload core fusion frames
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: parry-doll-mirror-break-v16-core-fusion-audit
+          path: mirror-break-v16-audit/
+          if-no-files-found: error
+          retention-days: 3
