@@ -1,0 +1,115 @@
+name: MIRROR BREAK v7 CORE ECHO Audit
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - dist/mirror-break-v7.js
+      - dist/mirror-break-final-adapter.js
+      - .github/workflows/mirror-break-v7-echo-audit.yml
+
+permissions:
+  contents: read
+
+jobs:
+  core-echo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate CORE ECHO layer
+        run: |
+          node --check dist/mirror-break-v7.js
+          node --check dist/mirror-break-final-adapter.js
+      - name: Install browser stack
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Serve game
+        run: |
+          python3 -m http.server 4173 --directory dist > /tmp/parry-v7-http.log 2>&1 &
+          for i in {1..30}; do curl -fsS http://127.0.0.1:4173/ >/dev/null && exit 0; sleep 1; done
+          cat /tmp/parry-v7-http.log; exit 1
+      - name: Verify final mirror CORE ECHO attacks
+        run: |
+          mkdir -p mirror-break-v7-audit
+          cat > v7-audit.cjs <<'NODE'
+          const { chromium } = require('playwright');
+          const fs = require('fs');
+          const sleep = ms => new Promise(r=>setTimeout(r,ms));
+          (async()=>{
+            const browser=await chromium.launch({headless:true,args:['--enable-webgl','--ignore-gpu-blocklist','--enable-unsafe-swiftshader','--use-gl=angle','--use-angle=swiftshader-webgl','--disable-dev-shm-usage']});
+            const page=await browser.newPage({viewport:{width:852,height:393},isMobile:true,hasTouch:true,userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 26_6 like Mac OS X) AppleWebKit/605.1.15 Version/26.0 Mobile/15E148 Safari/604.1'});
+            const errors=[];
+            page.on('pageerror',e=>errors.push('pageerror: '+e.message));
+            page.on('console',m=>{if(m.type()==='error'&&!m.text().includes('Failed to load resource'))errors.push('console: '+m.text())});
+            page.on('response',r=>{if(r.status()>=400&&!r.url().includes('/version.json'))errors.push(`HTTP ${r.status()} ${r.url()}`)});
+            await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});
+            await page.waitForFunction(()=>window.parryMirrorBreakDiagnostics?.().v7===true,null,{timeout:60000,polling:100});
+            await page.evaluate(()=>document.getElementById('start')?.click());await sleep(250);
+            await page.evaluate(()=>{
+              const st=window.__mirrorBreakState;reset(4);mode='play';st.cores.EDGE=1;st.cores.MIRROR=1;st.cores.PULSE=1;
+              if(window.__phaseBreakV2State){window.__phaseBreakV2State.cineT=0;window.__phaseBreakV2State.ultimateT=0}
+              document.getElementById('pbCineBars')?.classList.remove('show');
+              player.hp=100;player.invuln=10;player.stun=0;player.down=0;player.pos=V(0,0,3.7);player.vel=V();
+              boss.hp=boss.spec.hp;boss.invuln=0;boss.stun=0;boss.down=0;boss.wind=0;boss.strike=0;boss.pattern=null;boss.ai=0;boss.pos=V(0,0,0);boss.vel=V();
+              for(let i=0;i<5;i++)step(1/60);
+            });
+            await sleep(120);await page.screenshot({path:'mirror-break-v7-audit/01-final-loadout.png'});
+
+            const echoes=[];
+            for(let call=1;call<=9;call++){
+              const r=await page.evaluate(call=>{
+                boss.stun=0;boss.ai=0;boss.wind=0;boss.strike=0;boss.pattern=null;boss.vel=V();player.invuln=10;player.stun=0;
+                if(window.__phaseBreakV2State)window.__phaseBreakV2State.cineT=0;
+                const source=ENEMY_MOVES[4][(call-1)%4];startEnemyAttack(source);step(1/60);
+                const d=window.parryMirrorBreakDiagnostics(),m=boss.pattern;
+                return{call,name:m?.name||'',kind:m?.kind||'',shape:m?.shape||'',hits:[...(m?.hits||[])],wind:m?.wind||0,active:m?.active||0,range:m?.range||0,force:m?.force||0,diag:d};
+              },call);
+              if(r.name.includes('CORE ECHO')){
+                echoes.push(r);await sleep(80);await page.screenshot({path:`mirror-break-v7-audit/0${echoes.length+1}-${String(r.diag.lastCoreEcho||'echo').toLowerCase()}-echo.png`});
+              }
+              await page.evaluate(()=>{boss.wind=0;boss.strike=0;boss.pattern=null;boss.stun=0;boss.ai=0;player.stun=0});
+            }
+            const diagBeforeBreak=await page.evaluate(()=>window.parryMirrorBreakDiagnostics());
+            if(echoes.length!==3)throw new Error('expected exactly three CORE ECHOs '+JSON.stringify(echoes));
+            if(diagBeforeBreak.coreEchoHistory.join(',')!=='EDGE,MIRROR,PULSE')throw new Error('CORE ECHO rotation wrong '+JSON.stringify(diagBeforeBreak));
+            const edge=echoes[0],mirror=echoes[1],pulse=echoes[2];
+            if(edge.kind!=='combo'||edge.hits.length!==3||!(edge.hits[2]-edge.hits[1]<.30))throw new Error('EDGE echo identity wrong '+JSON.stringify(edge));
+            if(mirror.kind!=='combo'||mirror.hits.length!==3||!(mirror.hits[1]-mirror.hits[0]>.30))throw new Error('MIRROR echo timing wrong '+JSON.stringify(mirror));
+            if(pulse.kind!=='stomp'||pulse.shape!=='circle'||pulse.range<4)throw new Error('PULSE echo identity wrong '+JSON.stringify(pulse));
+
+            // Once the mirror core itself is broken, v7 yields to v5 COPY OVERLOAD.
+            const postBreak=await page.evaluate(()=>{
+              const st=window.__mirrorBreakState,before=window.parryMirrorBreakDiagnostics().coreEchoHistory.length;
+              st.boss=boss;st.level=4;st.broken=true;st.exposeT=0;st.part={id:'mirrorCore',label:'鏡 核',node:'chest',kind:'CORE'};
+              const names=[];for(let k=0;k<3;k++){boss.stun=0;boss.ai=0;boss.wind=0;boss.strike=0;boss.pattern=null;startEnemyAttack(ENEMY_MOVES[4][k]);step(1/60);names.push(boss.pattern?.name||'');boss.wind=0;boss.strike=0;boss.pattern=null}
+              const d=window.parryMirrorBreakDiagnostics();return{before,after:d.coreEchoHistory.length,names,diag:d};
+            });
+            await sleep(90);await page.screenshot({path:'mirror-break-v7-audit/05-post-break-overload.png'});
+            if(postBreak.after!==postBreak.before||!postBreak.diag.coreEchoSuppressed)throw new Error('CORE ECHO did not stop after final BODY BREAK '+JSON.stringify(postBreak));
+            if(!postBreak.diag.v5||!postBreak.diag.tacticShift||!postBreak.diag.tacticHud)throw new Error('v5 COPY OVERLOAD did not retain ownership '+JSON.stringify(postBreak.diag));
+            if(!postBreak.names.some(n=>/暴走刃|遅延鏡|脈動過負荷/.test(n)))throw new Error('post-break overload attacks not observed '+JSON.stringify(postBreak.names));
+
+            const finite=await page.evaluate(()=>[player,boss].every(d=>d.nodes.every(n=>Object.values(n.p).every(Number.isFinite))));
+            if(!finite)throw new Error('non-finite final duel state');if(errors.length)throw new Error(errors.join(' | '));
+            fs.writeFileSync('mirror-break-v7-audit/result.json',JSON.stringify({echoes,diagBeforeBreak,postBreak,finite,errors},null,2));
+            console.log(JSON.stringify({history:diagBeforeBreak.coreEchoHistory,echoes:echoes.map(e=>({name:e.name,kind:e.kind,hits:e.hits})),postBreak},null,2));
+            await browser.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+          node v7-audit.cjs
+      - name: Upload CORE ECHO frames
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: parry-doll-mirror-break-v7-audit
+          path: mirror-break-v7-audit/
+          if-no-files-found: error
+          retention-days: 3
