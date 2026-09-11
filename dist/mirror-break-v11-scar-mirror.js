@@ -6,10 +6,9 @@
  const s={history:[],lastSerial:0,bossRef:null,attackCalls:0,scarIndex:0,scarEchoes:0,lastScar:null,pulseT:0};window.__mirrorBreakV11State=s;
  const LABEL=['BLADELESS','HOLLOW','THREADLESS','BELL TOWER'],COLOR=['#ffb36b','#8ce4d3','#d0a6ff','#abd9ff'];
  const clone=m=>({...m,hits:[...(m?.hits||[])]});
+ const scarStyle=document.createElement('style');scarStyle.textContent=`body.mb-final-duel.mb-scar-firing #mbMirrorLoadout{opacity:0!important;visibility:hidden!important;transform:translateY(-3px) scale(.98)!important}`;document.head.appendChild(scarStyle);
  const hud=document.createElement('div');hud.id='mbScarMemory';Object.assign(hud.style,{position:'absolute',right:'max(22px,env(safe-area-inset-right))',top:'114px',zIndex:'30',pointerEvents:'none',textAlign:'right',fontSize:'7px',letterSpacing:'1.7px',lineHeight:'1.2',color:'#aab7b5',textShadow:'0 2px 8px #000',opacity:'0',transformOrigin:'100% 50%',transition:'opacity .14s,transform .14s'});document.body.appendChild(hud);
  function refreshHud(proc=null){
-  // Once the mirror core is shattered the scar system has yielded to COPY OVERLOAD; hide it immediately
-  // instead of leaving a stale ECHO label beside the new phase UI.
   if(level!==4||state.broken){hud.style.opacity='0';hud.style.transform='scale(.96)';hud.innerHTML='';return}
   const count=s.history.length,pips=[0,1,2,3].map(i=>`<i style="font-style:normal;color:${i<count?COLOR[i]:'#3d474a'};margin-left:3px">${i<count?'◆':'◇'}</i>`).join('');
   hud.innerHTML=`<b style="font-weight:600;color:#c8bbb0;letter-spacing:1.6px">SCAR MEMORY</b><span style="margin-left:6px;white-space:nowrap">${pips}</span>`;
@@ -23,7 +22,7 @@
   if(l===2)return{name:'SCAR ECHO · THREADLESS',kind:'sweep',shape:'circle',wind:.82,active:.78,hits:[.15,.44,.69],range:4.15,speed:0,damage:.67,force:18,recover:.82,motion:2,__scar:true};
   return{name:'SCAR ECHO · BELL TOWER',kind:'stomp',shape:'circle',wind:1.0,active:.56,hits:[.20],range:4.65,speed:0,damage:1.08,force:35,recover:1.08,motion:2,__scar:true};
  }
- function scarBeat(entry){const p=boss?.nodes?.find(n=>n.name==='chest')?.p||boss?.nodes?.[1]?.p;if(p){ring(p,COLOR[entry.level]);burst(p,COLOR[entry.level],9,3.6)}sound([520,330,680,220][entry.level],.12,'triangle',.022);s.pulseT=.72;refreshHud(LABEL[entry.level])}
+ function scarBeat(entry){const p=boss?.nodes?.find(n=>n.name==='chest')?.p||boss?.nodes?.[1]?.p;if(p){ring(p,COLOR[entry.level]);burst(p,COLOR[entry.level],9,3.6)}sound([520,330,680,220][entry.level],.12,'triangle',.022);s.pulseT=.72;document.body.classList.add('mb-scar-firing');refreshHud(LABEL[entry.level])}
  function forceScar(move,entry){const originals=ENEMY_MOVES[4].slice(),forced=originals.map(()=>clone(move)),cores={...state.cores};ENEMY_MOVES[4].splice(0,ENEMY_MOVES[4].length,...forced);state.cores.EDGE=state.cores.MIRROR=state.cores.PULSE=0;try{return baseStart(move)}finally{state.cores.EDGE=cores.EDGE;state.cores.MIRROR=cores.MIRROR;state.cores.PULSE=cores.PULSE;ENEMY_MOVES[4].splice(0,ENEMY_MOVES[4].length,...originals)}}
  const baseStart=startEnemyAttack;startEnemyAttack=function(move){
   if(boss!==s.bossRef){s.bossRef=boss;s.attackCalls=0;s.scarIndex=0;refreshHud()}
@@ -31,8 +30,8 @@
   s.attackCalls++;if(s.attackCalls%4!==0)return baseStart(move);
   const entry=s.history[s.scarIndex++%s.history.length],scar=scarMove(entry),out=forceScar(scar,entry);s.scarEchoes++;s.lastScar=LABEL[entry.level];scarBeat(entry);return out;
  };
- const baseReset=reset;reset=function(l=0){const prev=typeof level==='number'?level:-1,out=baseReset(l);if(l===0&&prev>=4){s.history.length=0;s.lastSerial=0}s.bossRef=boss;s.attackCalls=0;s.scarIndex=0;s.pulseT=0;refreshHud();return out};
- function frame(){const hit=window.__mirrorBreakV9State?.stageHit;if(hit)record(hit);s.pulseT=Math.max(0,s.pulseT-1/60);if(level!==4||state.broken)refreshHud();else if(s.pulseT<=0)refreshHud();requestAnimationFrame(frame)}requestAnimationFrame(frame);
- const priorDiag=window.parryMirrorBreakDiagnostics;window.parryMirrorBreakDiagnostics=()=>{const d=priorDiag?priorDiag():{};return{...d,v11:true,scarMirror:true,destructionHistory:s.history.map(x=>({...x})),scarMemoryCount:s.history.length,scarAttackCalls:s.attackCalls,scarEchoes:s.scarEchoes,lastScarEcho:s.lastScar,scarEchoSuppressed:level===4&&!!state.broken}};
+ const baseReset=reset;reset=function(l=0){const prev=typeof level==='number'?level:-1,out=baseReset(l);if(l===0&&prev>=4){s.history.length=0;s.lastSerial=0}s.bossRef=boss;s.attackCalls=0;s.scarIndex=0;s.pulseT=0;document.body.classList.remove('mb-scar-firing');refreshHud();return out};
+ function frame(){const hit=window.__mirrorBreakV9State?.stageHit;if(hit)record(hit);s.pulseT=Math.max(0,s.pulseT-1/60);const firing=level===4&&!state.broken&&s.pulseT>0;document.body.classList.toggle('mb-scar-firing',firing);if(level!==4||state.broken)refreshHud();else if(s.pulseT<=0)refreshHud();requestAnimationFrame(frame)}requestAnimationFrame(frame);
+ const priorDiag=window.parryMirrorBreakDiagnostics;window.parryMirrorBreakDiagnostics=()=>{const d=priorDiag?priorDiag():{};return{...d,v11:true,scarMirror:true,destructionHistory:s.history.map(x=>({...x})),scarMemoryCount:s.history.length,scarAttackCalls:s.attackCalls,scarEchoes:s.scarEchoes,lastScarEcho:s.lastScar,scarEchoSuppressed:level===4&&!!state.broken,scarTelegraphPriority:document.body.classList.contains('mb-scar-firing')}};
  refreshHud();
 })();
