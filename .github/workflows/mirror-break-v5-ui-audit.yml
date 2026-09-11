@@ -1,0 +1,119 @@
+name: MIRROR BREAK v5 UI Audit
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - dist/mirror-break-v5-ui.js
+      - .github/workflows/mirror-break-v5-ui-audit.yml
+
+permissions:
+  contents: read
+
+jobs:
+  ui:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate UI layer
+        run: node --check dist/mirror-break-v5-ui.js
+      - name: Install browser stack
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Serve game
+        run: |
+          python3 -m http.server 4173 --directory dist > /tmp/parry-v5-ui-http.log 2>&1 &
+          for i in {1..30}; do curl -fsS http://127.0.0.1:4173/ >/dev/null && exit 0; sleep 1; done
+          cat /tmp/parry-v5-ui-http.log; exit 1
+      - name: Verify spent counter retirement and next-parry recovery
+        run: |
+          mkdir -p mirror-break-v5-ui-audit
+          cat > v5-ui-audit.cjs <<'NODE'
+          const { chromium } = require('playwright');
+          const fs = require('fs');
+          const sleep = ms => new Promise(r=>setTimeout(r,ms));
+          const visible = async (page, selector) => page.$eval(selector, el => {
+            const cs=getComputedStyle(el),r=el.getBoundingClientRect();
+            return cs.display!=='none'&&cs.visibility!=='hidden'&&Number(cs.opacity||1)>.05&&r.width>1&&r.height>1;
+          });
+          (async()=>{
+            const browser=await chromium.launch({headless:true,args:['--enable-webgl','--ignore-gpu-blocklist','--enable-unsafe-swiftshader','--use-gl=angle','--use-angle=swiftshader-webgl','--disable-dev-shm-usage']});
+            const page=await browser.newPage({viewport:{width:852,height:393},isMobile:true,hasTouch:true,userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 26_6 like Mac OS X) AppleWebKit/605.1.15 Version/26.0 Mobile/15E148 Safari/604.1'});
+            const errors=[];
+            page.on('pageerror',e=>errors.push('pageerror: '+e.message));
+            page.on('console',m=>{if(m.type()==='error'&&!m.text().includes('Failed to load resource'))errors.push('console: '+m.text())});
+            page.on('response',r=>{if(r.status()>=400&&!r.url().includes('/version.json'))errors.push(`HTTP ${r.status()} ${r.url()}`)});
+            await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});
+            await page.waitForFunction(()=>window.parryMirrorBreakDiagnostics?.().v5Ui===true,null,{timeout:60000,polling:100});
+            await page.evaluate(()=>document.getElementById('start')?.click());
+            await sleep(280);
+
+            // Produce a real successful parry on boss 0 so visual-upgrade shows COUNTER READY.
+            const parryState=await page.evaluate(()=>{
+              level=0;boss=new Doll(bosses[0]);mode='play';
+              player.hp=100;player.stun=0;player.down=0;player.cool=0;player.parryCool=0;player.counter=0;player.swing=null;player.invuln=0;
+              player.pos=V(0,0,1.65);player.vel=V();boss.pos=V(0,0,0);boss.vel=V();boss.stun=0;boss.down=0;boss.wind=0;boss.strike=0;boss.ai=0;boss.invuln=0;
+              for(let i=0;i<3;i++)step(1/60);
+              player.parry=.50;enemyImpact(null);for(let i=0;i<2;i++)step(1/60);
+              return{parries,perfects,counter:player.counter,diag:window.parryMirrorBreakDiagnostics(),hudClass:document.getElementById('parrySuccessHud')?.className||''};
+            });
+            await sleep(70);
+            const counterBefore=await visible(page,'#parrySuccessHud');
+            await page.screenshot({path:'mirror-break-v5-ui-audit/01-counter-before-break.png'});
+            if(!counterBefore||!parryState.hudClass.includes('show')||parryState.counter<=0)throw new Error('counter card did not appear before BODY BREAK '+JSON.stringify(parryState));
+
+            // Consume the counter with the exposed weak-point strike and verify BODY BREAK retires the old card.
+            const breakState=await page.evaluate(()=>{
+              player.cool=0;player.comboWindow=0;player.stun=0;player.down=0;player.pos=V(boss.pos.x,0,boss.pos.z+1.45);player.vel=V();boss.invuln=0;boss.stun=0;
+              playerAttack();player.swingClock=0;resolveSwing();for(let i=0;i<3;i++)step(1/60);
+              return{broken:window.__mirrorBreakState.broken,counter:player.counter,diag:window.parryMirrorBreakDiagnostics(),hudClass:document.getElementById('parrySuccessHud')?.className||''};
+            });
+            await sleep(90);
+            const counterAfter=await visible(page,'#parrySuccessHud');
+            await page.screenshot({path:'mirror-break-v5-ui-audit/02-body-break-clean.png'});
+            if(!breakState.broken)throw new Error('BODY BREAK did not occur '+JSON.stringify(breakState));
+            if(breakState.counter!==0)throw new Error('spent counter state survived BODY BREAK '+JSON.stringify(breakState));
+            if(counterAfter||breakState.diag.counterHudVisible)throw new Error('stale COUNTER READY remained visible '+JSON.stringify(breakState));
+            if(!breakState.diag.tacticVisible||breakState.diag.spentCounterRetired<1)throw new Error('BODY BREAK tactic UI/retirement diagnostic failed '+JSON.stringify(breakState.diag));
+
+            // Let the short guard expire. Without a new parry the old card must stay gone.
+            await sleep(320);
+            const staleAfterGuard=await visible(page,'#parrySuccessHud');
+            if(staleAfterGuard)throw new Error('old COUNTER READY returned after guard expired');
+
+            // Start a fresh encounter and prove that a genuinely new parry can show COUNTER READY again.
+            const nextParry=await page.evaluate(()=>{
+              reset(0);mode='play';
+              player.hp=100;player.stun=0;player.down=0;player.cool=0;player.parryCool=0;player.counter=0;player.swing=null;player.invuln=0;
+              player.pos=V(0,0,1.65);player.vel=V();boss.pos=V(0,0,0);boss.vel=V();boss.stun=0;boss.down=0;boss.wind=0;boss.strike=0;boss.ai=0;boss.invuln=0;
+              for(let i=0;i<3;i++)step(1/60);
+              player.parry=.50;enemyImpact(null);for(let i=0;i<2;i++)step(1/60);
+              return{counter:player.counter,diag:window.parryMirrorBreakDiagnostics(),hudClass:document.getElementById('parrySuccessHud')?.className||''};
+            });
+            await sleep(70);
+            const nextVisible=await visible(page,'#parrySuccessHud');
+            await page.screenshot({path:'mirror-break-v5-ui-audit/03-new-counter-returns.png'});
+            if(!nextVisible||!nextParry.hudClass.includes('show')||nextParry.counter<=0)throw new Error('new parry could not restore COUNTER READY '+JSON.stringify(nextParry));
+            if(errors.length)throw new Error(errors.join(' | '));
+            fs.writeFileSync('mirror-break-v5-ui-audit/result.json',JSON.stringify({parryState,breakState,counterBefore,counterAfter,staleAfterGuard,nextParry,nextVisible,errors},null,2));
+            console.log(JSON.stringify({counterBefore,counterAfter,staleAfterGuard,nextVisible,breakDiag:breakState.diag},null,2));
+            await browser.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+          node v5-ui-audit.cjs
+      - name: Upload UI frames
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: parry-doll-mirror-break-v5-ui-audit
+          path: mirror-break-v5-ui-audit/
+          if-no-files-found: error
+          retention-days: 3
