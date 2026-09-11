@@ -4,7 +4,7 @@
  if(window.__parryMirrorBreakV9Loaded)return;window.__parryMirrorBreakV9Loaded=true;
  const state=window.__mirrorBreakState;if(!state)return;
  const styles=['BLADELESS SPIN CRASH','HOLLOW TUMBLE','FIVE-LEG CARTWHEEL','BELL TOWER COLLAPSE','MIRROR CORE FAILURE'];
- const s={bossRef:null,postBreakPoseTicks:0,specialKOs:0,lastKO:null,koBoss:null,koT:0,koStartedAt:0,landing:false,settleBeat:false,landingT:0,landingAt:0};
+ const s={bossRef:null,postBreakPoseTicks:0,specialKOs:0,lastKO:null,koBoss:null,koT:0,koStartedAt:0,landing:false,settleBeat:false,landingT:0,landingAt:0,stageHitSerial:0,stageHit:null};
  window.__mirrorBreakV9State=s;
  const brokenNow=d=>!!(d&&d===boss&&state.boss===d&&state.broken&&state.part);
  const horizontal=v=>{const q=V(v?.x||0,0,v?.z||0);return len(q)>.001?norm(q):V(Math.sin(boss?.face||0),0,Math.cos(boss?.face||0))};
@@ -44,8 +44,6 @@
   const dir=horizontal(force),side=sideOf(dir),sc=d.spec.scale,chest=named(d,'chest'),head=named(d,'head'),hip=named(d,'hip');
   s.specialKOs++;s.lastKO=styles[level];s.koBoss=d;s.koT=0;s.koStartedAt=performance.now();s.landing=false;s.settleBeat=false;s.landingT=0;s.landingAt=0;
   d.wind=d.strike=0;d.pattern=null;d.ai=99;
-  // The base lethal hit already injects a second 1.8x impulse. Keep some of it, but tame it before
-  // applying the boss-specific silhouette so a dramatic finish stays inside the arena/camera.
   dampNodes(d,level===3?.18:.28);
   if(level===0){
    if(chest)d.impulse(chest.p,add(add(mul(dir,10),mul(side,16)),V(0,6.2,0)));
@@ -77,6 +75,7 @@
   s.koT=s.koStartedAt?Math.max(0,(now-s.koStartedAt)/1000):s.koT;
   if(!s.landing&&s.koT>.22&&(landingCheck(boss)||s.koT>(level===3?1.35:1.05))){
    s.landing=true;s.landingT=s.koT;s.landingAt=now;const p=koPoint(boss),q=V(p.x,.08,p.z);groundImpact(q,level===3?2.7:level===2?1.8:1.45);ring(q,level===3?'#e3c17e':'#cfa87a');dampNodes(boss,level===3?.22:.34);shake=Math.max(shake,level===3?.32:.20);
+   s.stageHitSerial++;s.stageHit={serial:s.stageHitSerial,level,style:s.lastKO,x:q.x,z:q.z,power:level===3?2.7:level===2?1.8:1.45,time:now};
   }
   if(s.landing&&!s.settleBeat&&level===3&&now-s.landingAt>280){
    s.settleBeat=true;const p=koPoint(boss),q=V(p.x,.07,p.z);groundImpact(q,1.65);dampNodes(boss,.18);
@@ -85,7 +84,7 @@
  function syncBoss(){if(boss!==s.bossRef)resetLocal()}
  const baseStep=step;step=function(dt){const out=baseStep(dt);syncBoss();return out};
  const baseReset=reset;reset=function(l=0){const out=baseReset(l);resetLocal();return out};
- let rafLast=performance.now();function koFrame(now){rafLast=now;syncBoss();updateKO(now);requestAnimationFrame(koFrame)}requestAnimationFrame(koFrame);
- const priorDiag=window.parryMirrorBreakDiagnostics;window.parryMirrorBreakDiagnostics=()=>{const d=priorDiag?priorDiag():{};return{...d,v9:true,bossDestruction2:true,postBreakPoseTicks:s.postBreakPoseTicks,specialKOs:s.specialKOs,lastSpecialKO:s.lastKO,koStyle:s.koBoss===boss?s.lastKO:null,koTime:+s.koT.toFixed(2),koLanded:s.landing,koSettleBeat:s.settleBeat}};
+ function koFrame(now){syncBoss();updateKO(now);requestAnimationFrame(koFrame)}requestAnimationFrame(koFrame);
+ const priorDiag=window.parryMirrorBreakDiagnostics;window.parryMirrorBreakDiagnostics=()=>{const d=priorDiag?priorDiag():{};return{...d,v9:true,bossDestruction2:true,postBreakPoseTicks:s.postBreakPoseTicks,specialKOs:s.specialKOs,lastSpecialKO:s.lastKO,koStyle:s.koBoss===boss?s.lastKO:null,koTime:+s.koT.toFixed(2),koLanded:s.landing,koSettleBeat:s.settleBeat,stageHitSerial:s.stageHitSerial,stageHit:s.stageHit?{...s.stageHit}:null}};
  resetLocal();
 })();
