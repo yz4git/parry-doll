@@ -33,3 +33,6 @@
  const baseStart=startEnemyAttack;startEnemyAttack=function(move){if(level!==4||!ENEMY_MOVES[4]?.length)return baseStart(move);const saved={...state.cores},originals=ENEMY_MOVES[4].slice(),adapted=originals.map(m=>mirror(m,saved));ENEMY_MOVES[4].splice(0,ENEMY_MOVES[4].length,...adapted);state.cores.EDGE=state.cores.MIRROR=state.cores.PULSE=0;try{return baseStart(mirror(move,saved))}finally{state.cores.EDGE=saved.EDGE;state.cores.MIRROR=saved.MIRROR;state.cores.PULSE=saved.PULSE;ENEMY_MOVES[4].splice(0,ENEMY_MOVES[4].length,...originals)}};
  const priorDiag=window.parryMirrorBreakDiagnostics;window.parryMirrorBreakDiagnostics=()=>{const d=priorDiag?priorDiag():{};return {...d,mirrorDominant:dominant(state.cores),finalAdapter:true,uiSimplified:true,perfectFxTrimmed:true}};
 })();
+
+// V2 deliberately loads after every v1/final wrapper so its render-only attack echo, synergies and final phases compose last.
+(()=>{if(window.__parryMirrorBreakV2Queued)return;window.__parryMirrorBreakV2Queued=true;const src=document.currentScript?.src||'',q=src.includes('?')?'?'+src.split('?').slice(1).join('?'):'',s=document.createElement('script');s.src='./mirror-break-v2.js'+q;document.body.appendChild(s)})();
