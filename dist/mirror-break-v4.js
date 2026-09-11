@@ -37,24 +37,27 @@
   return{kind,target,targetIndex,hidden,anchor,branch,label:state.part.label||kind,level};
  }
  function stumpPoint(p){if(!p?.anchor||!p.target)return p?.anchor?.p||p?.target?.p||boss?.pos||V();return add(p.anchor.p,mul(sub(p.target.p,p.anchor.p),p.kind==='ARM'?.31:.26))}
- function addCrack(q,r,alpha=.8){const p=project(q);if(p.z<=.25)return;shapes.push({depth:p.z-.64,draw(){ctx.save();ctx.strokeStyle=`rgba(255,174,112,${alpha})`;ctx.lineWidth=Math.max(1,p.s*.012);for(let i=0;i<5;i++){const a=i*Math.PI*.4+.22,rr=r*p.s*(i%2?.72:1);ctx.beginPath();ctx.moveTo(p.x+Math.cos(a)*rr*.12,p.y+Math.sin(a)*rr*.12);ctx.lineTo(p.x+Math.cos(a)*rr,p.y+Math.sin(a)*rr);ctx.stroke()}ctx.restore()}})}
+ function addCrack(q,r,alpha=.8){const p=project(q);if(p.z<=.25)return;shapes.push({depth:p.z-.64,draw(){ctx.save();ctx.strokeStyle=`rgba(255,196,112,${alpha})`;ctx.lineWidth=Math.max(1,p.s*.012);for(let i=0;i<5;i++){const a=i*Math.PI*.4+.22,rr=r*p.s*(i%2?.72:1);ctx.beginPath();ctx.moveTo(p.x+Math.cos(a)*rr*.12,p.y+Math.sin(a)*rr*.12);ctx.lineTo(p.x+Math.cos(a)*rr,p.y+Math.sin(a)*rr);ctx.stroke()}ctx.restore()}})}
  function drawDamage(p){
   if(!p)return;
   if(p.kind==='CORE'){
-   const c=p.anchor?.p||p.target.p,sc=boss.spec.scale;orb(c,.24*sc,'#241b1c');orb(add(c,boss.local(V(0,0,.035*sc))),.12*sc,'#ffd08a');addCrack(c,.46*sc,.92);return;
+   const c=p.anchor?.p||p.target.p,sc=boss.spec.scale;orb(c,.24*sc,'#20262b');orb(add(c,boss.local(V(0,0,.035*sc))),.12*sc,'#ffd08a');addCrack(c,.46*sc,.92);return;
   }
-  const q=stumpPoint(p),sc=boss.spec.scale;segment(p.anchor?.p||q,q,p.kind==='ARM'?.105*sc:.09*sc,'#4a2927');orb(q,.105*sc,'#5b2c27');orb(add(q,boss.local(V(0,0,.022*sc))),.058*sc,'#ffb16f');addCrack(q,.16*sc,.7);
+  const q=stumpPoint(p),sc=boss.spec.scale;segment(p.anchor?.p||q,q,p.kind==='ARM'?.105*sc:.09*sc,'#303941');orb(q,.105*sc,'#303941');orb(add(q,boss.local(V(0,0,.022*sc))),.058*sc,'#ffc66f');addCrack(q,.16*sc,.7);
  }
  function drawDebris(){
-  for(const f of s.debris){if(f.life<=0)continue;const a=clamp(f.life/f.max,0,1),col=f.weapon?'#dfbf76':f.heavy?'#9d7658':'#c48c68';if(f.weapon){segment(f.p,add(f.p,f.axis),f.r,col);orb(f.p,f.r*.9,'#57473a')}else{orb(f.p,f.r,col);if(f.heavy)addCrack(f.p,f.r*2.2,Math.min(.72,a))}}
+  for(const f of s.debris){if(f.life<=0)continue;const a=clamp(f.life/f.max,0,1),col=f.weapon?'#dfbf76':f.limb?'#747c82':f.heavy?'#9d7658':'#c48c68';if(f.weapon){segment(f.p,add(f.p,f.axis),f.r,col);orb(f.p,f.r*.9,'#57473a')}else if(f.limb){const end=add(f.p,f.axis);segment(f.p,end,f.r,col);orb(f.p,f.r*1.2,'#555d64');orb(end,f.r*.9,'#8e969a');if(a>.25)addCrack(f.p,f.r*2.1,Math.min(.55,a))}else{orb(f.p,f.r,col);if(f.heavy)addCrack(f.p,f.r*2.2,Math.min(.72,a))}}
  }
  function spawnSever(){
   const p=plan();if(!p)return;s.lastPlan=p;s.severs++;const origin=p.kind==='CORE'?(p.anchor?.p||p.target.p):(p.branch?.p||p.target.p),sc=boss.spec.scale,count=p.kind==='CORE'?8:p.level===3?7:5;
   for(let i=0;i<count;i++){const outward=boss.local(V((Math.random()-.5)*(p.kind==='LEG'?4.5:5.8),3.2+Math.random()*5.5,(Math.random()-.5)*5.2));s.debris.push({p:{...origin},v:outward,r:(.05+Math.random()*.07)*sc,life:3.2+Math.random()*1.3,max:4.5,heavy:p.level===3||p.kind==='CORE'})}
-  if(p.kind==='ARM'){const axis=boss.local(V(0,.02,-.72*sc));s.debris.push({p:{...origin},v:boss.local(V((Math.random()-.5)*3.4,5.4,2.2)),axis,r:.045*sc,life:5.2,max:5.2,weapon:true,heavy:p.level===3})}
-  if(s.debris.length>22)s.debris.splice(0,s.debris.length-22);
+  if(p.kind==='ARM'||p.kind==='LEG'){
+   const axis=boss.local(p.kind==='ARM'?V(0,-.48*sc,.12*sc):V(0,-.72*sc,.16*sc));s.debris.push({p:{...origin},v:boss.local(V((Math.random()-.5)*3.0,5.1,1.8+Math.random()*1.4)),axis,r:(p.kind==='ARM'?.07:.085)*sc,life:4.9,max:4.9,limb:true,spin:(Math.random()>.5?1:-1)*(2.1+Math.random()*2.2)})
+  }
+  if(p.kind==='ARM'){const axis=boss.local(V(0,.02,-.72*sc));s.debris.push({p:{...origin},v:boss.local(V((Math.random()-.5)*3.4,5.4,2.2)),axis,r:.045*sc,life:5.2,max:5.2,weapon:true,spin:3.2,heavy:p.level===3})}
+  if(s.debris.length>24)s.debris.splice(0,s.debris.length-24);
  }
- function updateDebris(dt){for(const f of s.debris){if(f.life<=0)continue;f.life=Math.max(0,f.life-dt);f.v.y-=13*dt;f.p=add(f.p,mul(f.v,dt));const floor=f.r*.85;if(f.p.y<floor){f.p.y=floor;if(f.v.y<0)f.v.y*=-.26;f.v.x*=.72;f.v.z*=.72}f.axis=f.weapon?add(mul(f.axis,.995),V(Math.sin(time*7)*.0005,0,Math.cos(time*5)*.0005)):f.axis}while(s.debris.length&&s.debris[0].life<=0)s.debris.shift()}
+ function updateDebris(dt){for(const f of s.debris){if(f.life<=0)continue;f.life=Math.max(0,f.life-dt);f.v.y-=13*dt;f.p=add(f.p,mul(f.v,dt));if(f.axis&&f.spin){const a=f.spin*dt,c=Math.cos(a),si=Math.sin(a),x=f.axis.x,z=f.axis.z;f.axis=V(x*c-z*si,f.axis.y*c+z*si*.22,x*si+z*c)}const floor=f.r*.85;if(f.p.y<floor){f.p.y=floor;if(f.v.y<0)f.v.y*=-.26;f.v.x*=.72;f.v.z*=.72;if(f.spin)f.spin*=.72}if(f.weapon&&!f.spin)f.axis=add(mul(f.axis,.995),V(Math.sin(time*7)*.0005,0,Math.cos(time*5)*.0005))}while(s.debris.length&&s.debris[0].life<=0)s.debris.shift()}
  function syncBreak(){
   if(boss!==s.bossRef){s.bossRef=boss;s.lastBroken=false;s.debris=[];s.lastPlan=null}
   const now=!!(state.broken&&state.boss===boss);if(now&&!s.lastBroken)spawnSever();s.lastBroken=now;
@@ -74,6 +77,6 @@
  const baseResolveSwing=resolveSwing;resolveSwing=function(){const out=baseResolveSwing();syncBreak();return out};
  const baseStep=step;step=function(dt){const out=baseStep(dt);syncBreak();updateDebris(dt);return out};
  const baseReset=reset;reset=function(l=0){const out=baseReset(l);s.bossRef=boss;s.lastBroken=false;s.debris=[];s.lastPlan=null;return out};
- const priorDiag=window.parryMirrorBreakDiagnostics;window.parryMirrorBreakDiagnostics=()=>{const d=priorDiag?priorDiag():{},p=plan();return{...d,v4:true,visibleSever:!!p,visualBreakKind:p?.kind||null,hiddenNodes:p?[...p.hidden].map(i=>boss.nodes[i]?.name||String(i)):[],breakDebris:s.debris.filter(x=>x.life>0).length,severs:s.severs,persistentDamage:true}};
+ const priorDiag=window.parryMirrorBreakDiagnostics;window.parryMirrorBreakDiagnostics=()=>{const d=priorDiag?priorDiag():{},p=plan();return{...d,v4:true,visibleSever:!!p,visualBreakKind:p?.kind||null,hiddenNodes:p?[...p.hidden].map(i=>boss.nodes[i]?.name||String(i)):[],breakDebris:s.debris.filter(x=>x.life>0).length,detachedParts:s.debris.filter(x=>x.life>0&&(x.limb||x.weapon)).length,severs:s.severs,persistentDamage:true}};
  syncBreak();
 })();
