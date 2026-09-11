@@ -46,7 +46,7 @@ new="""    # Labiomental fold separates the lower lip from a more feminine, comp
     z-=fm*.00165*labiomental*math.exp(-(x/.0245)**2-((yy+.1060)/.0075)**2)
     z+=fm*.00535*math.exp(-(x/.0315)**2-((yy+.119)/.0180)**2)
 
-    # v11.8 adult facial planes.  These are local depth fields, not detached feature meshes,
+    # v11.8 adult facial planes. These are local depth fields, not detached feature meshes,
     # so the silhouette remains one continuous head surface from front through three-quarter views.
     z+=fm*.00215*glabella*math.exp(-(x/.0220)**2-((yy-.0470)/.0180)**2)
     z+=fm*.00355*bridge_relief*math.exp(-(x/.0145)**2-((yy+.0100)/.0340)**2)
@@ -100,7 +100,11 @@ s=s.replace("UpperLidRimV117_","UpperLidRimV118_")
 s=s.replace("UpperLashV117_","UpperLashV118_")
 s=s.replace("UpperLidFoldV117_","UpperLidFoldV118_")
 s=s.replace("LowerLidV117_","LowerLidV118_")
-s=s.replace(".00048,HAIR)",".00062,HAIR)",2)
+old_lash=" add_strand(HEAD,f'UpperLashV118_{side}',[(inner,eye_y-eye_tilt+.0006,.10255),(ex,eye_y+.0101,.10305),(outer,eye_y+eye_tilt+.0006,.10260)],.00048,HAIR)\n"
+new_lash=" add_strand(HEAD,f'UpperLashV118_{side}',[(inner,eye_y-eye_tilt+.0006,.10266),(ex,eye_y+.0103,.10316),(outer,eye_y+eye_tilt+.0006,.10271)],.00062,HAIR)\n"
+if old_lash not in s:
+    raise SystemExit('v11.8 upper lash anchor missing')
+s=s.replace(old_lash,new_lash,1)
 s=s.replace("BrowV100_","BrowV118_")
 
 s=s.replace("UpperLipV117_L","UpperLipV118_L").replace("UpperLipV117_R","UpperLipV118_R")
