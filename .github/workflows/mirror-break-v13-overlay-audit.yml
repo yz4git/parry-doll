@@ -1,0 +1,57 @@
+name: MIRROR BREAK v13 Overlay Audit
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/mirror-break-v13-overlay-audit.yml
+      - dist/mirror-break-v13-chain-destruction.js
+
+permissions:
+  contents: read
+
+jobs:
+  overlay-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install browser stack
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Serve game
+        run: |
+          python3 -m http.server 4173 --directory dist > /tmp/parry-overlay-http.log 2>&1 &
+          for i in {1..30}; do curl -fsS http://127.0.0.1:4173/ >/dev/null && exit 0; sleep 1; done
+          cat /tmp/parry-overlay-http.log; exit 1
+      - name: Inspect visible MIRROR SHIFT sources during ALTAR RIFT chain
+        run: |
+          mkdir -p mirror-break-v13-overlay-audit
+          cat > overlay-audit.cjs <<'NODE'
+          const { chromium }=require('playwright');const fs=require('fs');const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+          (async()=>{
+            const browser=await chromium.launch({headless:true,args:['--enable-webgl','--ignore-gpu-blocklist','--enable-unsafe-swiftshader','--use-gl=angle','--use-angle=swiftshader-webgl','--disable-dev-shm-usage']});
+            const page=await browser.newPage({viewport:{width:852,height:393},isMobile:true,hasTouch:true,userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 26_6 like Mac OS X) AppleWebKit/605.1.15 Version/26.0 Mobile/15E148 Safari/604.1'});
+            await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>window.parryMirrorBreakDiagnostics?.().v13===true,null,{timeout:60000,polling:100});await page.evaluate(()=>document.getElementById('start')?.click());await sleep(300);
+            await page.evaluate(()=>{const hit={serial:991,level:3,style:'BELL TOWER COLLAPSE',part:'bellArm',kind:'ARM',label:'overlay',x:.8,z:-2.5,power:2.4,time:performance.now()};window.__mirrorBreakV9State.stageHitSerial=hit.serial;window.__mirrorBreakV9State.stageHit=hit;reset(4);mode='play';transition=0;player.hp=100;player.invuln=10;player.stun=0;boss.hp=Math.max(100,boss.spec.hp*.7);boss.invuln=0;boss.ai=999;boss.wind=0;boss.strike=0;boss.stun=0;boss.down=0;boss.pattern=null});await sleep(360);
+            await page.evaluate(()=>{const t={x:0,z:-4.05},ch=boss.nodes.find(n=>n.name==='chest')||boss.nodes[0];hurt(boss,1,V(35,4,-3),ch.p);const dx=t.x-ch.p.x,dz=t.z-ch.p.z;boss.pos.x+=dx;boss.pos.z+=dz;for(const n of boss.nodes){n.p.x+=dx;n.prev.x+=dx;n.p.z+=dz;n.prev.z+=dz}step(1/60)});await sleep(980);
+            const report=await page.evaluate(()=>{const all=[...document.querySelectorAll('body *')].filter(el=>(el.textContent||'').includes('MIRROR SHIFT')).map(el=>{const c=getComputedStyle(el),r=el.getBoundingClientRect();return{tag:el.tagName,id:el.id,cls:el.className||'',text:(el.textContent||'').trim().replace(/\s+/g,' ').slice(0,220),display:c.display,visibility:c.visibility,opacity:c.opacity,z:c.zIndex,x:+r.x.toFixed(1),y:+r.y.toFixed(1),w:+r.width.toFixed(1),h:+r.height.toFixed(1),html:el.outerHTML.slice(0,600)}});return{diag:window.parryMirrorBreakDiagnostics(),all,mirrorIds:[...document.querySelectorAll('[id]')].filter(e=>e.id.toLowerCase().includes('mirror')).map(e=>({id:e.id,text:(e.textContent||'').trim().replace(/\s+/g,' ').slice(0,160),display:getComputedStyle(e).display,visibility:getComputedStyle(e).visibility,opacity:getComputedStyle(e).opacity}))}});
+            fs.writeFileSync('mirror-break-v13-overlay-audit/report.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));await page.screenshot({path:'mirror-break-v13-overlay-audit/overlay.png'});await browser.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+          node overlay-audit.cjs
+      - name: Upload overlay report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: parry-doll-mirror-break-v13-overlay-audit
+          path: mirror-break-v13-overlay-audit/
+          if-no-files-found: error
+          retention-days: 3
