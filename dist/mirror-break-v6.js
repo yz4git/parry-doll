@@ -21,9 +21,13 @@
  #mbCoreChoice .mb-core-rule{display:block;margin-top:4px;color:#aabbb7;font-size:9px;line-height:1.4;letter-spacing:.4px}
  #mbCoreChoice .mb-build-preview{margin-top:7px;text-align:center;color:#9fb0ad;font-size:8px;letter-spacing:2px}
  #mbCoreChoice .mb-build-preview b{color:#e6c985;font-weight:700}
- @media(max-height:500px){#mbCoreChoice .mb-core-role{margin-top:5px;padding-top:4px;font-size:8px}#mbCoreChoice .mb-core-rule{margin-top:2px;font-size:8px;line-height:1.25}#mbCoreChoice .mb-panel:after{margin-top:6px}}
+ #mbCoreProc{display:block;min-height:9px;margin-top:3px;font-size:7px;font-weight:800;letter-spacing:2px;opacity:0;transform:translateX(4px);transition:opacity .08s,transform .08s;text-shadow:0 0 9px currentColor,0 2px 7px #000}
+ #mbCoreProc.show{opacity:.95;transform:none}#mbCoreProc.edge{color:#f3d184}#mbCoreProc.mirror{color:#b2fff0}#mbCoreProc.pulse{color:#acdfff}
+ @media(max-height:500px){#mbCoreChoice .mb-core-role{margin-top:5px;padding-top:4px;font-size:8px}#mbCoreChoice .mb-core-rule{margin-top:2px;font-size:8px;line-height:1.25}#mbCoreChoice .mb-panel:after{margin-top:6px}#mbCoreProc{margin-top:2px;font-size:6.5px}}
  `;document.head.appendChild(style);
- function proc(name,point,color){s.lastProc=name;s.procT=.48;if(point){ring(point,color);burst(point,color,5,2.7)}sound(name==='EDGE DRIVE'?610:name==='MIRROR CHAIN'?790:330,.08,'triangle',.014)}
+ function ensureProcHud(){let el=document.getElementById('mbCoreProc');if(el)return el;const host=document.getElementById('mbCores');if(!host)return null;el=document.createElement('small');el.id='mbCoreProc';host.appendChild(el);return el}
+ function syncProcHud(){const el=ensureProcHud();if(!el)return;const on=s.procT>0&&!!s.lastProc;el.textContent=on?s.lastProc:'';el.className=on?'show '+(s.lastProc.startsWith('EDGE')?'edge':s.lastProc.startsWith('MIRROR')?'mirror':'pulse'):''}
+ function proc(name,point,color){s.lastProc=name;s.procT=.48;if(point){ring(point,color);burst(point,color,5,2.7)}sound(name==='EDGE DRIVE'?610:name==='MIRROR CHAIN'?790:330,.08,'triangle',.014);syncProcHud()}
  function enhanceChoice(){
   if(!state.choice)return;const chooser=document.getElementById('mbCoreChoice'),grid=chooser?.querySelector('.mb-core-grid');if(!grid||grid.children.length!==3)return;
   const keys=['EDGE','MIRROR','PULSE'];[...grid.children].forEach((b,i)=>{const key=keys[i],d=INFO[key];b.classList.add('core-'+key.toLowerCase());if(!b.querySelector('.mb-core-role')){const role=document.createElement('span');role.className='mb-core-role';role.textContent=d.role+' · '+d.jp;const rule=document.createElement('span');rule.className='mb-core-rule';rule.textContent=d.rule;b.append(role,rule)}});
@@ -32,7 +36,7 @@
   s.choicePasses++;
  }
  const v6EnemyImpact=enemyImpact;enemyImpact=function(move=null){
-  const p0=parries,pf=perfects,out=v6EnemyImpact(move),didPerfect=perfects>pf;
+  const pf=perfects,out=v6EnemyImpact(move),didPerfect=perfects>pf;
   if(didPerfect){
    const edge=state.cores.EDGE||0,mirror=state.cores.MIRROR||0,point=player?.nodes?.find(n=>n.name==='hand')?.p||player?.nodes?.[1]?.p;
    if(edge>0){s.edgeReadyT=Math.max(s.edgeReadyT,1.18+.16*edge);proc('EDGE READY',point,'#ffe0a0')}
@@ -41,8 +45,7 @@
   return out;
  };
  const v6PlayerParry=playerParry;playerParry=function(){
-  const mirror=state.cores.MIRROR||0,chain=mirror>0&&s.mirrorChainT>0;
-  if(chain)player.parryCool=0;
+  const mirror=state.cores.MIRROR||0,chain=mirror>0&&s.mirrorChainT>0;if(chain)player.parryCool=0;
   const ok=v6PlayerParry();if(ok&&chain){s.mirrorChainInputs++;s.mirrorChainT=Math.max(s.mirrorChainT,.48+.10*mirror)}return ok;
  };
  const v6PlayerAttack=playerAttack;playerAttack=function(){
@@ -54,8 +57,7 @@
   return ok;
  };
  const v6ResolveSwing=resolveSwing;resolveSwing=function(){
-  const move=player.swing?{...player.swing}:null,beforeHp=boss?.hp||0,beforePosture=boss?.posture||0,out=v6ResolveSwing(),landed=!!(boss&&boss.hp<beforeHp);
-  if(!landed||!move)return out;
+  const move=player.swing?{...player.swing}:null,beforeHp=boss?.hp||0,beforePosture=boss?.posture||0,out=v6ResolveSwing(),landed=!!(boss&&boss.hp<beforeHp);if(!landed||!move)return out;
   const point=boss.nodes?.find(n=>n.name==='chest')?.p||boss.nodes?.[1]?.p||boss.pos;
   if(move.__mbEdgeDrive){const lv=state.cores.EDGE||0;boss.posture=Math.min(115,boss.posture+4+2*lv);player.comboWindow=Math.max(player.comboWindow,.30+.055*lv);player.cool=Math.min(player.cool,.15);s.edgeHits++;proc('EDGE DRIVE',point,'#ffe0a0')}
   if(move.combo===2&&!move.counter&&(state.cores.PULSE||0)>0){
@@ -65,8 +67,8 @@
   }
   s.lastPostureGain=Math.max(0,(boss.posture||0)-beforePosture);return out;
  };
- const v6Reset=reset;reset=function(l=0){const out=v6Reset(l);s.edgeReadyT=s.mirrorChainT=s.procT=0;s.lastProc='';return out};
- const v6Step=step;step=function(dt){const out=v6Step(dt);s.edgeReadyT=Math.max(0,s.edgeReadyT-dt);s.mirrorChainT=Math.max(0,s.mirrorChainT-dt);s.procT=Math.max(0,s.procT-dt);enhanceChoice();return out};
- const priorDiag=window.parryMirrorBreakDiagnostics;window.parryMirrorBreakDiagnostics=()=>{const d=priorDiag?priorDiag():{};return{...d,v6:true,coreStyle:true,edgeReady:+s.edgeReadyT.toFixed(2),edgeDrives:s.edgeDrives,edgeHits:s.edgeHits,mirrorChain:+s.mirrorChainT.toFixed(2),mirrorRefreshes:s.mirrorRefreshes,mirrorChainInputs:s.mirrorChainInputs,pulseCrushes:s.pulseCrushes,lastCoreProc:s.lastProc,choiceEnhanced:s.choicePasses>0}};
- enhanceChoice();
+ const v6Reset=reset;reset=function(l=0){const out=v6Reset(l);s.edgeReadyT=s.mirrorChainT=s.procT=0;s.lastProc='';syncProcHud();return out};
+ const v6Step=step;step=function(dt){const out=v6Step(dt);s.edgeReadyT=Math.max(0,s.edgeReadyT-dt);s.mirrorChainT=Math.max(0,s.mirrorChainT-dt);s.procT=Math.max(0,s.procT-dt);enhanceChoice();syncProcHud();return out};
+ const priorDiag=window.parryMirrorBreakDiagnostics;window.parryMirrorBreakDiagnostics=()=>{const d=priorDiag?priorDiag():{},procHud=document.getElementById('mbCoreProc');return{...d,v6:true,coreStyle:true,edgeReady:+s.edgeReadyT.toFixed(2),edgeDrives:s.edgeDrives,edgeHits:s.edgeHits,mirrorChain:+s.mirrorChainT.toFixed(2),mirrorRefreshes:s.mirrorRefreshes,mirrorChainInputs:s.mirrorChainInputs,pulseCrushes:s.pulseCrushes,lastCoreProc:s.lastProc,coreProcVisible:!!(procHud&&getComputedStyle(procHud).opacity>.1&&s.procT>0),choiceEnhanced:s.choicePasses>0}};
+ ensureProcHud();enhanceChoice();syncProcHud();
 })();
