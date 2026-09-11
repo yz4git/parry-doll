@@ -1,1 +1,1 @@
-2026-09-11 build Blender heroine v11.4 stronger facial projection and rebuilt-surface mouth nose accents
+2026-09-11 build Blender heroine v11.5 tapered adult jaw stronger cheek orbit and wider mouth
