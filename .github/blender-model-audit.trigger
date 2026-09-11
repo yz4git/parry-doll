@@ -1,1 +1,1 @@
-2026-09-11 Blender heroine v11.8 slimmer reference face stronger adult profile planes cinematic almond eyes dual five-view audit
+2026-09-11 Blender heroine v11.9 key-art eye contrast compact V-line stronger profile layered asymmetric bangs dual five-view audit
