@@ -1,0 +1,77 @@
+name: MIRROR BREAK v12 Destruction Route Audit
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - dist/mirror-break-v12-destruction-route.js
+      - dist/mirror-break-final-adapter.js
+      - .github/workflows/mirror-break-v12-route-audit.yml
+
+permissions:
+  contents: read
+
+jobs:
+  destruction-route:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate v12
+        run: |
+          node --check dist/mirror-break-v12-destruction-route.js
+          node --check dist/mirror-break-final-adapter.js
+      - name: Install browser stack
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Serve game
+        run: |
+          python3 -m http.server 4173 --directory dist > /tmp/parry-v12-http.log 2>&1 &
+          for i in {1..30}; do curl -fsS http://127.0.0.1:4173/ >/dev/null && exit 0; sleep 1; done
+          cat /tmp/parry-v12-http.log; exit 1
+      - name: Verify destruction routes across arenas
+        run: |
+          mkdir -p mirror-break-v12-audit
+          cat > v12-audit.cjs <<'NODE'
+          const { chromium }=require('playwright');const fs=require('fs');const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+          (async()=>{
+            const browser=await chromium.launch({headless:true,args:['--enable-webgl','--ignore-gpu-blocklist','--enable-unsafe-swiftshader','--use-gl=angle','--use-angle=swiftshader-webgl','--disable-dev-shm-usage']});
+            const page=await browser.newPage({viewport:{width:852,height:393},isMobile:true,hasTouch:true,userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 26_6 like Mac OS X) AppleWebKit/605.1.15 Version/26.0 Mobile/15E148 Safari/604.1'});
+            const errors=[];page.on('pageerror',e=>errors.push('pageerror: '+e.message));page.on('console',m=>{if(m.type()==='error'&&!m.text().includes('Failed to load resource'))errors.push('console: '+m.text())});page.on('response',r=>{if(r.status()>=400&&!r.url().includes('/version.json'))errors.push(`HTTP ${r.status()} ${r.url()}`)});
+            await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>window.parryMirrorBreakDiagnostics?.().v12===true,null,{timeout:60000,polling:100});await page.evaluate(()=>document.getElementById('start')?.click());await sleep(250);
+            const names=['ASH GATE','CAGE BREACH','BROKEN SPINE','ALTAR RIFT'],styles=['BLADELESS SPIN CRASH','HOLLOW TUMBLE','FIVE-LEG CARTWHEEL','BELL TOWER COLLAPSE'];const routes=[];
+            for(let source=0;source<4;source++){
+              const d=await page.evaluate(({source,style})=>{
+                const hit={serial:200+source,level:source,style,part:['swordArm','foreLeg','spearLeg','bellArm'][source],kind:['ARM','LEG','LEG','ARM'][source],label:'route',x:(source-1.5)*.55,z:-1.8-source*.25,power:1.55+source*.2,time:performance.now()};
+                window.__mirrorBreakV9State.stageHitSerial=hit.serial;window.__mirrorBreakV9State.stageHit=hit;
+                reset(source+1);mode='play';transition=0;player.hp=100;player.invuln=10;player.stun=0;boss.hp=Math.max(1,boss.hp);boss.ai=999;boss.wind=0;boss.strike=0;boss.pattern=null;
+                return window.parryMirrorBreakDiagnostics();
+              },{source,style:styles[source]});
+              await sleep(260);
+              const diag=await page.evaluate(()=>window.parryMirrorBreakDiagnostics());
+              if(diag.routeName!==names[source]||diag.routeLevel!==source+1||diag.routeSource!==source)throw new Error('route identity mismatch '+JSON.stringify({source,diag}));
+              if(diag.routeMeshes<8)throw new Error('route geometry too small '+JSON.stringify({source,diag}));
+              routes.push({source,name:diag.routeName,meshes:diag.routeMeshes,history:diag.routeHistoryCount});
+              await page.screenshot({path:`mirror-break-v12-audit/0${source+1}-${names[source].toLowerCase().replaceAll(' ','-')}.png`});
+            }
+            const final=await page.evaluate(()=>window.parryMirrorBreakDiagnostics());if(final.routeHistoryCount!==4||final.routeName!=='ALTAR RIFT')throw new Error('route history did not accumulate '+JSON.stringify(final));
+            const finite=await page.evaluate(()=>[player,boss].every(d=>d.nodes.every(n=>Object.values(n.p).every(Number.isFinite))));if(!finite)throw new Error('non-finite route state');if(errors.length)throw new Error(errors.join(' | '));
+            fs.writeFileSync('mirror-break-v12-audit/result.json',JSON.stringify({success:true,routes,final:{name:final.routeName,history:final.routeHistoryCount,meshes:final.routeMeshes},finite,errors},null,2));console.log(JSON.stringify({success:true,routes,final:final.routeName},null,2));await browser.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+          node v12-audit.cjs
+      - name: Upload route frames
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: parry-doll-mirror-break-v12-route-audit
+          path: mirror-break-v12-audit/
+          if-no-files-found: error
+          retention-days: 3
