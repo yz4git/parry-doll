@@ -34,5 +34,5 @@
  const priorDiag=window.parryMirrorBreakDiagnostics;window.parryMirrorBreakDiagnostics=()=>{const d=priorDiag?priorDiag():{};return {...d,mirrorDominant:dominant(state.cores),finalAdapter:true,uiSimplified:true,perfectFxTrimmed:true}};
 })();
 
-// V2 deliberately loads after every v1/final wrapper so its render-only attack echo, synergies and final phases compose last.
-(()=>{if(window.__parryMirrorBreakV2Queued)return;window.__parryMirrorBreakV2Queued=true;const src=document.currentScript?.src||'',q=src.includes('?')?'?'+src.split('?').slice(1).join('?'):'',s=document.createElement('script');s.src='./mirror-break-v2.js'+q;document.body.appendChild(s)})();
+// V2/V3 deliberately load after every v1/final wrapper so the latest render and final-duel director compose last.
+(()=>{if(window.__parryMirrorBreakV2Queued)return;window.__parryMirrorBreakV2Queued=true;const src=document.currentScript?.src||'',q=src.includes('?')?'?'+src.split('?').slice(1).join('?'):'',s=document.createElement('script');s.src='./mirror-break-v2.js'+q;s.onload=()=>{if(window.__parryMirrorBreakV3Queued)return;window.__parryMirrorBreakV3Queued=true;const v3=document.createElement('script');v3.src='./mirror-break-v3.js'+q;document.body.appendChild(v3)};document.body.appendChild(s)})();
