@@ -3,15 +3,17 @@
 (()=>{
  if(window.__parryMirrorBreakV2Loaded)return;window.__parryMirrorBreakV2Loaded=true;
  const state=window.__mirrorBreakState;if(!state)return;
- const v2={attack:{t:0,duration:0,motion:0,contact:.12,hp:0,serial:0},finalPhase:0,lastFinalBoss:null,synergyPulse:0,lastBroken:false,lastLevel:-1,fullCopy:false};
+ const v2={attack:{t:0,duration:0,motion:0,contact:.12,hp:0,serial:0},finalPhase:0,lastFinalBoss:null,synergyPulse:0,phaseBeatT:0,phaseBeatText:'',lastBroken:false,lastLevel:-1,fullCopy:false};
  window.__mirrorBreakV2State=v2;
  const style=document.createElement('style');style.textContent=`
  #mbSynergyHud{position:absolute;right:max(24px,env(safe-area-inset-right));top:116px;z-index:29;pointer-events:none;text-align:right;font-size:8px;line-height:1.55;letter-spacing:1.3px;color:#8ca5a0;text-shadow:0 2px 8px #000;opacity:.82}#mbSynergyHud b{display:block;color:#d5bb83;font-size:9px;letter-spacing:2px}#mbSynergyHud .hot{color:#ffe1a2}
  #mbMirrorLoadout{position:absolute;left:50%;top:24%;transform:translateX(-50%);z-index:31;pointer-events:none;display:none;padding:5px 10px;border:1px solid #c9b27738;background:#0810179c;color:#9db0ad;font-size:8px;letter-spacing:2px;text-align:center;text-shadow:0 2px 8px #000}#mbMirrorLoadout.show{display:block}#mbMirrorLoadout b{color:#ebce90;letter-spacing:3px}#mbMirrorLoadout i{font-style:normal;color:#d7e4e0;margin-left:7px}
- @media(max-height:500px){#mbSynergyHud{top:88px}#mbMirrorLoadout{top:22%}}@media(orientation:portrait){#mbSynergyHud{top:145px;right:12px}#mbMirrorLoadout{top:19%}}
+ #mbPhaseBeat{position:absolute;left:50%;top:30%;transform:translate(-50%,-6px);z-index:32;pointer-events:none;opacity:0;padding:3px 8px;border-top:1px solid #e3c78355;border-bottom:1px solid #e3c78355;background:#081017a6;color:#f3d998;font-size:10px;font-weight:700;letter-spacing:4px;text-shadow:0 2px 9px #000;transition:opacity .10s,transform .12s}#mbPhaseBeat.show{opacity:.92;transform:translate(-50%,0)}
+ @media(max-height:500px){#mbSynergyHud{top:88px}#mbMirrorLoadout{top:22%}#mbPhaseBeat{top:29%}}@media(orientation:portrait){#mbSynergyHud{top:145px;right:12px}#mbMirrorLoadout{top:19%}#mbPhaseBeat{top:25%}}
  `;document.head.appendChild(style);
  const synergyHud=document.createElement('div');synergyHud.id='mbSynergyHud';document.body.appendChild(synergyHud);
  const mirrorHud=document.createElement('div');mirrorHud.id='mbMirrorLoadout';document.body.appendChild(mirrorHud);
+ const phaseBeat=document.createElement('div');phaseBeat.id='mbPhaseBeat';document.body.appendChild(phaseBeat);
  const dominant=c=>{const max=Math.max(c.EDGE,c.MIRROR,c.PULSE);if(max<=0)return null;if(c.EDGE===max)return'EDGE';if(c.MIRROR===max)return'MIRROR';return'PULSE'};
  function synergies(c=state.cores){
   const out=[];if(c.EDGE>0&&c.MIRROR>0)out.push(['REFLECT EDGE',Math.min(c.EDGE,c.MIRROR)]);if(c.EDGE>0&&c.PULSE>0)out.push(['RUPTURE DRIVE',Math.min(c.EDGE,c.PULSE)]);if(c.MIRROR>0&&c.PULSE>0)out.push(['RESONANT MIRROR',Math.min(c.MIRROR,c.PULSE)]);if(c.EDGE>0&&c.MIRROR>0&&c.PULSE>0)out.push(['ZERO TRACE',Math.min(c.EDGE,c.MIRROR,c.PULSE)]);return out
@@ -19,6 +21,7 @@
  function updateHud(){
   const list=synergies();synergyHud.innerHTML=list.length?`<b>CORE SYNERGY</b>${list.map(([n,l],i)=>`<span class="${v2.synergyPulse>0&&i===0?'hot':''}">${n} ${l}</span>`).join('<br>')}`:'';
   const final=level===4&&boss&&boss.hp>0;mirrorHud.classList.toggle('show',final);if(final){const c=state.cores;mirrorHud.innerHTML=`<b>BUILD MIRROR</b><i>E${c.EDGE} · M${c.MIRROR} · P${c.PULSE}</i><i>PHASE ${['I','II','III'][Math.max(0,v2.finalPhase-1)]||'I'}</i>`}
+  phaseBeat.textContent=v2.phaseBeatText;phaseBeat.classList.toggle('show',final&&v2.phaseBeatT>0)
  }
  function armAttackVisual(){const a=v2.attack;a.duration=Math.max(.12,player.motionDuration||player.attack||.46);a.t=a.duration;a.motion=Math.max(0,player.motion||0);a.contact=Math.max(.045,player.motionContact||.12);a.hp=player.hp;a.serial++}
  const mb2PlayerAttack=playerAttack;playerAttack=function(){const ok=mb2PlayerAttack();if(ok)armAttackVisual();return ok};
@@ -39,16 +42,16 @@
   }
   return mb2StartEnemyAttack(m)
  };
- function phaseBurst(label){const n=boss?.nodes?.find(n=>n.name==='chest')||boss?.nodes?.[1];if(n){ring(n.p,'#fff0b8');ring(n.p,'#b4fff0');burst(n.p,'#e9ffe9',18,6)}hitstop=Math.max(hitstop,.085);shake=Math.max(shake,.18);boss.stun=Math.max(boss.stun,.36);announce(label,.72);sound(250+v2.finalPhase*90,.20,'triangle',.035)}
+ function phaseBurst(label){const n=boss?.nodes?.find(n=>n.name==='chest')||boss?.nodes?.[1];if(n){ring(n.p,'#fff0b8');ring(n.p,'#b4fff0');burst(n.p,'#e9ffe9',12,4.8)}hitstop=Math.max(hitstop,.065);shake=Math.max(shake,.14);boss.stun=Math.max(boss.stun,.28);v2.phaseBeatText=label;v2.phaseBeatT=.66;sound(250+v2.finalPhase*90,.18,'triangle',.028)}
  function updateFinalPhase(){
-  if(level!==4||!boss||boss.hp<=0){v2.finalPhase=0;v2.lastFinalBoss=null;return}
+  if(level!==4||!boss||boss.hp<=0){v2.finalPhase=0;v2.lastFinalBoss=null;v2.phaseBeatT=0;return}
   if(v2.lastFinalBoss!==boss){v2.lastFinalBoss=boss;v2.finalPhase=1;phaseBurst('BUILD MIRROR')}
   const ratio=boss.hp/Math.max(1,boss.spec.hp||boss.hp),target=ratio<=.33?3:ratio<=.66?2:1;
   while(v2.finalPhase<target){v2.finalPhase++;boss.spec={...boss.spec,speed:boss.spec.speed*(v2.finalPhase===2?1.06:1.08),damage:boss.spec.damage*(v2.finalPhase===2?1.04:1.06)};phaseBurst(`MIRROR PHASE ${v2.finalPhase===2?'II':'III'}`)}
  }
  function saveNode(n){return{n,p:{...n.p},r:n.r}}
  function deformBrokenBoss(){
-  if(!boss||!state.broken||state.boss!==boss||!state.part)return[];const saved=[],s=boss.spec.scale,part=state.part,save=n=>{if(n&&!saved.some(q=>q.n===n))saved.push(saveNode(n))},offset=(n,q)=>{if(!n)return;save(n);const o=boss.local(q);n.p=add(n.p,o)};
+  if(!boss||!state.broken||state.boss!==boss||!state.part)return[];const saved=[],part=state.part,save=n=>{if(n&&!saved.some(q=>q.n===n))saved.push(saveNode(n))},offset=(n,q)=>{if(!n)return;save(n);const o=boss.local(q);n.p=add(n.p,o)};
   if(part.kind==='ARM'){const hands=boss.nodes.filter(n=>n.name==='hand'),hand=hands[hands.length-1],sign=Math.sign(hand?.rest?.x||1),elbows=boss.nodes.filter(n=>n.name==='elbow'),elbow=elbows.find(n=>Math.sign(n.rest.x||1)===sign)||elbows[elbows.length-1];offset(hand,V(-.18*sign,-.46,-.16));offset(elbow,V(-.10*sign,-.24,-.09));if(hand)hand.r*=.60;if(elbow)elbow.r*=.76}
   else if(part.kind==='LEG'){const feet=boss.nodes.filter(n=>n.name==='foot'),foot=feet.reduce((a,n)=>!a||n.rest.z>a.rest.z?n:a,null),sign=Math.sign(foot?.rest?.x||1),knees=boss.nodes.filter(n=>n.name==='knee'),knee=knees.find(n=>Math.sign(n.rest.x||1)===sign&&n.rest.z>0)||knees.reduce((a,n)=>!a||n.rest.z>a.rest.z?n:a,null);offset(foot,V(.20*sign,-.25,-.36));offset(knee,V(.12*sign,-.16,-.22));if(foot)foot.r*=.64;if(knee)knee.r*=.72}
   else if(part.kind==='CORE'){const chest=boss.nodes.find(n=>n.name==='chest'),head=boss.nodes.find(n=>n.name==='head');offset(chest,V(0,-.09,-.18));offset(head,V(0,-.05,-.10));if(chest)chest.r*=.78}
@@ -59,8 +62,8 @@
   const nodeSaves=deformBrokenBoss();
   try{return mb2Render()}finally{if(aSave)Object.assign(player,aSave);for(const q of nodeSaves){q.n.p=q.p;q.n.r=q.r}}
  };
- const mb2Reset=reset;reset=function(l=0){const out=mb2Reset(l);v2.attack.t=0;v2.finalPhase=0;v2.lastFinalBoss=null;v2.lastBroken=false;updateHud();return out};
- const mb2Step=step;step=function(dt){const out=mb2Step(dt);const a=v2.attack;if(a.t>0){if(!player||player.hp<a.hp-.01||player.down>0)a.t=0;else a.t=Math.max(0,a.t-dt)}v2.synergyPulse=Math.max(0,v2.synergyPulse-dt);updateFinalPhase();updateHud();v2.lastBroken=state.broken;v2.lastLevel=level;return out};
- const previousDiag=window.parryMirrorBreakDiagnostics;window.parryMirrorBreakDiagnostics=()=>{const d=previousDiag?previousDiag():{},c={...state.cores};return{...d,v2:true,attackVisual:{active:+v2.attack.t.toFixed(3),motion:v2.attack.motion,serial:v2.attack.serial},synergies:synergies(c).map(x=>x[0]),finalPhase:v2.finalPhase,fullBuildCopied:level===4&&(Object.values(c).filter(x=>x>0).length>1),secondaryCoreCopy:v2.fullCopy}};
+ const mb2Reset=reset;reset=function(l=0){const out=mb2Reset(l);v2.attack.t=0;v2.finalPhase=0;v2.lastFinalBoss=null;v2.phaseBeatT=0;v2.phaseBeatText='';v2.lastBroken=false;updateHud();return out};
+ const mb2Step=step;step=function(dt){const out=mb2Step(dt);const a=v2.attack;if(a.t>0){if(!player||player.hp<a.hp-.01||player.down>0)a.t=0;else a.t=Math.max(0,a.t-dt)}v2.synergyPulse=Math.max(0,v2.synergyPulse-dt);v2.phaseBeatT=Math.max(0,v2.phaseBeatT-dt);updateFinalPhase();updateHud();v2.lastBroken=state.broken;v2.lastLevel=level;return out};
+ const previousDiag=window.parryMirrorBreakDiagnostics;window.parryMirrorBreakDiagnostics=()=>{const d=previousDiag?previousDiag():{},c={...state.cores};return{...d,v2:true,attackVisual:{active:+v2.attack.t.toFixed(3),motion:v2.attack.motion,serial:v2.attack.serial},synergies:synergies(c).map(x=>x[0]),finalPhase:v2.finalPhase,phaseBeat:v2.phaseBeatText,fullBuildCopied:level===4&&(Object.values(c).filter(x=>x>0).length>1),secondaryCoreCopy:v2.fullCopy}};
  updateHud();
 })();
