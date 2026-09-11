@@ -11,6 +11,7 @@
   if(state.part.kind==='LEG'&&list.length>1)return list.reduce((a,n)=>n.rest.z>a.rest.z?n:a,list[0]);
   return list[list.length-1];
  };
+ const adjacent=(d,index)=>d.links.filter(l=>l.a===index||l.b===index).map(l=>l.a===index?l.b:l.a);
  function plan(d=boss){
   if(!d||!state.broken||state.boss!==d||!state.part)return null;
   const target=partNode();if(!target)return null;const targetIndex=d.nodes.indexOf(target),hidden=new Set(),kind=state.part.kind;
@@ -19,9 +20,16 @@
    hidden.add(targetIndex);const handParent=d.links.find(l=>l.b===targetIndex||l.a===targetIndex);const elbowIndex=handParent?(handParent.a===targetIndex?handParent.b:handParent.a):-1;
    if(elbowIndex>=0){hidden.add(elbowIndex);const parent=d.links.find(l=>(l.a===elbowIndex&&!hidden.has(l.b))||(l.b===elbowIndex&&!hidden.has(l.a)));if(parent){const ai=parent.a===elbowIndex?parent.b:parent.a;anchor=d.nodes[ai]}}
   }else if(kind==='LEG'){
-   hidden.add(targetIndex);const footLink=d.links.find(l=>l.a===targetIndex||l.b===targetIndex);let footIndex=-1;if(footLink){const oi=footLink.a===targetIndex?footLink.b:footLink.a;if(d.nodes[oi]?.name==='foot'){footIndex=oi;hidden.add(oi)}}
-   const rootLink=d.links.find(l=>(l.a===targetIndex&&!hidden.has(l.b))||(l.b===targetIndex&&!hidden.has(l.a)));if(rootLink){const ai=rootLink.a===targetIndex?rootLink.b:rootLink.a;anchor=d.nodes[ai]}
-   if(footIndex>=0)branch=d.nodes[footIndex];
+   let kneeIndex=-1,footIndex=-1;
+   if(target.name==='knee'){
+    kneeIndex=targetIndex;footIndex=adjacent(d,kneeIndex).find(i=>d.nodes[i]?.name==='foot')??-1;
+   }else if(target.name==='foot'){
+    footIndex=targetIndex;kneeIndex=adjacent(d,footIndex).find(i=>d.nodes[i]?.name==='knee')??-1;
+   }else kneeIndex=targetIndex;
+   if(kneeIndex>=0)hidden.add(kneeIndex);if(footIndex>=0)hidden.add(footIndex);
+   const rootIndex=kneeIndex>=0?adjacent(d,kneeIndex).find(i=>!hidden.has(i) && d.nodes[i]?.name!=='foot'):-1;
+   if(rootIndex>=0)anchor=d.nodes[rootIndex];
+   branch=footIndex>=0?d.nodes[footIndex]:(kneeIndex>=0?d.nodes[kneeIndex]:target);
   }else if(kind==='CORE')anchor=d.nodes.find(n=>n.name==='chest')||target;
   if(!anchor&&kind!=='CORE'){
    const link=d.links.find(l=>(hidden.has(l.a)&&!hidden.has(l.b))||(hidden.has(l.b)&&!hidden.has(l.a)));if(link)anchor=d.nodes[hidden.has(link.a)?link.b:link.a];
@@ -52,6 +60,8 @@
   const now=!!(state.broken&&state.boss===boss);if(now&&!s.lastBroken)spawnSever();s.lastBroken=now;
   if(now){const hud=document.getElementById('mbBreakHud'),span=hud?.querySelector('span');if(span)span.textContent=state.part?.kind==='CORE'?'CORE SHATTERED':'PART SEVERED'}
  }
+ // The persistent severed silhouette now communicates BODY BREAK; remove the older large center-screen BREAK toast.
+ const v4Announce=announce;announce=function(text,duration){const t=String(text||'');if(state.part?.label&&t.includes(state.part.label)&&t.includes('BREAK'))return;return v4Announce(text,duration)};
  const baseDrawDoll=drawDoll;drawDoll=function(d){
   if(d!==boss||!state.broken||state.boss!==boss){baseDrawDoll(d);return}
   const p=plan(d);if(!p){baseDrawDoll(d);return}
