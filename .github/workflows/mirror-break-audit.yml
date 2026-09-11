@@ -6,6 +6,7 @@ on:
     paths:
       - dist/mirror-break-v1.js
       - dist/mirror-break-final-adapter.js
+      - dist/mirror-break-v2.js
       - dist/parry-cinematic-v3.js
       - .github/mirror-break.trigger
       - .github/workflows/mirror-break-audit.yml
@@ -34,7 +35,7 @@ jobs:
           python3 -m http.server 4173 --directory dist > /tmp/parry-mb-http.log 2>&1 &
           for i in {1..30}; do curl -fsS http://127.0.0.1:4173/ >/dev/null && exit 0; sleep 1; done
           cat /tmp/parry-mb-http.log; exit 1
-      - name: Exercise BODY BREAK, DOLL CORE and final mirror loop
+      - name: Exercise BODY BREAK, DOLL CORE, synergy and final mirror loop
         run: |
           mkdir -p mirror-break-audit
           cat > mb-audit.cjs <<'NODE'
@@ -49,15 +50,19 @@ jobs:
             page.on('console',m=>{if(m.type()==='error'&&!m.text().includes('Failed to load resource'))errors.push(m.text())});
             page.on('response',r=>{if(r.status()>=400&&!r.url().includes('/version.json'))errors.push(`HTTP ${r.status()} ${r.url()}`)});
             await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});
-            await page.waitForFunction(()=>typeof window.parryMirrorBreakDiagnostics==='function'&&window.parryMirrorBreakDiagnostics()?.finalAdapter===true,{timeout:15000});
+            await page.waitForFunction(()=>typeof window.parryMirrorBreakDiagnostics==='function'&&window.parryMirrorBreakDiagnostics()?.v2===true,{timeout:15000});
             await page.evaluate(()=>document.getElementById('start')?.click());await sleep(350);
             const result=await page.evaluate(async()=>{
               const tick=(n=1)=>{for(let i=0;i<n;i++)step(1/60)};
               player.pos.x=boss.pos.x;player.pos.z=boss.pos.z+1.8;player.vel=V();boss.vel=V();boss.stun=0;boss.wind=0;boss.strike=0;boss.invuln=0;
               player.parry=.50;player.parryCool=0;enemyImpact(null);tick(2);
               const exposed=window.parryMirrorBreakDiagnostics();
-              player.cool=0;player.comboWindow=0;player.pos.x=boss.pos.x;player.pos.z=boss.pos.z+1.55;playerAttack();player.swingClock=0;resolveSwing();tick(2);
+
+              player.cool=0;player.comboWindow=0;player.pos.x=boss.pos.x;player.pos.z=boss.pos.z+1.55;
+              const attackStarted=playerAttack();const attackVisualStart=window.parryMirrorBreakDiagnostics().attackVisual;
+              player.swingClock=0;resolveSwing();tick(2);
               const broken=window.parryMirrorBreakDiagnostics();
+
               boss.invuln=0;hurt(boss,999,V(0,8,-30),boss.nodes[1].p);tick(3);
               const choiceOpen=document.getElementById('mbCoreChoice')?.classList.contains('show');
               const buttons=[...document.querySelectorAll('.mb-core')].map(b=>b.textContent.trim());
@@ -65,24 +70,32 @@ jobs:
               const afterChoice=window.parryMirrorBreakDiagnostics();
               const nextLevel=level,nextBoss=boss?.spec?.name||'';
 
-              // Verify the secret duel receives the run build even when its adaptive AI replaces the requested move.
-              window.__mirrorBreakState.cores.EDGE=2;window.__mirrorBreakState.cores.MIRROR=0;window.__mirrorBreakState.cores.PULSE=0;
-              level=4;boss=new Doll(bosses[4]);boss.stun=0;boss.wind=0;boss.strike=0;boss.ai=0;boss.invuln=0;
+              // Mixed build: dominant EDGE plus MIRROR/PULSE secondary traits must all be copied.
+              window.__mirrorBreakState.cores.EDGE=2;window.__mirrorBreakState.cores.MIRROR=1;window.__mirrorBreakState.cores.PULSE=1;
+              level=4;boss=new Doll(bosses[4]);boss.stun=0;boss.wind=0;boss.strike=0;boss.ai=0;boss.invuln=0;tick(2);
               startEnemyAttack(ENEMY_MOVES[4][0]);
               const finalPattern=boss.pattern?.name||'';
+              const finalMove={damage:boss.pattern?.damage||0,wind:boss.pattern?.wind||0,force:boss.pattern?.force||0,range:boss.pattern?.range||0};
               const finalDiag=window.parryMirrorBreakDiagnostics();
-              return {exposed,broken,choiceOpen,buttons,afterChoice,nextLevel,nextBoss,finalPattern,finalDiag,mode};
+              const fullHp=boss.spec.hp||boss.hp;
+              boss.hp=fullHp*.60;tick(2);const phase2=window.parryMirrorBreakDiagnostics().finalPhase;
+              boss.hp=fullHp*.30;tick(2);const phase3=window.parryMirrorBreakDiagnostics().finalPhase;
+              return {exposed,attackStarted,attackVisualStart,broken,choiceOpen,buttons,afterChoice,nextLevel,nextBoss,finalPattern,finalMove,finalDiag,phase2,phase3,mode};
             });
             await page.screenshot({path:'mirror-break-audit/result.png'});
             fs.writeFileSync('mirror-break-audit/result.json',JSON.stringify({result,errors},null,2));
             if(errors.length)throw new Error('browser errors: '+errors.join(' | '));
             if(!(result.exposed.expose>0))throw new Error('PERFECT did not expose a break target');
+            if(!result.attackStarted||!(result.attackVisualStart.active>0)||result.attackVisualStart.serial<1)throw new Error('render attack echo did not arm');
             if(!result.broken.broken||result.broken.breaks<1)throw new Error('counter did not BODY BREAK');
             if(!result.choiceOpen||result.buttons.length!==3)throw new Error('DOLL CORE choice did not open');
             if(result.afterChoice.cores.EDGE!==1)throw new Error('EDGE core was not acquired');
             if(result.nextLevel!==1)throw new Error('run did not advance to boss 2 after core choice');
-            if(!result.finalDiag.finalAdapter||result.finalDiag.mirrorDominant!=='EDGE')throw new Error('final adapter/core diagnostics missing');
+            if(!result.finalDiag.finalAdapter||!result.finalDiag.v2||result.finalDiag.mirrorDominant!=='EDGE')throw new Error('final adapter/v2 diagnostics missing');
             if(!result.finalPattern.includes('写刃・'))throw new Error('THE PARRY DOLL did not copy EDGE core: '+result.finalPattern);
+            if(!result.finalDiag.fullBuildCopied||!result.finalDiag.secondaryCoreCopy)throw new Error('mixed DOLL CORE build was not fully mirrored');
+            if(!result.finalDiag.synergies.includes('ZERO TRACE'))throw new Error('three-core synergy was not activated');
+            if(result.phase2<2||result.phase3<3)throw new Error(`final phases did not evolve: ${result.phase2}/${result.phase3}`);
             console.log(JSON.stringify(result,null,2));await browser.close();
           })().catch(e=>{console.error(e);process.exit(1)});
           NODE
