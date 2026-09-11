@@ -1,1 +1,1 @@
-2026-09-11 Blender heroine v11.7 model-editor RBF nose lips mouth corners labiomental anatomy dual five-view audit
+2026-09-11 Blender heroine v11.8 slimmer reference face stronger adult profile planes cinematic almond eyes dual five-view audit
