@@ -1,1 +1,1 @@
-Core heroine WebGL baseline: 6eb27a9; 2026-09-09
+Parry Doll v11.9 gameplay visual audit: 2026-09-11 current main
