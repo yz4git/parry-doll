@@ -37,3 +37,6 @@
  window.parryRuinTargetDiagnostics=()=>{const cs=getComputedStyle(hud),gs=getComputedStyle(guide);return{v15:true,visible:s.visible,ready:s.ready,source:s.source,route:s.route,threshold:+s.threshold.toFixed(1),target:s.target?{...s.target}:null,screen:s.screen?{...s.screen}:null,consumed:s.consumed,updates:s.updates,className:hud.className,opacity:+(Number(cs.opacity)||0).toFixed(2),visibility:cs.visibility,guideOpacity:+(Number(gs.opacity)||0).toFixed(2),guideVisibility:gs.visibility}};
  update();
 })();
+
+// V16 loads only after v15 has installed its deterministic route targeting.
+(()=>{if(window.__parryMirrorBreakV16Queued)return;window.__parryMirrorBreakV16Queued=true;const src=document.currentScript?.src||'',q=src.includes('?')?'?'+src.split('?').slice(1).join('?'):'',v16=document.createElement('script');v16.src='./mirror-break-v16-core-fusion.js'+q;document.body.appendChild(v16)})();
