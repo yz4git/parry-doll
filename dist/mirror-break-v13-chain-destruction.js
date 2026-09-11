@@ -1,0 +1,31 @@
+'use strict';
+// MIRROR BREAK v13 — CHAIN DESTRUCTION: launch a boss into inherited ruins to trigger a secondary collapse.
+(()=>{
+ if(window.__parryMirrorBreakV13Loaded)return;window.__parryMirrorBreakV13Loaded=true;
+ const proto=window.ParryVisual?.VisualScene?.prototype,v12=window.__mirrorBreakV12State;if(!proto||!v12)return;
+ const NAMES=['ASH GATE','CAGE BREACH','BROKEN SPINE','ALTAR RIFT'];
+ const COLORS=['#ffc06c','#8fe7d7','#d9b2ff','#b8e3ff'];
+ const s={launch:null,triggers:0,history:[],consumed:new Set(),applying:false,collapse:null,scene:null,last:null,checks:0};window.__mirrorBreakV13State=s;
+ const named=(d,name)=>d?.nodes?.find?.(n=>n.name===name)||null;
+ const copyV=v=>({x:+(v?.x||0),y:+(v?.y||0),z:+(v?.z||0)});
+ const mag=v=>Math.hypot(v?.x||0,v?.y||0,v?.z||0);
+ function entry(){if(level<1||level>4)return null;return v12.history?.find?.(e=>e.level===level-1)||null}
+ function key(e=entry()){return e?`${level}:${e.level}:${e.serial}`:''}
+ function contactPoint(){return copyV(named(boss,'chest')?.p||named(boss,'hip')?.p||boss?.pos)}
+ function targetFor(source){const side=source%2?1:-1;if(source===3)return{x:0,z:-4.05,r:2.45};return{x:side*3.6,z:-5.35,r:source===2?2.65:2.35}}
+ function inZone(p,source){const q=targetFor(source),dx=p.x-q.x,dz=p.z-q.z;return dx*dx+dz*dz<=q.r*q.r}
+ function recordLaunch(d,amount,force,point){if(s.applying||d!==boss||d?.player||!force)return;const power=mag(force);if(power<18)return;s.launch={at:performance.now(),level,source:entry()?.level??-1,power:+power.toFixed(2),force:copyV(force),point:copyV(point||contactPoint()),bossRef:d}}
+ const baseHurt=hurt;hurt=function(d,amount,force,point){const out=baseHurt(d,amount,force,point);if(out)recordLaunch(d,amount,force,point);return out};
+ function prepareCollapse(source,now){const vs=s.scene,meshes=vs?.__mbDestructionRoute?.meshes||[];if(!meshes.length){s.collapse=null;return}const take=Math.min(source===0?4:source===1?6:source===2?7:8,Math.max(0,meshes.length-7));const chosen=meshes.slice(Math.max(7,meshes.length-take));s.collapse={key:key(),source,start:now,items:chosen.map((m,i)=>({m,i,px:m.position.x,py:m.position.y,pz:m.position.z,rx:m.rotation.x,ry:m.rotation.y,rz:m.rotation.z}))}}
+ function animateCollapse(now){const c=s.collapse;if(!c)return;if(c.key!==key()){s.collapse=null;return}const t=Math.max(0,Math.min(1,(now-c.start)/720)),ease=1-Math.pow(1-t,3),side=c.source%2?1:-1;for(const it of c.items){const m=it.m;if(!m?.parent)continue;const seed=(it.i+1)*(c.source+2),drift=((seed%3)-1)*.34+side*.16;m.position.x=it.px+drift*ease;m.position.y=it.py-Math.min(it.py+.12,ease*(.35+.09*(seed%4)));m.position.z=it.pz+(.18+.07*(seed%5))*ease;m.rotation.x=it.rx+(.32+.11*(seed%4))*ease;m.rotation.y=it.ry+drift*.42*ease;m.rotation.z=it.rz+side*(.72+.12*(seed%3))*ease}if(t>=1)c.settled=true}
+ function trigger(source,launch,now){const e=entry(),k=key(e);if(!e||s.consumed.has(k))return false;s.consumed.add(k);s.triggers++;const p=contactPoint(),route=NAMES[source],q=targetFor(source),away=V(p.x-q.x,0,p.z-q.z),dir=mag(away)>.01?norm(away):V(source%2?1:-1,0,.25),damage=8+source*3,secondary=add(mul(dir,13+source*2.5),V(0,4.2+source*.65,0));
+  prepareCollapse(source,now);groundImpact(V(p.x,.06,p.z),1.75+source*.42);burst(V(p.x,.18,p.z),COLORS[source],20+source*5,5.2+source*.75);ring(V(p.x,.08,p.z),COLORS[source]);shake=Math.max(shake,.22+source*.035);announce(`連 鎖 崩 壊 — ${route}`,1.05);
+  let damaged=false;if(boss.hp>0){const inv=boss.invuln;boss.invuln=0;s.applying=true;try{damaged=!!baseHurt(boss,damage,secondary,named(boss,'chest')?.p||p)}finally{s.applying=false;boss.invuln=Math.max(boss.invuln,inv,.16)}}else{const chest=named(boss,'chest')||named(boss,'hip');if(chest)boss.impulse(chest.p,mul(secondary,.72))}
+  const event={serial:s.triggers,route,source,routeSerial:e.serial,level,power:launch.power,damage,damaged,at:now,point:{x:+p.x.toFixed(2),z:+p.z.toFixed(2)}};s.history.push(event);s.last=event;s.launch=null;return true}
+ function check(now=performance.now()){s.checks++;const e=entry(),l=s.launch;if(!e||!l||l.bossRef!==boss||l.level!==level||l.source!==e.level)return;if(now-l.at>1050){s.launch=null;return}if(l.power<18)return;const p=contactPoint();if(inZone(p,e.level))trigger(e.level,l,now)}
+ const baseStep=step;step=function(dt){const out=baseStep(dt);check(performance.now());return out};
+ const baseRender=proto.render;proto.render=function(renderState){s.scene=this;animateCollapse(performance.now());return baseRender.call(this,renderState)};
+ const baseReset=reset;reset=function(l=0){const prev=typeof level==='number'?level:-1,out=baseReset(l);s.launch=null;s.collapse=null;s.scene=null;if(l===0&&prev>=4){s.triggers=0;s.history.length=0;s.consumed.clear();s.last=null}s.checks=0;return out};
+ const priorDiag=window.parryMirrorBreakDiagnostics;window.parryMirrorBreakDiagnostics=()=>{const d=priorDiag?priorDiag():{};return{...d,v13:true,chainDestruction:true,chainTriggers:s.triggers,chainHistory:s.history.map(e=>({...e})),chainLast:s.last?{...s.last}:null,chainArmed:!!s.launch,chainPower:s.launch?.power||0,chainChecks:s.checks,chainCollapseActive:!!s.collapse,chainCollapseSettled:!!s.collapse?.settled,chainConsumed:[...s.consumed]}};
+ window.parryChainDestructionDiagnostics=()=>({v13:true,triggers:s.triggers,last:s.last?{...s.last}:null,armed:!!s.launch,power:s.launch?.power||0,checks:s.checks,collapse:!!s.collapse,settled:!!s.collapse?.settled,consumed:[...s.consumed]});
+})();
