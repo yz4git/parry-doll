@@ -1,0 +1,113 @@
+name: MIRROR BREAK v6 DOLL CORE Audit
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - dist/mirror-break-v6.js
+      - dist/mirror-break-final-adapter.js
+      - .github/workflows/mirror-break-v6-core-audit.yml
+
+permissions:
+  contents: read
+
+jobs:
+  core-styles:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate DOLL CORE layer
+        run: |
+          node --check dist/mirror-break-v6.js
+          node --check dist/mirror-break-final-adapter.js
+      - name: Install browser stack
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Serve game
+        run: |
+          python3 -m http.server 4173 --directory dist > /tmp/parry-v6-http.log 2>&1 &
+          for i in {1..30}; do curl -fsS http://127.0.0.1:4173/ >/dev/null && exit 0; sleep 1; done
+          cat /tmp/parry-v6-http.log; exit 1
+      - name: Verify choice screen and all three combat styles
+        run: |
+          mkdir -p mirror-break-v6-audit
+          cat > v6-audit.cjs <<'NODE'
+          const { chromium } = require('playwright');
+          const fs = require('fs');
+          const sleep = ms => new Promise(r=>setTimeout(r,ms));
+          (async()=>{
+            const browser=await chromium.launch({headless:true,args:['--enable-webgl','--ignore-gpu-blocklist','--enable-unsafe-swiftshader','--use-gl=angle','--use-angle=swiftshader-webgl','--disable-dev-shm-usage']});
+            const page=await browser.newPage({viewport:{width:852,height:393},isMobile:true,hasTouch:true,userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 26_6 like Mac OS X) AppleWebKit/605.1.15 Version/26.0 Mobile/15E148 Safari/604.1'});
+            const errors=[];page.on('pageerror',e=>errors.push('pageerror: '+e.message));page.on('console',m=>{if(m.type()==='error'&&!m.text().includes('Failed to load resource'))errors.push('console: '+m.text())});page.on('response',r=>{if(r.status()>=400&&!r.url().includes('/version.json'))errors.push(`HTTP ${r.status()} ${r.url()}`)});
+            await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});
+            await page.waitForFunction(()=>window.parryMirrorBreakDiagnostics?.().v6===true,null,{timeout:60000,polling:100});
+            await page.evaluate(()=>document.getElementById('start')?.click());await sleep(260);
+
+            // Real post-boss core choice screen.
+            await page.evaluate(()=>{mode='play';player.hp=100;boss.hp=0;boss.down=99;transition=.5;step(1/60)});
+            await page.waitForFunction(()=>document.querySelectorAll('#mbCoreChoice.show .mb-core-role').length===3,null,{timeout:5000});
+            const choice=await page.evaluate(()=>({
+              roles:[...document.querySelectorAll('#mbCoreChoice .mb-core-role')].map(x=>x.textContent),
+              rules:[...document.querySelectorAll('#mbCoreChoice .mb-core-rule')].map(x=>x.textContent),
+              preview:document.querySelector('#mbCoreChoice .mb-build-preview')?.textContent||'',
+              diag:window.parryMirrorBreakDiagnostics()
+            }));
+            await page.screenshot({path:'mirror-break-v6-audit/01-core-choice.png'});
+            if(choice.roles.length!==3||!choice.roles.some(x=>x.includes('RIPOSTE DRIVE'))||!choice.roles.some(x=>x.includes('CHAIN DEFLECT'))||!choice.roles.some(x=>x.includes('RESONANCE CRUSH')))throw new Error('core choice roles missing '+JSON.stringify(choice));
+            if(!choice.preview.includes('CURRENT BUILD')||!choice.diag.choiceEnhanced)throw new Error('core build preview missing '+JSON.stringify(choice));
+
+            // EDGE: a PERFECT arms a riposte drive; the counter hit opens a combo continuation.
+            const edge=await page.evaluate(()=>{
+              const st=window.__mirrorBreakState;st.choice=false;document.getElementById('mbCoreChoice').classList.remove('show');reset(1);mode='play';st.cores.EDGE=1;st.cores.MIRROR=0;st.cores.PULSE=0;
+              player.hp=100;player.invuln=0;player.stun=0;player.down=0;player.cool=0;player.parryCool=0;player.counter=0;player.swing=null;player.pos=V(0,0,1.7);player.vel=V();boss.pos=V(0,0,0);boss.vel=V();boss.stun=0;boss.down=0;boss.invuln=0;boss.wind=0;boss.strike=0;
+              for(let i=0;i<3;i++)step(1/60);player.parry=.50;enemyImpact(null);for(let i=0;i<2;i++)step(1/60);const armed=window.parryMirrorBreakDiagnostics();
+              st.exposeT=0;boss.stun=0;boss.invuln=0;player.cool=0;player.comboWindow=0;player.pos=V(boss.pos.x,0,boss.pos.z+1.45);playerAttack();const driven=window.parryMirrorBreakDiagnostics();player.swingClock=0;resolveSwing();for(let i=0;i<2;i++)step(1/60);
+              return{armed,driven,after:window.parryMirrorBreakDiagnostics(),comboWindow:player.comboWindow,bossHp:boss.hp,bossPosture:boss.posture};
+            });
+            await sleep(45);await page.screenshot({path:'mirror-break-v6-audit/02-edge-drive.png'});
+            if(edge.armed.edgeReady<=0||edge.driven.edgeDrives<1||edge.after.edgeHits<1||edge.comboWindow<=0)throw new Error('EDGE identity failed '+JSON.stringify(edge));
+
+            // MIRROR: a PERFECT clears the normal parry lockout so a second manual deflect can be input immediately.
+            const mirror=await page.evaluate(()=>{
+              const st=window.__mirrorBreakState;reset(2);mode='play';st.cores.EDGE=0;st.cores.MIRROR=1;st.cores.PULSE=0;
+              player.hp=100;player.invuln=0;player.stun=0;player.down=0;player.cool=0;player.parryCool=0;player.counter=0;player.swing=null;player.pos=V(0,0,1.7);player.vel=V();boss.pos=V(0,0,0);boss.vel=V();boss.stun=0;boss.down=0;boss.invuln=0;boss.wind=0;boss.strike=0;
+              for(let i=0;i<3;i++)step(1/60);player.parry=.50;enemyImpact(null);for(let i=0;i<2;i++)step(1/60);const armed=window.parryMirrorBreakDiagnostics(),coolAfterPerfect=player.parryCool;
+              player.parry=0;player.parryCool=.55;const second=playerParry();const after=window.parryMirrorBreakDiagnostics();
+              return{armed,coolAfterPerfect,second,after,parryCool:player.parryCool,parry:player.parry};
+            });
+            await sleep(45);await page.screenshot({path:'mirror-break-v6-audit/03-mirror-chain.png'});
+            if(mirror.armed.mirrorChain<=0||mirror.armed.mirrorRefreshes<1||mirror.coolAfterPerfect>.08||!mirror.second||mirror.after.mirrorChainInputs<1)throw new Error('MIRROR identity failed '+JSON.stringify(mirror));
+
+            // PULSE: the third normal swing creates a posture/RESOLVE resonance hit.
+            const pulse=await page.evaluate(()=>{
+              const st=window.__mirrorBreakState;reset(3);mode='play';st.cores.EDGE=0;st.cores.MIRROR=0;st.cores.PULSE=1;
+              player.hp=100;player.invuln=0;player.stun=0;player.down=0;player.cool=0;player.counter=0;player.swing=null;player.pos=V(0,0,1.65);player.vel=V();boss.pos=V(0,0,0);boss.vel=V();boss.stun=0;boss.down=0;boss.invuln=0;boss.wind=0;boss.strike=0;boss.posture=0;
+              for(let i=0;i<3;i++)step(1/60);const resolveBefore=window.__phaseBreakV2State?.resolve||0;playerAttack();player.swing.combo=2;player.swing.counter=false;player.swingClock=0;resolveSwing();for(let i=0;i<2;i++)step(1/60);
+              return{after:window.parryMirrorBreakDiagnostics(),posture:boss.posture,resolveBefore,resolveAfter:window.__phaseBreakV2State?.resolve||0,bossHp:boss.hp};
+            });
+            await sleep(45);await page.screenshot({path:'mirror-break-v6-audit/04-pulse-crush.png'});
+            if(pulse.after.pulseCrushes<1||pulse.posture<10||pulse.resolveAfter<=pulse.resolveBefore)throw new Error('PULSE identity failed '+JSON.stringify(pulse));
+
+            const finite=await page.evaluate(()=>[player,boss].every(d=>d.nodes.every(n=>Object.values(n.p).every(Number.isFinite))));
+            if(!finite)throw new Error('non-finite combat state');if(errors.length)throw new Error(errors.join(' | '));
+            fs.writeFileSync('mirror-break-v6-audit/result.json',JSON.stringify({choice,edge,mirror,pulse,finite,errors},null,2));
+            console.log(JSON.stringify({choice:choice.roles,edge:edge.after,mirror:mirror.after,pulse:pulse.after},null,2));await browser.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+          node v6-audit.cjs
+      - name: Upload DOLL CORE frames
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: parry-doll-mirror-break-v6-audit
+          path: mirror-break-v6-audit/
+          if-no-files-found: error
+          retention-days: 3
