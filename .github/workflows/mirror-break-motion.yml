@@ -1,0 +1,38 @@
+name: MIRROR BREAK Attack Motion Worker
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - tools/apply-mirror-break-motion-v1.py
+      - .github/workflows/mirror-break-motion.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply visual attack readability
+        run: python3 tools/apply-mirror-break-motion-v1.py
+      - name: Validate runtime JavaScript
+        run: node --check dist/visual-upgrade.js
+      - name: Commit visual runtime
+        run: |
+          if git diff --quiet -- dist/visual-upgrade.js; then
+            echo 'No visual motion changes required.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add dist/visual-upgrade.js
+          git commit -m 'feat: strengthen heroine attack motion readability'
+          git push origin HEAD:main
