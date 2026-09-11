@@ -1,0 +1,71 @@
+name: MIRROR BREAK v13 iPhone WebKit Audit
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - dist/mirror-break-v13-chain-destruction.js
+      - .github/workflows/mirror-break-v13-webkit-audit.yml
+
+permissions:
+  contents: read
+
+jobs:
+  iphone-webkit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate v13
+        run: node --check dist/mirror-break-v13-chain-destruction.js
+      - name: Install Safari-class browser stack
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install playwright@1.55.0
+          npx playwright install --with-deps webkit
+      - name: Serve game
+        run: |
+          python3 -m http.server 4173 --directory dist > /tmp/parry-v13-webkit-http.log 2>&1 &
+          for i in {1..30}; do curl -fsS http://127.0.0.1:4173/ >/dev/null && exit 0; sleep 1; done
+          cat /tmp/parry-v13-webkit-http.log; exit 1
+      - name: Capture ALTAR RIFT chain on iPhone WebKit
+        run: |
+          mkdir -p mirror-break-v13-webkit-audit
+          cat > v13-webkit-audit.cjs <<'NODE'
+          const { webkit }=require('playwright');const fs=require('fs');const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+          (async()=>{
+            const browser=await webkit.launch({headless:true});
+            const page=await browser.newPage({viewport:{width:852,height:393},isMobile:true,hasTouch:true,deviceScaleFactor:1,userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 26_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1'});
+            const errors=[];page.on('pageerror',e=>errors.push('pageerror: '+e.message));page.on('console',m=>{if(m.type()==='error'&&!m.text().includes('Failed to load resource'))errors.push('console: '+m.text())});page.on('response',r=>{if(r.status()>=400&&!r.url().includes('/version.json'))errors.push(`HTTP ${r.status()} ${r.url()}`)});
+            await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});
+            await page.waitForFunction(()=>window.parryMirrorBreakDiagnostics?.().v13===true,null,{timeout:60000,polling:100});
+            await page.evaluate(()=>document.getElementById('start')?.click());await sleep(350);
+            await page.evaluate(()=>{const hit={serial:1313,level:3,style:'BELL TOWER COLLAPSE',part:'bellArm',kind:'ARM',label:'webkit-chain',x:.9,z:-2.6,power:2.4,time:performance.now()};window.__mirrorBreakV9State.stageHitSerial=hit.serial;window.__mirrorBreakV9State.stageHit=hit;reset(4);mode='play';transition=0;player.hp=100;player.invuln=10;player.stun=0;boss.hp=Math.max(100,boss.spec.hp*.7);boss.invuln=0;boss.ai=999;boss.wind=0;boss.strike=0;boss.stun=0;boss.down=0;boss.pattern=null});
+            await sleep(420);
+            await page.screenshot({path:'mirror-break-v13-webkit-audit/00-before-chain.png'});
+            await page.evaluate(()=>{const t={x:0,z:-4.05},ch=boss.nodes.find(n=>n.name==='chest')||boss.nodes[0];hurt(boss,1,V(35,4,-3),ch.p);const dx=t.x-ch.p.x,dz=t.z-ch.p.z;boss.pos.x+=dx;boss.pos.z+=dz;for(const n of boss.nodes){n.p.x+=dx;n.prev.x+=dx;n.p.z+=dz;n.prev.z+=dz}step(1/60)});
+            await sleep(980);
+            await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
+            const report=await page.evaluate(()=>{const d=window.parryMirrorBreakDiagnostics(),shift=document.getElementById('mbMirrorShift'),canvases=[...document.querySelectorAll('canvas')].map(c=>({w:c.width,h:c.height,cssW:c.clientWidth,cssH:c.clientHeight}));return{diag:{v13:d.v13,triggers:d.chainTriggers,route:d.chainLast?.route,priority:d.chainUiPriority,detached:d.chainMirrorDetached,collapseSettled:d.chainCollapseSettled},mirrorAttached:!!shift,bodyClass:document.body.className,canvases,userAgent:navigator.userAgent,viewport:[innerWidth,innerHeight]}});
+            await page.screenshot({path:'mirror-break-v13-webkit-audit/01-altar-rift-chain-webkit.png'});
+            fs.writeFileSync('mirror-break-v13-webkit-audit/result.json',JSON.stringify({success:true,report,errors},null,2));
+            if(report.diag.triggers!==1||report.diag.route!=='ALTAR RIFT')throw new Error('ALTAR RIFT chain missing '+JSON.stringify(report));
+            if(!report.diag.priority||!report.diag.detached||report.mirrorAttached)throw new Error('mirror layer was not detached during WebKit chain '+JSON.stringify(report));
+            if(errors.length)throw new Error(errors.join(' | '));
+            console.log(JSON.stringify({success:true,report},null,2));await browser.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+          node v13-webkit-audit.cjs
+      - name: Upload WebKit frames
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: parry-doll-mirror-break-v13-webkit-audit
+          path: mirror-break-v13-webkit-audit/
+          if-no-files-found: error
+          retention-days: 3
