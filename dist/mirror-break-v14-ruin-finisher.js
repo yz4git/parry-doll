@@ -37,3 +37,6 @@
  window.parryRuinFinisherDiagnostics=()=>({v14:true,finishers:s.finishers,active:s.activeT>0,last:s.last?{...s.last}:null,wave:!!s.wave,seen:s.seen,exclusive:document.body.classList.contains('mb-ruin-finisher')});
  s.bossRef=boss;
 })();
+
+// V15 loads only after v14 has installed its execution state and presentation wrappers.
+(()=>{if(window.__parryMirrorBreakV15Queued)return;window.__parryMirrorBreakV15Queued=true;const src=document.currentScript?.src||'',q=src.includes('?')?'?'+src.split('?').slice(1).join('?'):'',v15=document.createElement('script');v15.src='./mirror-break-v15-ruin-target.js'+q;document.body.appendChild(v15)})();
