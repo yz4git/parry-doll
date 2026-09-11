@@ -53,29 +53,37 @@ jobs:
             await page.evaluate(()=>document.getElementById('start')?.click());await sleep(260);
             const picks=[1,1,2,0,0],results=[];
             for(let l=0;l<5;l++){
-              const r=await page.evaluate(({l,pick})=>{
+              await page.evaluate(l=>{
                 level=l;boss=new Doll(bosses[l]);boss.stun=0;boss.wind=0;boss.strike=0;boss.ai=0;boss.invuln=0;player.hp=100;player.invuln=10;player.stun=0;player.down=0;player.cool=0;player.comboWindow=0;player.counter=0;player.swing=null;player.pos=V(0,0,3);player.vel=V();
                 for(let i=0;i<3;i++)step(1/60);
                 player.pos.x=boss.pos.x;player.pos.z=boss.pos.z+1.65;player.vel=V();boss.vel=V();boss.stun=0;boss.wind=0;boss.strike=0;boss.invuln=0;player.parry=.50;player.parryCool=0;enemyImpact(null);for(let i=0;i<2;i++)step(1/60);
                 player.cool=0;player.comboWindow=0;player.pos.x=boss.pos.x;player.pos.z=boss.pos.z+1.45;playerAttack();player.swingClock=0;resolveSwing();for(let i=0;i<4;i++)step(1/60);
-                boss.stun=0;boss.ai=0;boss.wind=0;boss.strike=0;boss.pattern=null;boss.vel=V();player.pos=V(boss.pos.x,0,boss.pos.z+4.4);player.invuln=10;
+                boss.stun=99;boss.ai=99;boss.wind=0;boss.strike=0;boss.pattern=null;boss.vel=V();player.counter=0;player.parry=0;player.swing=null;player.pos=V(boss.pos.x,0,boss.pos.z+4.4);player.invuln=10;
+              },l);
+              await sleep(760);
+              const r=await page.evaluate(({l,pick})=>{
+                particles=[];rings=[];feel.flash=0;shake=0;hitstop=0;player.counter=0;toastT=0;if($('toast'))$('toast').textContent='';document.getElementById('pbDanger')?.classList.remove('show');if($('attackHud'))$('attackHud').textContent='';
+                boss.stun=0;boss.ai=0;boss.wind=0;boss.strike=0;boss.pattern=null;boss.vel=V();player.invuln=10;
                 if(l===4){window.__mirrorBreakState.cores.EDGE=1;window.__mirrorBreakState.cores.MIRROR=1;window.__mirrorBreakState.cores.PULSE=1}
                 const source=ENEMY_MOVES[l][pick];startEnemyAttack(source);step(1/60);
                 const first={name:boss.pattern?.name||'',kind:boss.pattern?.kind||'',wind:boss.wind,diag:window.parryMirrorBreakDiagnostics()};
                 const modes=[];
-                if(l===4){modes.push(first.diag.coreOverload);for(let k=1;k<3;k++){boss.stun=0;boss.ai=0;boss.wind=0;boss.strike=0;boss.pattern=null;startEnemyAttack(ENEMY_MOVES[4][k]);step(1/60);modes.push(window.parryMirrorBreakDiagnostics().coreOverload)}}
+                if(l===4){modes.push(first.diag.coreOverload);for(let k=1;k<3;k++){boss.stun=0;boss.ai=0;boss.wind=0;boss.strike=0;boss.pattern=null;startEnemyAttack(ENEMY_MOVES[4][k]);step(1/60);modes.push(window.parryMirrorBreakDiagnostics().coreOverload)}boss.stun=0;boss.ai=0;boss.wind=0;boss.strike=0;boss.pattern=null;startEnemyAttack(source);step(1/60)}
                 return{level:l,name:boss.spec.name,source:source.name,first,modes,finite:[player,boss].every(d=>d.nodes.every(n=>Object.values(n.p).every(Number.isFinite)))};
               },{l,pick:picks[l]});
-              results.push(r);await sleep(220);await page.screenshot({path:`mirror-break-v5-audit/0${l+1}-boss-${l}-tactic.png`});
+              await sleep(150);await page.screenshot({path:`mirror-break-v5-audit/0${l+1}-boss-${l}-tactic.png`});
+              if(l<4){r.direct=await page.evaluate(({l,pick})=>{boss.stun=0;boss.ai=0;boss.strike=0;boss.pattern={...ENEMY_MOVES[l][pick],hits:[...ENEMY_MOVES[l][pick].hits],name:'DIRECT PHASE TEST'};boss.wind=boss.pattern.wind;boss.windDuration=boss.wind;step(1/60);return{name:boss.pattern?.name||'',kind:boss.pattern?.kind||'',diag:window.parryMirrorBreakDiagnostics()}},{l,pick:picks[l]})}
+              results.push(r);
             }
             fs.writeFileSync('mirror-break-v5-audit/result.json',JSON.stringify({results,errors},null,2));
             if(errors.length)throw new Error(errors.join(' | '));
-            for(const r of results)if(!r.finite||!r.first.diag.v5||!r.first.diag.tacticShift||r.first.diag.adaptedAttacks<1)throw new Error('v5 inactive '+JSON.stringify(r));
+            for(const r of results)if(!r.finite||!r.first.diag.v5||!r.first.diag.tacticShift||!r.first.diag.tacticHud||r.first.diag.adaptedAttacks<1)throw new Error('v5 inactive '+JSON.stringify(r));
             if(!results[0].first.name.includes('断剣')||results[0].first.kind==='thrust')throw new Error('duelist did not lose sword language '+JSON.stringify(results[0]));
-            if(['leap'].includes(results[1].first.kind)||!results[1].first.name.includes('傷脚'))throw new Error('hound still leaps '+JSON.stringify(results[1]));
+            if(results[1].first.kind==='leap'||!results[1].first.name.includes('傷脚'))throw new Error('hound still leaps '+JSON.stringify(results[1]));
             if(results[2].first.kind==='leap'||!results[2].first.name.includes('断脚'))throw new Error('spider still uses aerial leg '+JSON.stringify(results[2]));
             if(results[3].first.kind!=='stomp'||!results[3].first.name.includes('片腕'))throw new Error('giant did not switch to stomp bias '+JSON.stringify(results[3]));
             if(results[1].first.diag.mobilityScale>=1||results[2].first.diag.mobilityScale>=1)throw new Error('leg break did not reduce mobility');
+            for(const r of results.slice(0,4))if(!r.direct?.diag?.adaptedPattern||r.direct.diag.lastAdaptedSource!=='DIRECT PHASE TEST')throw new Error('direct phase attack bypassed v5 '+JSON.stringify(r));
             if(results[4].modes.join(',')!=='EDGE,MIRROR,PULSE')throw new Error('core overload did not rotate '+JSON.stringify(results[4].modes));
             console.log(JSON.stringify(results,null,2));await browser.close();
           })().catch(e=>{console.error(e);process.exit(1)});
