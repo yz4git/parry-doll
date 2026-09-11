@@ -1,0 +1,84 @@
+name: MIRROR BREAK v8 Defeat Presentation Audit
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - dist/mirror-break-v8-defeat-presentation.js
+      - dist/mirror-break-final-adapter.js
+      - .github/workflows/mirror-break-v8-defeat-audit.yml
+      - .github/mirror-break-v8.trigger
+
+permissions:
+  contents: read
+
+jobs:
+  defeat-pacing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate defeat presentation layer
+        run: node --check dist/mirror-break-v8-defeat-presentation.js
+      - name: Install browser stack
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Serve game
+        run: |
+          python3 -m http.server 4173 --directory dist > /tmp/parry-v8-http.log 2>&1 &
+          for i in {1..30}; do curl -fsS http://127.0.0.1:4173/ >/dev/null && exit 0; sleep 1; done
+          cat /tmp/parry-v8-http.log; exit 1
+      - name: Verify KO flight, down beat, then reward
+        run: |
+          mkdir -p mirror-break-v8-audit
+          cat > v8-audit.cjs <<'NODE'
+          const { chromium } = require('playwright');
+          const fs = require('fs');
+          const sleep = ms => new Promise(r=>setTimeout(r,ms));
+          (async()=>{
+            const browser=await chromium.launch({headless:true,args:['--enable-webgl','--ignore-gpu-blocklist','--enable-unsafe-swiftshader','--use-gl=angle','--use-angle=swiftshader-webgl','--disable-dev-shm-usage']});
+            const page=await browser.newPage({viewport:{width:852,height:393},isMobile:true,hasTouch:true,userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 26_6 like Mac OS X) AppleWebKit/605.1.15 Version/26.0 Mobile/15E148 Safari/604.1'});
+            const errors=[];page.on('pageerror',e=>errors.push('pageerror: '+e.message));page.on('console',m=>{if(m.type()==='error'&&!m.text().includes('Failed to load resource'))errors.push('console: '+m.text())});page.on('response',r=>{if(r.status()>=400&&!r.url().includes('/version.json'))errors.push(`HTTP ${r.status()} ${r.url()}`)});
+            await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});
+            await page.waitForFunction(()=>window.parryMirrorBreakDiagnostics?.().v8DefeatPresentation===true,null,{timeout:60000,polling:100});
+            await page.evaluate(()=>document.getElementById('start')?.click());await sleep(350);
+            const start=Date.now();
+            await page.evaluate(()=>{
+              level=0;boss=new Doll(bosses[0]);player.hp=100;player.invuln=10;player.pos=V(0,0,3);player.vel=V();window.__mirrorBreakState.choice=false;window.__mirrorBreakState.choiceFor=-1;document.getElementById('mbCoreChoice')?.classList.remove('show');
+              const chest=boss.nodes.find(n=>n.name==='chest')||boss.nodes[1];hurt(boss,boss.hp+10,V(34,17,8),chest.p);
+            });
+            await sleep(220);
+            const early=await page.evaluate(()=>({diag:window.parryMirrorBreakDiagnostics(),choice:document.getElementById('mbCoreChoice')?.classList.contains('show'),bossHp:boss.hp,chest:(boss.nodes.find(n=>n.name==='chest')||boss.nodes[1]).p}));
+            await page.screenshot({path:'mirror-break-v8-audit/01-ko-flight.png'});
+            await sleep(820);
+            const mid=await page.evaluate(()=>({diag:window.parryMirrorBreakDiagnostics(),choice:document.getElementById('mbCoreChoice')?.classList.contains('show'),chest:(boss.nodes.find(n=>n.name==='chest')||boss.nodes[1]).p}));
+            await page.screenshot({path:'mirror-break-v8-audit/02-ko-down.png'});
+            await page.waitForFunction(()=>document.getElementById('mbCoreChoice')?.classList.contains('show')===true,null,{timeout:3500,polling:16});
+            const openedMs=Date.now()-start;
+            const after=await page.evaluate(()=>({diag:window.parryMirrorBreakDiagnostics(),choice:document.getElementById('mbCoreChoice')?.classList.contains('show'),chest:(boss.nodes.find(n=>n.name==='chest')||boss.nodes[1]).p}));
+            await page.screenshot({path:'mirror-break-v8-audit/03-core-after-ko.png'});
+            const result={openedMs,early,mid,after,errors};fs.writeFileSync('mirror-break-v8-audit/result.json',JSON.stringify(result,null,2));
+            if(errors.length)throw new Error(errors.join(' | '));
+            if(early.bossHp!==0||!early.diag.koPending||early.choice)throw new Error('reward opened during launch '+JSON.stringify(early));
+            if(mid.choice)throw new Error('reward opened before down beat '+JSON.stringify(mid));
+            if(openedMs<1450)throw new Error('reward opened too early '+openedMs);
+            if(openedMs>3100||!after.choice||after.diag.koOpened<1)throw new Error('reward failed to open after KO '+JSON.stringify({openedMs,after}));
+            console.log(JSON.stringify(result,null,2));await browser.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+          node v8-audit.cjs
+      - name: Upload defeat frames
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: parry-doll-mirror-break-v8-audit
+          path: mirror-break-v8-audit/
+          if-no-files-found: error
+          retention-days: 3
