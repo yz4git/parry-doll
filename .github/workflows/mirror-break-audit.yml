@@ -7,6 +7,7 @@ on:
       - dist/mirror-break-v1.js
       - dist/mirror-break-final-adapter.js
       - dist/mirror-break-v2.js
+      - dist/mirror-break-v3.js
       - dist/parry-cinematic-v3.js
       - .github/mirror-break.trigger
       - .github/workflows/mirror-break-audit.yml
@@ -35,7 +36,7 @@ jobs:
           python3 -m http.server 4173 --directory dist > /tmp/parry-mb-http.log 2>&1 &
           for i in {1..30}; do curl -fsS http://127.0.0.1:4173/ >/dev/null && exit 0; sleep 1; done
           cat /tmp/parry-mb-http.log; exit 1
-      - name: Exercise and capture MIRROR BREAK v2 loop
+      - name: Exercise and capture MIRROR BREAK v3 loop
         run: |
           mkdir -p mirror-break-audit
           cat > mb-audit.cjs <<'NODE'
@@ -46,7 +47,7 @@ jobs:
             const browser=await chromium.launch({headless:true,args:['--enable-webgl','--ignore-gpu-blocklist','--enable-unsafe-swiftshader','--use-gl=angle','--use-angle=swiftshader-webgl','--disable-dev-shm-usage']});
             const page=await browser.newPage({viewport:{width:852,height:393},isMobile:true,hasTouch:true,userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 26_6 like Mac OS X) AppleWebKit/605.1.15 Version/26.0 Mobile/15E148 Safari/604.1'});
             const errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error'&&!m.text().includes('Failed to load resource'))errors.push(m.text())});page.on('response',r=>{if(r.status()>=400&&!r.url().includes('/version.json'))errors.push(`HTTP ${r.status()} ${r.url()}`)});
-            await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>window.parryMirrorBreakDiagnostics?.().v2===true,{timeout:15000});await page.evaluate(()=>document.getElementById('start')?.click());await sleep(350);
+            await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>window.parryMirrorBreakDiagnostics?.().v3===true,{timeout:15000});await page.evaluate(()=>document.getElementById('start')?.click());await sleep(350);
 
             const exposed=await page.evaluate(()=>{for(let i=0;i<2;i++)step(1/60);player.pos.x=boss.pos.x;player.pos.z=boss.pos.z+1.8;player.vel=V();boss.vel=V();boss.stun=0;boss.wind=0;boss.strike=0;boss.invuln=0;player.parry=.50;player.parryCool=0;enemyImpact(null);for(let i=0;i<2;i++)step(1/60);return window.parryMirrorBreakDiagnostics()});
             await sleep(40);await page.screenshot({path:'mirror-break-audit/01-exposed.png'});
@@ -57,13 +58,28 @@ jobs:
 
             const mid=await page.evaluate(()=>{boss.invuln=0;hurt(boss,999,V(0,8,-30),boss.nodes[1].p);for(let i=0;i<3;i++)step(1/60);const choiceOpen=document.getElementById('mbCoreChoice')?.classList.contains('show'),buttons=[...document.querySelectorAll('.mb-core')].map(b=>b.textContent.trim());document.querySelector('.mb-core')?.click();for(let i=0;i<30;i++)step(1/60);return{choiceOpen,buttons,afterChoice:window.parryMirrorBreakDiagnostics(),nextLevel:level,nextBoss:boss?.spec?.name||''}});
 
-            const final1=await page.evaluate(()=>{window.__mirrorBreakState.cores.EDGE=2;window.__mirrorBreakState.cores.MIRROR=1;window.__mirrorBreakState.cores.PULSE=1;level=4;boss=new Doll(bosses[4]);boss.stun=0;boss.wind=0;boss.strike=0;boss.ai=0;boss.invuln=0;for(let i=0;i<2;i++)step(1/60);startEnemyAttack(ENEMY_MOVES[4][0]);return{pattern:boss.pattern?.name||'',move:{damage:boss.pattern?.damage||0,wind:boss.pattern?.wind||0,force:boss.pattern?.force||0,range:boss.pattern?.range||0},diag:window.parryMirrorBreakDiagnostics(),fullHp:boss.spec.hp||boss.hp}});
-            await sleep(80);await page.screenshot({path:'mirror-break-audit/03-final-phase1.png'});
-            const phase2=await page.evaluate(fullHp=>{boss.hp=fullHp*.60;for(let i=0;i<2;i++)step(1/60);return window.parryMirrorBreakDiagnostics().finalPhase},final1.fullHp);await sleep(100);await page.screenshot({path:'mirror-break-audit/04-final-phase2.png'});
-            const phase3=await page.evaluate(fullHp=>{boss.hp=fullHp*.30;for(let i=0;i<2;i++)step(1/60);return window.parryMirrorBreakDiagnostics().finalPhase},final1.fullHp);await sleep(100);await page.screenshot({path:'mirror-break-audit/05-final-phase3.png'});
-            const result={exposed,broken,...mid,finalPattern:final1.pattern,finalMove:final1.move,finalDiag:final1.diag,phase2,phase3,mode:await page.evaluate(()=>mode)};
+            const final1=await page.evaluate(()=>{window.__mirrorBreakState.cores.EDGE=2;window.__mirrorBreakState.cores.MIRROR=1;window.__mirrorBreakState.cores.PULSE=1;level=4;boss=new Doll(bosses[4]);boss.stun=0;boss.wind=0;boss.strike=0;boss.ai=0;boss.invuln=0;for(let i=0;i<2;i++)step(1/60);startEnemyAttack(ENEMY_MOVES[4][0]);const legacy={banner:getComputedStyle(document.getElementById('pbBanner')).visibility,caption:getComputedStyle(document.getElementById('pbCineCaption')).visibility,synergy:getComputedStyle(document.getElementById('mbSynergyHud')).display,mirror:document.getElementById('mbMirrorLoadout')?.textContent||''};return{pattern:boss.pattern?.name||'',move:{damage:boss.pattern?.damage||0,wind:boss.pattern?.wind||0,force:boss.pattern?.force||0,range:boss.pattern?.range||0},diag:window.parryMirrorBreakDiagnostics(),fullHp:boss.spec.hp||boss.hp,legacy}});
+            await sleep(90);await page.screenshot({path:'mirror-break-audit/03-final-phase1.png'});
+
+            const zeroTrace=await page.evaluate(()=>{boss.wind=0;boss.strike=0;boss.pattern=null;boss.stun=0;boss.invuln=0;player.pos.x=boss.pos.x;player.pos.z=boss.pos.z+1.7;player.parry=.50;player.parryCool=0;enemyImpact(null);for(let i=0;i<2;i++)step(1/60);const armed=window.parryMirrorBreakDiagnostics();player.cool=0;player.comboWindow=0;player.pos.x=boss.pos.x;player.pos.z=boss.pos.z+1.5;playerAttack();player.swingClock=0;resolveSwing();for(let i=0;i<2;i++)step(1/60);return{armed,spent:window.parryMirrorBreakDiagnostics()}});
+
+            const phase2=await page.evaluate(fullHp=>{boss.hp=fullHp*.60;for(let i=0;i<2;i++)step(1/60);return{diag:window.parryMirrorBreakDiagnostics(),legacy:{banner:getComputedStyle(document.getElementById('pbBanner')).visibility,caption:getComputedStyle(document.getElementById('pbCineCaption')).visibility,mirror:document.getElementById('mbMirrorLoadout')?.textContent||''}}},final1.fullHp);await sleep(100);await page.screenshot({path:'mirror-break-audit/04-final-phase2.png'});
+            const phase3=await page.evaluate(fullHp=>{boss.hp=fullHp*.30;for(let i=0;i<2;i++)step(1/60);return{diag:window.parryMirrorBreakDiagnostics(),legacy:{banner:getComputedStyle(document.getElementById('pbBanner')).visibility,caption:getComputedStyle(document.getElementById('pbCineCaption')).visibility,mirror:document.getElementById('mbMirrorLoadout')?.textContent||''}}},final1.fullHp);await sleep(100);await page.screenshot({path:'mirror-break-audit/05-final-phase3.png'});
+            const result={exposed,broken,...mid,finalPattern:final1.pattern,finalMove:final1.move,finalDiag:final1.diag,finalLegacy:final1.legacy,zeroTrace,phase2,phase3,mode:await page.evaluate(()=>mode)};
             fs.writeFileSync('mirror-break-audit/result.json',JSON.stringify({result,errors},null,2));
-            if(errors.length)throw new Error('browser errors: '+errors.join(' | '));if(!(exposed.expose>0))throw new Error('PERFECT did not expose target');if(!broken.attackStarted||!(broken.attackVisualStart.active>0))throw new Error('attack echo did not arm');if(!broken.broken||broken.breaks<1)throw new Error('BODY BREAK failed');if(!mid.choiceOpen||mid.buttons.length!==3)throw new Error('core choice failed');if(mid.afterChoice.cores.EDGE!==1||mid.nextLevel!==1)throw new Error('EDGE acquisition/advance failed');if(!final1.diag.finalAdapter||!final1.diag.v2||final1.diag.mirrorDominant!=='EDGE')throw new Error('final adapter/v2 missing');if(!final1.pattern.includes('写刃・'))throw new Error('dominant EDGE copy missing');if(!final1.diag.fullBuildCopied||!final1.diag.secondaryCoreCopy||!final1.diag.synergies.includes('ZERO TRACE'))throw new Error('mixed build copy/synergy failed');if(phase2<2||phase3<3)throw new Error(`final phases failed ${phase2}/${phase3}`);
+            if(errors.length)throw new Error('browser errors: '+errors.join(' | '));
+            if(!(exposed.expose>0))throw new Error('PERFECT did not expose target');
+            if(!broken.attackStarted||!(broken.attackVisualStart.active>0))throw new Error('attack echo did not arm');
+            if(!broken.broken||broken.breaks<1||!broken.destructionPass)throw new Error('BODY BREAK v3 destruction failed');
+            if(!mid.choiceOpen||mid.buttons.length!==3)throw new Error('core choice failed');
+            if(mid.afterChoice.cores.EDGE!==1||mid.nextLevel!==1)throw new Error('EDGE acquisition/advance failed');
+            if(!final1.diag.finalAdapter||!final1.diag.v2||!final1.diag.v3||final1.diag.mirrorDominant!=='EDGE')throw new Error('final adapter/v2/v3 missing');
+            if(!final1.pattern.includes('写刃・'))throw new Error('dominant EDGE copy missing');
+            if(!final1.diag.fullBuildCopied||!final1.diag.secondaryCoreCopy||!final1.diag.synergies.includes('ZERO TRACE'))throw new Error('mixed build copy/synergy failed');
+            if(final1.legacy.banner!=='hidden'||final1.legacy.caption!=='hidden'||final1.legacy.synergy!=='none')throw new Error('legacy final HUD was not suppressed');
+            if(!(zeroTrace.armed.zeroTraceCharges>0)||!(zeroTrace.spent.zeroTraceCharges<zeroTrace.armed.zeroTraceCharges))throw new Error('ZERO TRACE did not arm/spend');
+            if(phase2.diag.finalPhase<2||phase3.diag.finalPhase<3)throw new Error(`final phases failed ${phase2.diag.finalPhase}/${phase3.diag.finalPhase}`);
+            if(!phase2.legacy.mirror.includes('MIRROR II')||!phase3.legacy.mirror.includes('MIRROR III'))throw new Error('mirror phase HUD did not advance');
             console.log(JSON.stringify(result,null,2));await browser.close();
           })().catch(e=>{console.error(e);process.exit(1)});
           NODE
