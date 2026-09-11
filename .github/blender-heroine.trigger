@@ -1,1 +1,1 @@
-2026-09-11 build Blender heroine v11.3 strong adult S-profile and seated eyes on clean single-shell face
+2026-09-11 build Blender heroine v11.4 stronger facial projection and rebuilt-surface mouth nose accents
