@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "source_design": "yz4git/model-editor parameter-group architecture",
+  "notes": "Independent frontal, profile and surface controls for the rebuilt single-shell heroine head. Values are authored for Parry Doll and do not copy model-editor mesh data.",
+  "frontal": {
+    "faceWidth": 1.0,
+    "jaw": 0.975,
+    "eyeSpacing": 1.0,
+    "eyeSize": 0.985,
+    "mouthWidth": 1.055,
+    "cheekVolume": 1.045
+  },
+  "profile": {
+    "noseProjection": 1.0,
+    "noseWidth": 0.96,
+    "foreheadDepth": 1.0,
+    "mouthProjection": 1.0,
+    "chinProjection": 1.0,
+    "chinLength": 0.985
+  },
+  "surface": {
+    "orbitalDepth": 1.12,
+    "malarSupport": 1.06,
+    "lowerCheekHollow": 1.06,
+    "lipThickness": 1.10,
+    "upperLidThickness": 1.08,
+    "nostrilScale": 1.12
+  }
+}
