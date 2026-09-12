@@ -1,0 +1,118 @@
+name: Blender Heroine Modular Structure Audit
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - dist/assets/models/heroine-blender.glb
+      - tools/make-blender-heroine.py
+      - tools/heroine-assembly-v120.json
+      - tools/heroine-face-controls-v120.json
+      - .github/blender-structure-audit.trigger
+      - .github/workflows/blender-modular-structure-audit.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  structure-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse GLB and verify modular plus legacy runtime nodes
+        run: |
+          mkdir -p blender-modular-structure-audit
+          python3 - <<'PY'
+          import json, struct, pathlib, sys
+
+          glb = pathlib.Path('dist/assets/models/heroine-blender.glb')
+          data = glb.read_bytes()
+          if len(data) < 20:
+              raise SystemExit('GLB too small')
+          magic, version, total = struct.unpack_from('<4sII', data, 0)
+          if magic != b'glTF' or version != 2 or total != len(data):
+              raise SystemExit(f'invalid GLB header: magic={magic!r} version={version} total={total} actual={len(data)}')
+
+          pos = 12
+          doc = None
+          while pos + 8 <= len(data):
+              length, ctype = struct.unpack_from('<II', data, pos)
+              pos += 8
+              payload = data[pos:pos+length]
+              pos += length
+              if ctype == 0x4E4F534A:
+                  doc = json.loads(payload.rstrip(b' \t\r\n\x00').decode('utf-8'))
+                  break
+          if doc is None:
+              raise SystemExit('GLB JSON chunk missing')
+
+          nodes = doc.get('nodes', [])
+          names = [n.get('name') for n in nodes if n.get('name')]
+          counts = {n: names.count(n) for n in set(names)}
+
+          modular = [
+              'BL_ROOT','BL_BODY_ASSET','BL_HEAD_ASSET','BL_HAIR_ASSET','BL_FACE_ASSET',
+              'BL_EYE_L','BL_EYE_R','BL_MOUTH'
+          ]
+          legacy = [
+              'BL_PELVIS','BL_TORSO','BL_HEAD','BL_PONY_DYNAMIC','BL_SWORD',
+              'BL_UPPER_ARM_L','BL_FOREARM_L','BL_HAND_L',
+              'BL_UPPER_ARM_R','BL_FOREARM_R','BL_HAND_R',
+              'BL_THIGH_L','BL_SHIN_L','BL_FOOT_L',
+              'BL_THIGH_R','BL_SHIN_R','BL_FOOT_R'
+          ]
+          required = modular + legacy
+          missing = [n for n in required if counts.get(n, 0) == 0]
+          duplicate = [n for n in required if counts.get(n, 0) != 1 and n not in missing]
+
+          # Build parent table so the audit records the exported hierarchy for future regressions.
+          parents = {}
+          for i, node in enumerate(nodes):
+              for child in node.get('children', []):
+                  parents[child] = i
+          index_by_name = {n.get('name'): i for i, n in enumerate(nodes) if n.get('name')}
+          hierarchy = {}
+          for name in modular:
+              i = index_by_name.get(name)
+              chain = []
+              seen = set()
+              while i is not None and i not in seen:
+                  seen.add(i)
+                  node = nodes[i]
+                  chain.append(node.get('name') or f'node:{i}')
+                  i = parents.get(i)
+              hierarchy[name] = chain
+
+          # Preserve the old game runtime contract while adding the new asset organization.
+          runtime_contract = all(counts.get(n) == 1 for n in legacy)
+          modular_contract = all(counts.get(n) == 1 for n in modular)
+          pass_gate = runtime_contract and modular_contract and not missing and not duplicate
+
+          report = {
+              'pass': pass_gate,
+              'glbBytes': len(data),
+              'nodeCount': len(nodes),
+              'requiredModularNodes': modular,
+              'requiredLegacyRuntimeNodes': legacy,
+              'missing': missing,
+              'duplicate': duplicate,
+              'hierarchy': hierarchy,
+              'runtimeContract': runtime_contract,
+              'modularContract': modular_contract,
+          }
+          out = pathlib.Path('blender-modular-structure-audit/modular-structure-audit.json')
+          out.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding='utf-8')
+          print(json.dumps(report, ensure_ascii=False, indent=2))
+          if not pass_gate:
+              sys.exit(2)
+          PY
+      - name: Upload structure report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: parry-doll-blender-modular-structure-audit
+          path: blender-modular-structure-audit/
+          if-no-files-found: error
+          retention-days: 7
