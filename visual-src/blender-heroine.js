@@ -28,6 +28,10 @@ function tunePortraitMaterials(root){
    }else if(n==='iris'||n==='iris inner'){
     m.metalness=0;m.roughness=.40;m.envMapIntensity=.92;
     if(m.isMeshPhysicalMaterial){m.clearcoat=Math.max(m.clearcoat||0,n==='iris inner'?.22:.18);m.clearcoatRoughness=.20}
+   // IRIS_DETAIL_V129: two radial materials share the accepted v12.8 eye reflectance envelope.
+   }else if(n==='iris ray warm'||n==='iris ray dark'){
+    m.metalness=0;m.roughness=n==='iris ray warm'?.39:.43;m.envMapIntensity=.90;
+    if(m.isMeshPhysicalMaterial){m.clearcoat=Math.max(m.clearcoat||0,n==='iris ray warm'?.18:.14);m.clearcoatRoughness=.22}
    }else if(n==='pupil'){
     m.metalness=0;m.roughness=.26;m.envMapIntensity=.70;
    }else if(n==='lip'){

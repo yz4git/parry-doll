@@ -61,6 +61,8 @@ for _hair_mat,_spec in ((HAIR,.14),(HAIR_HI,.18)):
 SCLERA=material('Sclera',(0.60,0.575,0.555),0,.42)
 IRIS=material('Iris',(0.052,0.032,0.030),.01,.42)
 IRIS_INNER=material('Iris Inner',(0.175,0.105,0.082),.01,.40)
+IRIS_RAY_WARM=material('Iris Ray Warm',(0.205,0.118,0.078),.01,.40)
+IRIS_RAY_DARK=material('Iris Ray Dark',(0.105,0.055,0.042),.01,.43)
 PUPIL=material('Pupil',(0.004,0.005,0.006),0,.28)
 LIP=material('Lip',(0.285,0.105,0.125),0,.42)
 FACE_DARK=material('Face Detail',(0.20,0.075,0.070),0,.68)
@@ -71,6 +73,8 @@ tune_principled(SKIN,specular=.32,coat=.035,coat_roughness=.70)
 tune_principled(SCLERA,specular=.52,coat=.32,coat_roughness=.18)
 tune_principled(IRIS,specular=.46,coat=.18,coat_roughness=.22)
 tune_principled(IRIS_INNER,specular=.48,coat=.22,coat_roughness=.20)
+tune_principled(IRIS_RAY_WARM,specular=.46,coat=.18,coat_roughness=.22)
+tune_principled(IRIS_RAY_DARK,specular=.42,coat=.14,coat_roughness=.24)
 tune_principled(PUPIL,specular=.34,coat=.12,coat_roughness=.20)
 tune_principled(LIP,specular=.44,coat=.30,coat_roughness=.24)
 tune_principled(EYE_WET,specular=.58,coat=.52,coat_roughness=.12)
@@ -431,6 +435,23 @@ def add_ellipse_surface(p,name,cx,cy,cz,rx,ry,mat,segments=40):
  mesh=bpy.data.meshes.new(name+'Mesh');mesh.from_pydata(verts,[],faces);mesh.update()
  o=bpy.data.objects.new(name,mesh);bpy.context.scene.collection.objects.link(o);o.data.materials.append(mat);smooth(o)
  return parent(o,p)
+
+
+def add_iris_rays_v129(p,name,cx,cy,cz,rx,ry,inner_ratio,mats,segments=24):
+ verts=[]
+ for radius in (inner_ratio,1.0):
+  for i in range(segments):
+   a=2*math.pi*i/segments
+   verts.append(bpos((cx+rx*radius*math.cos(a),cy+ry*radius*math.sin(a),cz)))
+ faces=[]
+ for i in range(segments):
+  j=(i+1)%segments
+  faces.append((i,j,segments+j,segments+i))
+ mesh=bpy.data.meshes.new(name+'Mesh');mesh.from_pydata(verts,[],faces);mesh.update()
+ o=bpy.data.objects.new(name,mesh);bpy.context.scene.collection.objects.link(o)
+ for mat in mats:o.data.materials.append(mat)
+ for i,poly in enumerate(o.data.polygons):poly.material_index=0 if (i%5 in (0,2) or i%3==1) else 1
+ smooth(o);return parent(o,p)
 
 
 def add_smooth_lock(p,name,pts,widths,depths,mat,ring_segments=12,samples=5):
@@ -946,6 +967,7 @@ TH_L=empty('BL_THIGH_L',BODY_ASSET);SH_L=empty('BL_SHIN_L',BODY_ASSET);FOOT_L=em
 # REFERENCE_V126: compact adult-anime face pass shortens the lower face, opens the gaze slightly and broadens the cheek plane without changing combat/head pivots.
 # REFERENCE_V127: profile-balance pass reduces excessive nasal projection and restores a cleaner nose-lip-chin S-curve while preserving the accepted v12.6 frontal mask.
 # REFERENCE_V128: portrait PBR pass adds mobile-safe eye wetline geometry plus skin/sclera/iris/lip specular tuning without changing accepted v12.7 proportions.
+# REFERENCE_V129: texture-like radial iris detail uses one tiny indexed mesh per eye, adding warm/dark spokes without image textures or extra draw-call-heavy strand objects.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
@@ -1120,6 +1142,7 @@ for side in(-1,1):
  # Dark outer iris first, then a smaller warm inner iris and pupil; this gives a readable limbal ring.
  add_ellipse_surface(HEAD,f'IrisOuterV119_{side}',ex,eye_y-.00025,.10448,.01155*iris_scale,.00915*iris_scale,IRIS,52)
  add_ellipse_surface(HEAD,f'IrisInnerV119_{side}',ex,eye_y-.00005,.10472,.00875*iris_scale,.00670*iris_scale,IRIS_INNER,48)
+ add_iris_rays_v129(HEAD,f'IrisRaysV129_{side}',ex,eye_y-.00005,.10484,.00795*iris_scale,.00605*iris_scale,.34,(IRIS_RAY_WARM,IRIS_RAY_DARK),24)
  add_ellipse_surface(HEAD,f'PupilV119_{side}',ex,eye_y-.00045,.10502,.00305*iris_scale,.00385*iris_scale,PUPIL,36)
  add_ellipse_surface(HEAD,f'EyeLightV119A_{side}',ex-side*.00355,eye_y+.00335,.10520,.00135,.00103,SCLERA,20)
  add_ellipse_surface(HEAD,f'EyeLightV119B_{side}',ex+side*.00205,eye_y+.00105,.10518,.00048,.00040,SCLERA,16)
@@ -1437,7 +1460,7 @@ for _o in list(bpy.data.objects):
  _reparent_keep_world(_o,_target)
 # Keep the existing dynamic pony root working, but move the complete hair subsystem under its own asset root.
 _reparent_keep_world(PONY,HAIR_ASSET)
-ROOT['character_revision']='v12.8';ROOT['assembly_workflow']='body-head-hair';BODY_ASSET['scale_reference']=True;BODY_ASSET['tps_silhouette_review']=True;HEAD_ASSET['profile_review']=True;HEAD_ASSET['facial_depth_review']=True;HEAD_ASSET['compact_face_review']=True;HEAD_ASSET['balanced_profile_review']=True;HAIR_ASSET['scalp_fit_review']=True;HAIR_ASSET['hero_silhouette_review']=True;FACE_ASSET['expression_ready']=True;FACE_ASSET['blink_system']='morph-eyelids';FACE_ASSET['mobile_gaze_review']=True;FACE_ASSET['portrait_material_revision']='v12.8-pbr';EYE_L['expression_pivot']='left-eye';EYE_R['expression_pivot']='right-eye';MOUTH_ASSET['expression_pivot']='mouth'
+ROOT['character_revision']='v12.9';ROOT['assembly_workflow']='body-head-hair';BODY_ASSET['scale_reference']=True;BODY_ASSET['tps_silhouette_review']=True;HEAD_ASSET['profile_review']=True;HEAD_ASSET['facial_depth_review']=True;HEAD_ASSET['compact_face_review']=True;HEAD_ASSET['balanced_profile_review']=True;HAIR_ASSET['scalp_fit_review']=True;HAIR_ASSET['hero_silhouette_review']=True;FACE_ASSET['expression_ready']=True;FACE_ASSET['blink_system']='morph-eyelids';FACE_ASSET['mobile_gaze_review']=True;FACE_ASSET['portrait_material_revision']='v12.8-pbr';FACE_ASSET['iris_detail_revision']='v12.9-radial';EYE_L['expression_pivot']='left-eye';EYE_R['expression_pivot']='right-eye';MOUTH_ASSET['expression_pivot']='mouth'
 
 
 bpy.context.scene.render.engine='BLENDER_EEVEE'
