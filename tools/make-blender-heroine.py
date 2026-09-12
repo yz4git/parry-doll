@@ -916,6 +916,7 @@ TH_L=empty('BL_THIGH_L',BODY_ASSET);SH_L=empty('BL_SHIN_L',BODY_ASSET);FOOT_L=em
 # REFERENCE_V119: visual-audit portrait pass boosts iPhone-scale eye contrast, shortens the lower face, exaggerates the key-art profile and adds layered asymmetric brow-length bangs.
 # REFERENCE_V120: Tripo/Astra-inspired modular assembly pass separates body/head/hair/face assets, adds expression pivots and rebalances the close-up eye/profile read without changing combat rig names.
 # REFERENCE_V121: audit correction keeps visible eye/mouth meshes in the face asset, leaves expression pivots transform-neutral, and narrows the adult-anime eye aperture for clean profile/3q views.
+# REFERENCE_V122: real skin eyelid meshes use a Blink morph target so eyes close over the globe instead of scaling the eyeball.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
@@ -1043,6 +1044,37 @@ for side in(-1,1):
  ],.00022,EAR_SHADOW)
 
 
+def add_blink_lid_surface(p,name,ex,cy,rx,ry,mat):
+ us=(-1.0,-.55,0.0,.55,1.0)
+ opened=[];closed=[]
+ for u in us:
+  bow=max(0.0,1.0-u*u);x=ex+u*rx*.985;z=.10542+.00034*bow
+  edge=cy+ry*(.10+.86*bow);top=edge+.00415+.00055*bow
+  opened.append((x,top,z-.00008));closed.append((x,top,z-.00008))
+ for u in us:
+  bow=max(0.0,1.0-u*u);x=ex+u*rx*.985;z=.10550+.00042*bow
+  edge=cy+ry*(.10+.86*bow);close_y=cy-.00030+ry*.075*bow-.00022
+  opened.append((x,edge,z));closed.append((x,close_y,z+.00016))
+ for u in us:
+  bow=max(0.0,1.0-u*u);x=ex+u*rx*.985;z=.10544+.00038*bow
+  edge=cy-ry*(.08+.60*bow);close_y=cy-.00030+ry*.075*bow+.00022
+  opened.append((x,edge,z));closed.append((x,close_y,z+.00010))
+ for u in us:
+  bow=max(0.0,1.0-u*u);x=ex+u*rx*.985;z=.10531+.00028*bow
+  edge=cy-ry*(.08+.60*bow);bottom=edge-.00330-.00038*bow
+  opened.append((x,bottom,z-.00008));closed.append((x,bottom,z-.00008))
+ verts=[bpos(v) for v in opened];faces=[]
+ for i in range(4):
+  faces.append((i,i+1,6+i,5+i))
+  faces.append((10+i,11+i,16+i,15+i))
+ mesh=bpy.data.meshes.new(name+'Mesh');mesh.from_pydata(verts,[],faces);mesh.update()
+ o=bpy.data.objects.new(name,mesh);bpy.context.scene.collection.objects.link(o);o.data.materials.append(mat);parent(o,p)
+ o.shape_key_add(name='Basis')
+ blink=o.shape_key_add(name='Blink')
+ for i,v in enumerate(closed):blink.data[i].co=bpos(v)
+ o['expression']='blink';o['blink_morph']='Blink';smooth(o)
+ return o
+
 # v11.9 key-art eyes: the white aperture stays adult-shaped, but a dark complete contour and larger warm iris
 # preserve the expressive anime-real portrait read at actual iPhone gameplay distance.
 face_front=.0974
@@ -1070,6 +1102,7 @@ for side in(-1,1):
  add_strand(HEAD,f'UpperLidFoldV119_{side}',[(inner+side*.0050,eye_y-eye_tilt+.0038,.10340),(ex,eye_y+.0153,.10375),(outer-side*.0060,eye_y+eye_tilt+.0036,.10342)],.00013,FACE_DARK)
  # Lower, fuller brows match the key-art expression and visually reduce the oversized forehead.
  add_strand(HEAD,f'BrowV119_{side}',[(ex-side*.0240,.0580,.1030),(ex,.0634,.10355),(ex+side*.0265,.0560,.10305)],.00062,HAIR)
+ add_blink_lid_surface(HEAD,'BL_EYELID_L' if side<0 else 'BL_EYELID_R',ex,eye_y,eye_rx,eye_ry,SKIN)
 
 # v7.1 integrated portrait accents: head topology owns all nose/mouth depth.
 # Only a shallow colour patch remains for the lips, following the actual mouth plane instead of floating in front of it.
@@ -1334,7 +1367,7 @@ for o in[ROOT,BODY_ASSET,PELVIS,TORSO,HEAD,HEAD_ASSET,HAIR_ASSET,FACE_ASSET,UA_L
 EYE_L.location=bpos((-.0452*ASSEMBLY120['head']['eyeSpacing'],.0295,.1040));EYE_R.location=bpos((.0452*ASSEMBLY120['head']['eyeSpacing'],.0295,.1040));MOUTH_ASSET.location=bpos((0,-.0880,.1290))
 EYE_L.rotation_euler=EYE_R.rotation_euler=MOUTH_ASSET.rotation_euler=(0,0,0);EYE_L.scale=EYE_R.scale=MOUTH_ASSET.scale=(1,1,1)
 
-_eye_tokens=('EyeSclera','IrisOuter','IrisInner','Pupil','EyeLight','UpperLash','OuterLash','LowerLid','UpperLid')
+_eye_tokens=('BL_EYELID','EyeSclera','IrisOuter','IrisInner','Pupil','EyeLight','UpperLash','OuterLash','LowerLid','UpperLid')
 _mouth_tokens=('UpperLip','LowerLip','MouthSeam')
 _face_tokens=('Brow','Nostril','Ear','Face','Philtrum','Chin','Nose')
 for _o in list(bpy.data.objects):
@@ -1349,7 +1382,7 @@ for _o in list(bpy.data.objects):
  _reparent_keep_world(_o,_target)
 # Keep the existing dynamic pony root working, but move the complete hair subsystem under its own asset root.
 _reparent_keep_world(PONY,HAIR_ASSET)
-ROOT['character_revision']='v12.1';ROOT['assembly_workflow']='body-head-hair';BODY_ASSET['scale_reference']=True;HEAD_ASSET['profile_review']=True;HAIR_ASSET['scalp_fit_review']=True;FACE_ASSET['expression_ready']=True;EYE_L['expression_pivot']='left-eye';EYE_R['expression_pivot']='right-eye';MOUTH_ASSET['expression_pivot']='mouth'
+ROOT['character_revision']='v12.2';ROOT['assembly_workflow']='body-head-hair';BODY_ASSET['scale_reference']=True;HEAD_ASSET['profile_review']=True;HAIR_ASSET['scalp_fit_review']=True;FACE_ASSET['expression_ready']=True;FACE_ASSET['blink_system']='morph-eyelids';EYE_L['expression_pivot']='left-eye';EYE_R['expression_pivot']='right-eye';MOUTH_ASSET['expression_pivot']='mouth'
 
 
 bpy.context.scene.render.engine='BLENDER_EEVEE'
