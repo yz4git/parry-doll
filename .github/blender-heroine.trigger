@@ -1,1 +1,1 @@
-2026-09-13 build Blender heroine v12.9 radial iris detail warm dark PBR spokes
+2026-09-13 build Blender heroine v13.0 user profile reference small rounded nose flatter muzzle elegant chin
