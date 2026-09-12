@@ -1,0 +1,90 @@
+name: Blender Heroine Blink WebKit Audit
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - dist/assets/models/heroine-blender.glb
+      - .github/workflows/blender-blink-webkit-audit.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  blink-webkit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install Safari-class browser stack
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install playwright@1.55.0
+          npx playwright install --with-deps webkit
+      - name: Serve game
+        run: |
+          python3 -m http.server 4173 --directory dist > /tmp/parry-blink-webkit-http.log 2>&1 &
+          for i in {1..30}; do curl -fsS http://127.0.0.1:4173/ >/dev/null && exit 0; sleep 1; done
+          cat /tmp/parry-blink-webkit-http.log; exit 1
+      - name: Capture open half and closed eyelids on iPhone WebKit
+        run: |
+          mkdir -p blender-blink-webkit-audit
+          cat > blender-blink-webkit-audit.cjs <<'NODE'
+          const { webkit }=require('playwright');
+          const fs=require('fs');
+          const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+          (async()=>{
+            const browser=await webkit.launch({headless:true});
+            const page=await browser.newPage({viewport:{width:852,height:393},isMobile:true,hasTouch:true,deviceScaleFactor:2,userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 26_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1'});
+            const errors=[];
+            page.on('pageerror',e=>errors.push('pageerror: '+e.message));
+            page.on('console',m=>{if(m.type()==='error'&&!m.text().includes('Failed to load resource'))errors.push('console: '+m.text())});
+            page.on('response',r=>{if(r.status()>=400&&!r.url().includes('/version.json'))errors.push(`HTTP ${r.status()} ${r.url()}`)});
+            await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});
+            await page.waitForFunction(()=>window.ParryModelViewer?.isAvailable?.()&&window.parryModelViewerUI?.open&&window.ParryHeroineAppearance?.set&&window.ParryHeroineBlink?.state,null,{timeout:60000,polling:100});
+            await page.evaluate(()=>window.parryModelViewerUI.open());
+            await sleep(250);
+            await page.evaluate(()=>window.ParryHeroineAppearance.set('blender'));
+            await page.waitForFunction(()=>{const a=window.ParryHeroineAppearance?.state?.(),b=window.ParryHeroineBlink?.state?.()?.[0];return a?.active==='blender'&&a?.blenderReady===true&&b?.ready&&b?.blinkReady&&b?.lidL&&b?.lidR},null,{timeout:60000,polling:100});
+            const pose=async(yaw,blink,name)=>{
+              await page.evaluate(({yaw,blink})=>{window.ParryModelViewer.reset();window.ParryModelViewer.setAuto(false);window.ParryModelViewer.rotate(.46,-.055);window.ParryModelViewer.preset('face');window.ParryModelViewer.rotate(yaw,0);window.ParryHeroineBlink.set(blink)},{yaw,blink});
+              await sleep(350);
+              await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
+              const state=await page.evaluate(()=>window.ParryHeroineBlink.state()[0]);
+              if(!state?.blinkReady||Math.abs(state.blink-blink)>.02)throw new Error(`blink state mismatch ${name}: `+JSON.stringify(state));
+              await page.screenshot({path:`blender-blink-webkit-audit/${name}.png`});
+              return state;
+            };
+            const report={};
+            report.open=await pose(0,0,'00-open-front');
+            report.half=await pose(0,.5,'01-half-front');
+            report.closed=await pose(0,1,'02-closed-front');
+            report.closed3q=await pose(-Math.PI/4,1,'03-closed-left-3q');
+            report.closedProfile=await pose(-Math.PI/2,1,'04-closed-left-profile');
+            await page.evaluate(()=>window.ParryHeroineBlink.auto());
+            report.auto=await page.evaluate(()=>window.ParryHeroineBlink.state()[0]);
+            report.appearance=await page.evaluate(()=>window.ParryHeroineAppearance.state());
+            report.viewer=await page.evaluate(()=>window.ParryModelViewer.state());
+            report.errors=errors;
+            report.pass=errors.length===0&&report.open.blinkReady&&report.closed.lidL&&report.closed.lidR&&report.auto.blinkOverride===null;
+            fs.writeFileSync('blender-blink-webkit-audit/result.json',JSON.stringify(report,null,2));
+            console.log(JSON.stringify(report,null,2));
+            await browser.close();
+            if(!report.pass)process.exit(2);
+          })().catch(e=>{console.error(e);try{fs.writeFileSync('blender-blink-webkit-audit/error.txt',String(e&&e.stack||e))}catch(_){}process.exit(1)});
+          NODE
+          node blender-blink-webkit-audit.cjs
+      - name: Upload WebKit blink frames
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: parry-doll-blender-blink-webkit-audit
+          path: blender-blink-webkit-audit/
+          if-no-files-found: error
+          retention-days: 3
