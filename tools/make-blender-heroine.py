@@ -650,11 +650,11 @@ def add_reference_head_v120(p,name,mat,segments=112):
  frontal={**frontal,'eyeSize':assembly_head['eyeSize'],'eyeSpacing':assembly_head['eyeSpacing'],'faceWidth':assembly_head['faceWidth'],'jaw':assembly_head['jaw'],'cheekVolume':assembly_head['cheekVolume'],'mouthWidth':assembly_head['mouthWidth']}
  profile_ctrl={**profile_ctrl,'noseProjection':assembly_head['noseProjection'],'noseWidth':assembly_head['noseWidth'],'foreheadDepth':assembly_head['foreheadDepth'],'mouthProjection':assembly_head['mouthProjection'],'chinProjection':assembly_head['chinProjection'],'chinLength':assembly_head['chinLength']}
  surface={**surface,'irisScale':assembly_head['irisScale'],'eyeContrast':assembly_head['eyeContrast']}
- fw=frontal['faceWidth'];jaw=frontal['jaw'];cheek=frontal['cheekVolume']
+ fw=frontal['faceWidth']*1.025;jaw=frontal['jaw']*.975;cheek=frontal['cheekVolume']*1.045
  eye_spacing=frontal['eyeSpacing'];eye_size=frontal['eyeSize']
  nose_proj=profile_ctrl['noseProjection'];nose_width=profile_ctrl['noseWidth']
  forehead_depth=profile_ctrl['foreheadDepth'];mouth_proj=profile_ctrl['mouthProjection']
- chin_proj=profile_ctrl['chinProjection'];chin_len=profile_ctrl['chinLength']
+ chin_proj=profile_ctrl['chinProjection'];chin_len=profile_ctrl['chinLength']*.82
  orbital=surface['orbitalDepth'];malar=surface['malarSupport'];hollow=surface['lowerCheekHollow']
  alar=surface['alarVolume'];philtrum=surface['philtrumDepth'];corner=surface['mouthCornerDepth']
  labiomental=surface['labiomentalDepth'];lip_volume=surface['lipThickness']
@@ -920,6 +920,7 @@ TH_L=empty('BL_THIGH_L',BODY_ASSET);SH_L=empty('BL_SHIN_L',BODY_ASSET);FOOT_L=em
 # REFERENCE_V123: TPS silhouette pass keeps measured rig endpoints while narrowing visual deltoid/clavicle armor and upper-chest shell bulk.
 # REFERENCE_V124: layered crown and hero-ponytail masses break the helmet/flat-sheet silhouette while preserving the existing dynamic pony root.
 # REFERENCE_V125: facial-depth and eye-material pass strengthens orbital/nasal/cheek planes and mobile-scale gaze without changing the modular expression pivots.
+# REFERENCE_V126: compact adult-anime face pass shortens the lower face, opens the gaze slightly and broadens the cheek plane without changing combat/head pivots.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
@@ -1083,8 +1084,8 @@ def add_blink_lid_surface(p,name,ex,cy,rx,ry,mat):
 face_front=.0974
 eye_y=.0295
 eye_x=.0452*ASSEMBLY120['head']['eyeSpacing']
-eye_rx=.0277*ASSEMBLY120['head']['eyeSize']
-eye_ry=.01015*ASSEMBLY120['head']['eyeSize']
+eye_rx=.02865*ASSEMBLY120['head']['eyeSize']
+eye_ry=.01090*ASSEMBLY120['head']['eyeSize']
 eye_tilt=.00285
 iris_scale=ASSEMBLY120['head']['irisScale']*1.05
 eye_contrast=ASSEMBLY120['head']['eyeContrast']*1.08
@@ -1110,10 +1111,10 @@ for side in(-1,1):
 # v7.1 integrated portrait accents: head topology owns all nose/mouth depth.
 # Only a shallow colour patch remains for the lips, following the actual mouth plane instead of floating in front of it.
 # v11.4 surface accents follow the rebuilt shell instead of the retired v8 face depth.
-add_panel(HEAD,'UpperLipV119_L',[(-.0280*FACE120['frontal']['mouthWidth'],-.0845,.1268),(-.0135,-.0796,.1284),(0,-.0827,.1302),(0,-.0867,.1305),(-.0115,-.0860,.1292),(-.0268*FACE120['frontal']['mouthWidth'],-.0884,.1273)],.00034*FACE120['surface']['lipThickness'],LIP)
-add_panel(HEAD,'UpperLipV119_R',[(0,-.0827,.1302),(.0135,-.0796,.1284),(.0280*FACE120['frontal']['mouthWidth'],-.0845,.1268),(.0268*FACE120['frontal']['mouthWidth'],-.0884,.1273),(.0115,-.0860,.1292),(0,-.0867,.1305)],.00034*FACE120['surface']['lipThickness'],LIP)
-add_panel(HEAD,'LowerLipV119',[(-.0268*FACE120['frontal']['mouthWidth'],-.0886,.1272),(0,-.0879,.1301),(.0268*FACE120['frontal']['mouthWidth'],-.0886,.1272),(.0228*FACE120['frontal']['mouthWidth'],-.0952,.1270),(0,-.0985,.1291),(-.0228*FACE120['frontal']['mouthWidth'],-.0952,.1270)],.00039*FACE120['surface']['lipThickness'],LIP)
-add_strand(HEAD,'MouthSeamV119',[(-.0282,-.0871,.1272),(-.0128,-.0863,.1290),(0,-.0872,.1307),(.0128,-.0863,.1290),(.0282,-.0871,.1272)],.000075,FACE_DARK)
+add_panel(HEAD,'UpperLipV119_L',[(-.0294*FACE120['frontal']['mouthWidth'],-.0835,.1268),(-.0135,-.0796,.1284),(0,-.0827,.1302),(0,-.0867,.1305),(-.0115,-.0860,.1292),(-.0282*FACE120['frontal']['mouthWidth'],-.0878,.1273)],.00034*FACE120['surface']['lipThickness'],LIP)
+add_panel(HEAD,'UpperLipV119_R',[(0,-.0827,.1302),(.0135,-.0796,.1284),(.0294*FACE120['frontal']['mouthWidth'],-.0835,.1268),(.0282*FACE120['frontal']['mouthWidth'],-.0878,.1273),(.0115,-.0860,.1292),(0,-.0867,.1305)],.00034*FACE120['surface']['lipThickness'],LIP)
+add_panel(HEAD,'LowerLipV119',[(-.0282*FACE120['frontal']['mouthWidth'],-.0880,.1272),(0,-.0879,.1301),(.0282*FACE120['frontal']['mouthWidth'],-.0880,.1272),(.0238*FACE120['frontal']['mouthWidth'],-.0944,.1270),(0,-.0985,.1291),(-.0238*FACE120['frontal']['mouthWidth'],-.0944,.1270)],.00039*FACE120['surface']['lipThickness'],LIP)
+add_strand(HEAD,'MouthSeamV119',[(-.0300,-.0868,.1272),(-.0135,-.0860,.1290),(0,-.0869,.1307),(.0135,-.0860,.1290),(.0300,-.0868,.1272)],.000075,FACE_DARK)
 for side in(-1,1):
  add_ellipse_surface(HEAD,f'NostrilTintV119_{side}',side*.0065*FACE120['profile']['noseWidth'],-.0580,.1485,.00215*FACE120['surface']['nostrilScale'],.00088*FACE120['surface']['nostrilScale'],FACE_DARK,20)
 
@@ -1408,7 +1409,7 @@ for _o in list(bpy.data.objects):
  _reparent_keep_world(_o,_target)
 # Keep the existing dynamic pony root working, but move the complete hair subsystem under its own asset root.
 _reparent_keep_world(PONY,HAIR_ASSET)
-ROOT['character_revision']='v12.5';ROOT['assembly_workflow']='body-head-hair';BODY_ASSET['scale_reference']=True;BODY_ASSET['tps_silhouette_review']=True;HEAD_ASSET['profile_review']=True;HEAD_ASSET['facial_depth_review']=True;HAIR_ASSET['scalp_fit_review']=True;HAIR_ASSET['hero_silhouette_review']=True;FACE_ASSET['expression_ready']=True;FACE_ASSET['blink_system']='morph-eyelids';FACE_ASSET['mobile_gaze_review']=True;EYE_L['expression_pivot']='left-eye';EYE_R['expression_pivot']='right-eye';MOUTH_ASSET['expression_pivot']='mouth'
+ROOT['character_revision']='v12.6';ROOT['assembly_workflow']='body-head-hair';BODY_ASSET['scale_reference']=True;BODY_ASSET['tps_silhouette_review']=True;HEAD_ASSET['profile_review']=True;HEAD_ASSET['facial_depth_review']=True;HEAD_ASSET['compact_face_review']=True;HAIR_ASSET['scalp_fit_review']=True;HAIR_ASSET['hero_silhouette_review']=True;FACE_ASSET['expression_ready']=True;FACE_ASSET['blink_system']='morph-eyelids';FACE_ASSET['mobile_gaze_review']=True;EYE_L['expression_pivot']='left-eye';EYE_R['expression_pivot']='right-eye';MOUTH_ASSET['expression_pivot']='mouth'
 
 
 bpy.context.scene.render.engine='BLENDER_EEVEE'
