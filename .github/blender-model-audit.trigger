@@ -1,1 +1,1 @@
-2026-09-11 Blender heroine v11.9 key-art eye contrast compact V-line stronger profile layered asymmetric bangs dual five-view audit
+2026-09-12 Blender heroine v12 modular Body Head Hair front side back 3q profile expression-ready audit
