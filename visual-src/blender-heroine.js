@@ -4,6 +4,7 @@ import {HeroineRig,axes,solveJoint} from './heroine-rig.js';
 
 const Y=new THREE.Vector3(0,1,0);
 const TMP=new THREE.Vector3();
+const INSTANCES=new Set();
 // Measured from the user-provided four-view sheet, normalized to the Blender model's 2.42u nominal height.
 // These are visual-only retarget values. Gameplay/PBD nodes remain untouched.
 const REF_SHOULDER_HALF=.172;
@@ -26,7 +27,7 @@ function referenceRetarget(d,base){
 
 export class BlenderHeroine{
  constructor(d,scene,{assetBase}){
-  this.root=new THREE.Group();this.root.name='blender-heroine-runtime';scene.add(this.root);
+  this.root=new THREE.Group();this.root.name='blender-heroine-runtime';scene.add(this.root);INSTANCES.add(this);
   this.driverRoot=new THREE.Group();this.rig=new HeroineRig(this.driverRoot);this.groups={};this.ready=false;this.failed='';this.weaponVisible=true;
   this.face={eyeL:null,eyeR:null,mouth:null,hair:null,lidL:null,lidR:null};this.expression={blink:0,modular:false,blinkReady:false,blinkOverride:null};
   this.weapon=new THREE.Group();this.weapon.name='blender-heroine-weapon-runtime';this.root.add(this.weapon);
@@ -45,7 +46,7 @@ export class BlenderHeroine{
  setWeaponVisible(value){this.weaponVisible=!!value;this.weapon.visible=this.weaponVisible}
  setBlinkOverride(value=null){this.expression.blinkOverride=value==null?null:THREE.MathUtils.clamp(Number(value)||0,0,1);if(this.expression.blinkOverride!=null)this.applyBlink(this.expression.blinkOverride)}
  applyBlink(value){const blink=THREE.MathUtils.clamp(value,0,1);for(const lid of [this.face.lidL,this.face.lidR]){const index=lid?.morphTargetDictionary?.Blink;if(Number.isInteger(index)&&lid.morphTargetInfluences)lid.morphTargetInfluences[index]=blink}this.expression.blink=blink}
- expressionState(){return{blink:this.expression.blink,blinkReady:this.expression.blinkReady,blinkOverride:this.expression.blinkOverride,lidL:!!this.face.lidL,lidR:!!this.face.lidR}}
+ expressionState(){return{ready:this.ready,failed:this.failed,blink:this.expression.blink,blinkReady:this.expression.blinkReady,blinkOverride:this.expression.blinkOverride,lidL:!!this.face.lidL,lidR:!!this.face.lidR}}
  setPoint(name,point,quat,scale){const g=this.groups[name];if(!g)return;g.position.copy(point);g.quaternion.copy(quat);g.scale.setScalar(scale)}
  setSegment(name,a,b,face,widthScale){const g=this.groups[name];if(!g)return;const delta=b.clone().sub(a),length=delta.length();g.position.copy(a).lerp(b,.5);g.quaternion.copy(axes(delta,face));g.scale.set(widthScale,Math.max(.001,length),widthScale)}
  update(d,pose,clock=0){
@@ -74,5 +75,11 @@ export class BlenderHeroine{
    }
   }
  }
- dispose(){this.rig.dispose();this.root.traverse(o=>{if(o.isMesh){o.geometry?.dispose?.();const materials=Array.isArray(o.material)?o.material:[o.material];materials.filter(Boolean).forEach(m=>m.dispose?.())}});this.root.removeFromParent()}
+ dispose(){INSTANCES.delete(this);this.rig.dispose();this.root.traverse(o=>{if(o.isMesh){o.geometry?.dispose?.();const materials=Array.isArray(o.material)?o.material:[o.material];materials.filter(Boolean).forEach(m=>m.dispose?.())}});this.root.removeFromParent()}
 }
+
+window.ParryHeroineBlink={
+ set:value=>{for(const h of INSTANCES)h.setBlinkOverride(value);return[...INSTANCES].map(h=>h.expressionState())},
+ auto:()=>{for(const h of INSTANCES)h.setBlinkOverride(null);return[...INSTANCES].map(h=>h.expressionState())},
+ state:()=>[...INSTANCES].map(h=>h.expressionState())
+};
