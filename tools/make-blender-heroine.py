@@ -918,6 +918,7 @@ TH_L=empty('BL_THIGH_L',BODY_ASSET);SH_L=empty('BL_SHIN_L',BODY_ASSET);FOOT_L=em
 # REFERENCE_V121: audit correction keeps visible eye/mouth meshes in the face asset, leaves expression pivots transform-neutral, and narrows the adult-anime eye aperture for clean profile/3q views.
 # REFERENCE_V122: real skin eyelid meshes use a Blink morph target so eyes close over the globe instead of scaling the eyeball.
 # REFERENCE_V123: TPS silhouette pass keeps measured rig endpoints while narrowing visual deltoid/clavicle armor and upper-chest shell bulk.
+# REFERENCE_V124: layered crown and hero-ponytail masses break the helmet/flat-sheet silhouette while preserving the existing dynamic pony root.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
@@ -1199,6 +1200,18 @@ for side in (-1,1):
   (side*head_w*.443,-.012,-head_d*.156)
  ],.000032,HAIR_HI)
 
+# v12.4 hero crown breakup: large overlapping sweeps give the top silhouette direction and asymmetry.
+_crown_v124=[
+ ('L',[(-.010,.214,-.003),(-.032,.209,.008),(-.058,.198,.020),(-.084,.180,.025),(-.103,.158,.014),(-.111,.132,-.006)],[.008,.021,.037,.046,.039,.009],[.003,.007,.011,.014,.012,.003],HAIR),
+ ('C',[(.006,.216,-.012),(.022,.210,.002),(.035,.198,.017),(.043,.181,.029),(.038,.160,.035),(.024,.138,.027)],[.007,.019,.034,.043,.036,.008],[.003,.006,.010,.013,.011,.003],HAIR_HI),
+ ('R',[(.018,.213,-.006),(.044,.207,.005),(.070,.195,.018),(.091,.176,.022),(.105,.151,.008),(.108,.124,-.014)],[.008,.022,.039,.047,.037,.009],[.003,.007,.011,.014,.011,.003],HAIR)
+]
+for _name,_pts,_widths,_depths,_mat in _crown_v124:
+ add_smooth_lock(HEAD,f'HeroCrownV124_{_name}',_pts,_widths,_depths,_mat,14,7)
+# A pair of long direction lines makes the crown read as hair rather than a smooth helmet under mobile lighting.
+add_strand(HEAD,'HeroCrownHiV124_L',[(-.026,.207,.010),(-.058,.191,.025),(-.092,.158,.016),(-.106,.132,-.004)],.000075,HAIR_HI)
+add_strand(HEAD,'HeroCrownHiV124_R',[(.038,.205,.007),(.070,.189,.023),(.099,.154,.012),(.106,.126,-.010)],.000060,HAIR_HI)
+
 # v9.0: the fringe is born inside the existing crown cap instead of being patched to it with blobs.
 # The first two samples are narrow and hidden under the cap; width only opens after the path exits the crown.
 add_fringe_surface_v85(HEAD,'FringeSurfaceV90_Main',[(-.008,.214,.004),(-.028,.207,.019),(-.050,.199,.036),(-.070,.188,.053),(-.076,.174,.070),(-.057,.157,.087),(-.025,.139,.101),(.012,.122,.108),(.052,.109,.110),(.090,.101,.106)],[.004,.010,.026,.052,.082,.101,.098,.078,.047,.014],[.0004,.0008,.0016,.0030,.0044,.0053,.0050,.0040,.0025,.0008],HAIR,.0027)
@@ -1286,6 +1299,17 @@ for i,(target,drop) in enumerate(((-.300,-1.34),(-.205,-1.52),(.195,-1.48),(.295
  widths=[.050,.090,.120,.132,.122,.102,.066,.010]
  depths=[.027,.043,.052,.056,.051,.043,.030,.007]
  add_smooth_lock(PONY,f'PonyWingV67_{i}',pts,widths,depths,HAIR if i in (0,3) else HAIR_HI,16,8)
+# v12.4 asymmetric hero pony contour: wide near the shoulder blades, tapering cleanly below the hips.
+_hero_pony_v124=[
+ ('L',[( -.020,.145,-head_d*.548),(-.050,.035,-head_d*.618),(-.105,-.180,-.274),(-.205,-.430,-.222),(-.295,-.720,-.170),(-.310,-1.000,-.132),(-.245,-1.270,-.105),(-.150,-1.520,-.080)],[.045,.082,.112,.132,.140,.112,.068,.010],HAIR),
+ ('M',[( .012,.146,-head_d*.552),(.020,.030,-head_d*.620),(.035,-.190,-.268),(.060,-.455,-.214),(.082,-.755,-.163),(.095,-1.055,-.125),(.082,-1.315,-.100),(.060,-1.535,-.078)],[.040,.076,.104,.124,.128,.102,.060,.009],HAIR_HI),
+ ('R',[( .032,.143,-head_d*.546),(.058,.030,-head_d*.616),(.108,-.175,-.270),(.180,-.420,-.220),(.235,-.700,-.172),(.245,-.970,-.134),(.205,-1.230,-.107),(.130,-1.480,-.084)],[.043,.080,.108,.126,.132,.105,.064,.010],HAIR)
+]
+for _name,_pts,_widths,_mat in _hero_pony_v124:
+ add_smooth_lock(PONY,f'HeroPonyV124_{_name}',_pts,_widths,[.026,.040,.050,.055,.052,.043,.029,.007],_mat,16,8)
+add_strand(PONY,'HeroPonyHiV124_L',[(-.045,.030,-head_d*.620),(-.142,-.300,-.244),(-.280,-.720,-.168),(-.270,-1.120,-.118),(-.165,-1.470,-.086)],.00018,HAIR_HI)
+add_strand(PONY,'HeroPonyHiV124_R',[(.052,.030,-head_d*.616),(.135,-.290,-.242),(.224,-.700,-.170),(.226,-1.080,-.121),(.142,-1.430,-.087)],.00014,HAIR_HI)
+
 # Eleven broad spline-smoothed locks create one readable hair mass with controlled asymmetry.
 for i in range(11):
  lane=(i-5)/5
@@ -1383,7 +1407,7 @@ for _o in list(bpy.data.objects):
  _reparent_keep_world(_o,_target)
 # Keep the existing dynamic pony root working, but move the complete hair subsystem under its own asset root.
 _reparent_keep_world(PONY,HAIR_ASSET)
-ROOT['character_revision']='v12.3';ROOT['assembly_workflow']='body-head-hair';BODY_ASSET['scale_reference']=True;BODY_ASSET['tps_silhouette_review']=True;HEAD_ASSET['profile_review']=True;HAIR_ASSET['scalp_fit_review']=True;FACE_ASSET['expression_ready']=True;FACE_ASSET['blink_system']='morph-eyelids';EYE_L['expression_pivot']='left-eye';EYE_R['expression_pivot']='right-eye';MOUTH_ASSET['expression_pivot']='mouth'
+ROOT['character_revision']='v12.4';ROOT['assembly_workflow']='body-head-hair';BODY_ASSET['scale_reference']=True;BODY_ASSET['tps_silhouette_review']=True;HEAD_ASSET['profile_review']=True;HAIR_ASSET['scalp_fit_review']=True;HAIR_ASSET['hero_silhouette_review']=True;FACE_ASSET['expression_ready']=True;FACE_ASSET['blink_system']='morph-eyelids';EYE_L['expression_pivot']='left-eye';EYE_R['expression_pivot']='right-eye';MOUTH_ASSET['expression_pivot']='mouth'
 
 
 bpy.context.scene.render.engine='BLENDER_EEVEE'
