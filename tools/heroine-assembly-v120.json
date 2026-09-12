@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "revision": "v12.0",
+  "source_workflow": "Tripo/Astra-inspired modular character assembly adapted to the existing Parry Doll Blender pipeline",
+  "goals": [
+    "Keep body, head and hair independently reviewable while preserving the working combat rig",
+    "Make front, profile and three-quarter face review first-class geometry constraints",
+    "Create expression-ready eye and mouth pivots without replacing the existing GLB runtime skeleton",
+    "Preserve the current heroine identity while reducing the doll-like eye read at close range"
+  ],
+  "body": {
+    "scaleReference": "BL_BODY_ASSET",
+    "preserveMeasuredShoulders": true,
+    "preserveMeasuredHips": true,
+    "neckJoinTolerance": 0.012
+  },
+  "head": {
+    "assetRoot": "BL_HEAD_ASSET",
+    "faceRoot": "BL_FACE_ASSET",
+    "eyeSize": 1.16,
+    "eyeSpacing": 0.99,
+    "faceWidth": 0.93,
+    "jaw": 0.83,
+    "cheekVolume": 1.10,
+    "mouthWidth": 1.11,
+    "noseProjection": 1.43,
+    "noseWidth": 0.92,
+    "foreheadDepth": 1.02,
+    "mouthProjection": 1.14,
+    "chinProjection": 1.11,
+    "chinLength": 0.80,
+    "irisScale": 1.14,
+    "eyeContrast": 1.18
+  },
+  "hair": {
+    "assetRoot": "BL_HAIR_ASSET",
+    "preservePonyDynamicRoot": true,
+    "templeLockWidth": 0.017,
+    "templeLockDepth": 0.0065,
+    "scalpFitClearance": 0.0025
+  },
+  "expressions": {
+    "eyeLeft": "BL_EYE_L",
+    "eyeRight": "BL_EYE_R",
+    "mouth": "BL_MOUTH",
+    "blinkPeriod": 4.6,
+    "blinkDuration": 0.16,
+    "blinkClosure": 0.86
+  }
+}
