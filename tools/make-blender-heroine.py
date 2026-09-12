@@ -43,7 +43,7 @@ for _hair_mat,_spec in ((HAIR,.14),(HAIR_HI,.18)):
   _old=_bsdf.inputs.get('Specular')
   if _ior:_ior.default_value=_spec
   elif _old:_old.default_value=_spec
-SCLERA=material('Sclera',(0.50,0.485,0.475),0,.68)
+SCLERA=material('Sclera',(0.43,0.415,0.405),0,.72)
 IRIS=material('Iris',(0.072,0.050,0.047),.01,.58)
 IRIS_INNER=material('Iris Inner',(0.125,0.086,0.078),.01,.60)
 PUPIL=material('Pupil',(0.004,0.005,0.006),0,.30)
@@ -915,6 +915,7 @@ TH_L=empty('BL_THIGH_L',BODY_ASSET);SH_L=empty('BL_SHIN_L',BODY_ASSET);FOOT_L=em
 # REFERENCE_V118: reference-locked adult portrait pass narrows the lower face, strengthens brow/bridge/tip/columella profile planes and upgrades the cinematic almond-eye treatment.
 # REFERENCE_V119: visual-audit portrait pass boosts iPhone-scale eye contrast, shortens the lower face, exaggerates the key-art profile and adds layered asymmetric brow-length bangs.
 # REFERENCE_V120: Tripo/Astra-inspired modular assembly pass separates body/head/hair/face assets, adds expression pivots and rebalances the close-up eye/profile read without changing combat rig names.
+# REFERENCE_V121: audit correction keeps visible eye/mouth meshes in the face asset, leaves expression pivots transform-neutral, and narrows the adult-anime eye aperture for clean profile/3q views.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
@@ -1047,17 +1048,17 @@ for side in(-1,1):
 face_front=.0974
 eye_y=.0295
 eye_x=.0452*ASSEMBLY120['head']['eyeSpacing']
-eye_rx=.0302*ASSEMBLY120['head']['eyeSize']
-eye_ry=.01055*ASSEMBLY120['head']['eyeSize']
-eye_tilt=.00300
+eye_rx=.0277*ASSEMBLY120['head']['eyeSize']
+eye_ry=.01015*ASSEMBLY120['head']['eyeSize']
+eye_tilt=.00285
 iris_scale=ASSEMBLY120['head']['irisScale']
 eye_contrast=ASSEMBLY120['head']['eyeContrast']
 for side in(-1,1):
  ex=side*eye_x
  add_almond_surface(HEAD,f'EyeScleraV119_{side}',ex,eye_y,.10310,eye_rx,eye_ry,.00128,SCLERA,96,side,eye_tilt*.74)
  # Dark outer iris first, then a smaller warm inner iris and pupil; this gives a readable limbal ring.
- add_ellipse_surface(HEAD,f'IrisOuterV119_{side}',ex,eye_y-.00025,.10448,.01095*iris_scale,.00905*iris_scale,IRIS,52)
- add_ellipse_surface(HEAD,f'IrisInnerV119_{side}',ex,eye_y-.00005,.10472,.00825*iris_scale,.00655*iris_scale,IRIS_INNER,48)
+ add_ellipse_surface(HEAD,f'IrisOuterV119_{side}',ex,eye_y-.00025,.10448,.01155*iris_scale,.00915*iris_scale,IRIS,52)
+ add_ellipse_surface(HEAD,f'IrisInnerV119_{side}',ex,eye_y-.00005,.10472,.00875*iris_scale,.00670*iris_scale,IRIS_INNER,48)
  add_ellipse_surface(HEAD,f'PupilV119_{side}',ex,eye_y-.00045,.10502,.00305*iris_scale,.00385*iris_scale,PUPIL,36)
  add_ellipse_surface(HEAD,f'EyeLightV119A_{side}',ex-side*.00355,eye_y+.00335,.10520,.00135,.00103,SCLERA,20)
  add_ellipse_surface(HEAD,f'EyeLightV119B_{side}',ex+side*.00205,eye_y+.00105,.10518,.00048,.00040,SCLERA,16)
@@ -1340,15 +1341,15 @@ for _o in list(bpy.data.objects):
  if _o.type!='MESH' or not _under(_o,HEAD) or _under(_o,PONY):continue
  _name=_o.name;_mats=_materials(_o);_target=None
  if any(t in _name for t in _eye_tokens):
-  _target=EYE_L if _name.endswith('_-1') else EYE_R if _name.endswith('_1') else FACE_ASSET
- elif any(t in _name for t in _mouth_tokens):_target=MOUTH_ASSET
+  _target=FACE_ASSET
+ elif any(t in _name for t in _mouth_tokens):_target=FACE_ASSET
  elif any(t in _name for t in _face_tokens):_target=FACE_ASSET
  elif 'Hair' in _mats or 'Hair Highlight' in _mats or 'HairTie' in _name or 'Fringe' in _name or 'Bang' in _name or 'TempleLayer' in _name:_target=HAIR_ASSET
  else:_target=HEAD_ASSET
  _reparent_keep_world(_o,_target)
 # Keep the existing dynamic pony root working, but move the complete hair subsystem under its own asset root.
 _reparent_keep_world(PONY,HAIR_ASSET)
-ROOT['character_revision']='v12.0';ROOT['assembly_workflow']='body-head-hair';BODY_ASSET['scale_reference']=True;HEAD_ASSET['profile_review']=True;HAIR_ASSET['scalp_fit_review']=True;FACE_ASSET['expression_ready']=True
+ROOT['character_revision']='v12.1';ROOT['assembly_workflow']='body-head-hair';BODY_ASSET['scale_reference']=True;HEAD_ASSET['profile_review']=True;HAIR_ASSET['scalp_fit_review']=True;FACE_ASSET['expression_ready']=True;EYE_L['expression_pivot']='left-eye';EYE_R['expression_pivot']='right-eye';MOUTH_ASSET['expression_pivot']='mouth'
 
 
 bpy.context.scene.render.engine='BLENDER_EEVEE'
