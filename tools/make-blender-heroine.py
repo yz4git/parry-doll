@@ -28,7 +28,7 @@ def bpos(v):x,y,z=v;return(x,-z,y)
 def bscale(v):x,y,z=v;return(x,z,y)
 def material(name,color,metallic=0.0,roughness=.45):
  m=bpy.data.materials.new(name);m.use_nodes=True;b=m.node_tree.nodes.get('Principled BSDF');b.inputs['Base Color'].default_value=(*color,1);b.inputs['Metallic'].default_value=metallic;b.inputs['Roughness'].default_value=roughness;return m
-SKIN=material('Skin',(0.36,0.235,0.215),0,.76)
+SKIN=material('Skin',(0.375,0.245,0.225),0,.68)
 BLACK=material('Suit Black',(0.014,0.018,0.027),.08,.30)
 BLACK_SOFT=material('Suit Soft',(0.030,0.035,0.048),.02,.44)
 WHITE=material('Porcelain White',(0.86,0.88,0.88),.18,.28)
@@ -43,11 +43,11 @@ for _hair_mat,_spec in ((HAIR,.14),(HAIR_HI,.18)):
   _old=_bsdf.inputs.get('Specular')
   if _ior:_ior.default_value=_spec
   elif _old:_old.default_value=_spec
-SCLERA=material('Sclera',(0.43,0.415,0.405),0,.72)
-IRIS=material('Iris',(0.072,0.050,0.047),.01,.58)
-IRIS_INNER=material('Iris Inner',(0.125,0.086,0.078),.01,.60)
+SCLERA=material('Sclera',(0.60,0.575,0.555),0,.66)
+IRIS=material('Iris',(0.052,0.032,0.030),.01,.56)
+IRIS_INNER=material('Iris Inner',(0.175,0.105,0.082),.01,.58)
 PUPIL=material('Pupil',(0.004,0.005,0.006),0,.30)
-LIP=material('Lip',(0.34,0.120,0.140),0,.62)
+LIP=material('Lip',(0.285,0.105,0.125),0,.67)
 FACE_DARK=material('Face Detail',(0.20,0.075,0.070),0,.68)
 EAR_SHADOW=material('Ear Inner',(0.255,0.145,0.135),0,.78)
 GLOW=material('Cyan Accent',(0.20,0.56,0.61),.38,.18)
@@ -724,10 +724,10 @@ def add_reference_head_v120(p,name,mat,segments=112):
 
     for side in (-1,1):
      ex=side*.0465*eye_spacing
-     z-=fm*(.0027*orbital)*math.exp(-((x-ex)/(.0265*eye_size))**2-((yy-.033)/(.0195*eye_size))**2)
+     z-=fm*(.00315*orbital)*math.exp(-((x-ex)/(.0265*eye_size))**2-((yy-.033)/(.0195*eye_size))**2)
      z+=fm*.0025*math.exp(-((x-ex)/.031)**2-((yy-.061)/.022)**2)
-     z+=fm*(.0062*malar*cheek)*math.exp(-((x-side*.057)/.034)**2-((yy+.004)/.036)**2)
-     z-=fm*(.0027*hollow)*math.exp(-((x-side*.069)/.030)**2-((yy+.054)/.035)**2)
+     z+=fm*(.00670*malar*cheek)*math.exp(-((x-side*.057)/.034)**2-((yy+.004)/.036)**2)
+     z-=fm*(.00300*hollow)*math.exp(-((x-side*.069)/.030)**2-((yy+.054)/.035)**2)
      z-=fm*.0016*math.exp(-((x-side*.087)/.025)**2-((yy-.040)/.041)**2)
      z+=fm*.0028*math.exp(-((x-side*.0105)/(.0110*nose_width))**2-((yy+.055)/.0135)**2)
      z-=fm*.0012*math.exp(-((x-side*.018)/.014)**2-((yy+.071)/.017)**2)
@@ -764,14 +764,14 @@ def add_reference_head_v120(p,name,mat,segments=112):
 
     # Labiomental fold separates the lower lip from a more feminine, compact chin pad.
     z-=fm*.00165*labiomental*math.exp(-(x/.0245)**2-((yy+.1060)/.0075)**2)
-    z+=fm*.00535*math.exp(-(x/.0315)**2-((yy+.119)/.0180)**2)
+    z+=fm*.00495*math.exp(-(x/.0315)**2-((yy+.119)/.0180)**2)
 
     # v11.8 adult facial planes. These are local depth fields, not detached feature meshes,
     # so the silhouette remains one continuous head surface from front through three-quarter views.
     z+=fm*.00215*glabella*math.exp(-(x/.0220)**2-((yy-.0470)/.0180)**2)
-    z+=fm*.00355*bridge_relief*math.exp(-(x/.0145)**2-((yy+.0100)/.0340)**2)
-    z+=fm*.00610*tip_relief*math.exp(-(x/.0115)**2-((yy+.0475)/.0105)**2)
-    z+=fm*.00215*columella*math.exp(-(x/.0095)**2-((yy+.0615)/.0080)**2)
+    z+=fm*.00415*bridge_relief*math.exp(-(x/.0145)**2-((yy+.0100)/.0340)**2)
+    z+=fm*.00670*tip_relief*math.exp(-(x/.0115)**2-((yy+.0475)/.0105)**2)
+    z+=fm*.00245*columella*math.exp(-(x/.0095)**2-((yy+.0615)/.0080)**2)
 
     # Soften the lower-orbit to malar transition but keep a readable cheek plane under cinematic light.
     for side in (-1,1):
@@ -919,6 +919,7 @@ TH_L=empty('BL_THIGH_L',BODY_ASSET);SH_L=empty('BL_SHIN_L',BODY_ASSET);FOOT_L=em
 # REFERENCE_V122: real skin eyelid meshes use a Blink morph target so eyes close over the globe instead of scaling the eyeball.
 # REFERENCE_V123: TPS silhouette pass keeps measured rig endpoints while narrowing visual deltoid/clavicle armor and upper-chest shell bulk.
 # REFERENCE_V124: layered crown and hero-ponytail masses break the helmet/flat-sheet silhouette while preserving the existing dynamic pony root.
+# REFERENCE_V125: facial-depth and eye-material pass strengthens orbital/nasal/cheek planes and mobile-scale gaze without changing the modular expression pivots.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
@@ -1085,8 +1086,8 @@ eye_x=.0452*ASSEMBLY120['head']['eyeSpacing']
 eye_rx=.0277*ASSEMBLY120['head']['eyeSize']
 eye_ry=.01015*ASSEMBLY120['head']['eyeSize']
 eye_tilt=.00285
-iris_scale=ASSEMBLY120['head']['irisScale']
-eye_contrast=ASSEMBLY120['head']['eyeContrast']
+iris_scale=ASSEMBLY120['head']['irisScale']*1.05
+eye_contrast=ASSEMBLY120['head']['eyeContrast']*1.08
 for side in(-1,1):
  ex=side*eye_x
  add_almond_surface(HEAD,f'EyeScleraV119_{side}',ex,eye_y,.10310,eye_rx,eye_ry,.00128,SCLERA,96,side,eye_tilt*.74)
@@ -1098,12 +1099,12 @@ for side in(-1,1):
  add_ellipse_surface(HEAD,f'EyeLightV119B_{side}',ex+side*.00205,eye_y+.00105,.10518,.00048,.00040,SCLERA,16)
  inner=ex-side*eye_rx*.965;outer=ex+side*eye_rx*1.035
  # Explicit dark eyelid silhouette. The previous skin-coloured rim disappeared against the face at mobile scale.
- add_strand(HEAD,f'UpperLashV119_{side}',[(inner,eye_y-eye_tilt+.0002,.10402),(ex-side*.0030,eye_y+.01145,.10478),(outer,eye_y+eye_tilt+.0002,.10410)],.00088*eye_contrast,HAIR)
- add_strand(HEAD,f'OuterLashV119_{side}',[(outer-side*.0040,eye_y+eye_tilt+.0015,.10416),(outer+side*.0048,eye_y+eye_tilt+.0042,.10418),(outer+side*.0080,eye_y+eye_tilt+.0030,.10405)],.00044*eye_contrast,HAIR)
- add_strand(HEAD,f'LowerLidV119_{side}',[(inner+side*.0040,eye_y-eye_tilt-.0004,.10372),(ex,eye_y-.00855,.10400),(outer-side*.0030,eye_y+eye_tilt-.0003,.10380)],.00016*eye_contrast,FACE_DARK)
- add_strand(HEAD,f'UpperLidFoldV119_{side}',[(inner+side*.0050,eye_y-eye_tilt+.0038,.10340),(ex,eye_y+.0153,.10375),(outer-side*.0060,eye_y+eye_tilt+.0036,.10342)],.00013,FACE_DARK)
+ add_strand(HEAD,f'UpperLashV119_{side}',[(inner,eye_y-eye_tilt+.0002,.10402),(ex-side*.0030,eye_y+.01145,.10478),(outer,eye_y+eye_tilt+.0002,.10410)],.00094*eye_contrast,HAIR)
+ add_strand(HEAD,f'OuterLashV119_{side}',[(outer-side*.0040,eye_y+eye_tilt+.0015,.10416),(outer+side*.0048,eye_y+eye_tilt+.0042,.10418),(outer+side*.0080,eye_y+eye_tilt+.0030,.10405)],.00048*eye_contrast,HAIR)
+ add_strand(HEAD,f'LowerLidV119_{side}',[(inner+side*.0040,eye_y-eye_tilt-.0004,.10372),(ex,eye_y-.00855,.10400),(outer-side*.0030,eye_y+eye_tilt-.0003,.10380)],.00019*eye_contrast,FACE_DARK)
+ add_strand(HEAD,f'UpperLidFoldV119_{side}',[(inner+side*.0050,eye_y-eye_tilt+.0038,.10340),(ex,eye_y+.0153,.10375),(outer-side*.0060,eye_y+eye_tilt+.0036,.10342)],.00017,FACE_DARK)
  # Lower, fuller brows match the key-art expression and visually reduce the oversized forehead.
- add_strand(HEAD,f'BrowV119_{side}',[(ex-side*.0240,.0580,.1030),(ex,.0634,.10355),(ex+side*.0265,.0560,.10305)],.00062,HAIR)
+ add_strand(HEAD,f'BrowV119_{side}',[(ex-side*.0240,.0580,.1030),(ex,.0634,.10355),(ex+side*.0265,.0560,.10305)],.00068,HAIR)
  add_blink_lid_surface(HEAD,'BL_EYELID_L' if side<0 else 'BL_EYELID_R',ex,eye_y,eye_rx,eye_ry,SKIN)
 
 # v7.1 integrated portrait accents: head topology owns all nose/mouth depth.
@@ -1114,7 +1115,7 @@ add_panel(HEAD,'UpperLipV119_R',[(0,-.0827,.1302),(.0135,-.0796,.1284),(.0280*FA
 add_panel(HEAD,'LowerLipV119',[(-.0268*FACE120['frontal']['mouthWidth'],-.0886,.1272),(0,-.0879,.1301),(.0268*FACE120['frontal']['mouthWidth'],-.0886,.1272),(.0228*FACE120['frontal']['mouthWidth'],-.0952,.1270),(0,-.0985,.1291),(-.0228*FACE120['frontal']['mouthWidth'],-.0952,.1270)],.00039*FACE120['surface']['lipThickness'],LIP)
 add_strand(HEAD,'MouthSeamV119',[(-.0282,-.0871,.1272),(-.0128,-.0863,.1290),(0,-.0872,.1307),(.0128,-.0863,.1290),(.0282,-.0871,.1272)],.000075,FACE_DARK)
 for side in(-1,1):
- add_ellipse_surface(HEAD,f'NostrilTintV119_{side}',side*.0065*FACE120['profile']['noseWidth'],-.0580,.1485,.00195*FACE120['surface']['nostrilScale'],.00072*FACE120['surface']['nostrilScale'],FACE_DARK,20)
+ add_ellipse_surface(HEAD,f'NostrilTintV119_{side}',side*.0065*FACE120['profile']['noseWidth'],-.0580,.1485,.00215*FACE120['surface']['nostrilScale'],.00088*FACE120['surface']['nostrilScale'],FACE_DARK,20)
 
 # v9.7: EarV78 is the single canonical ear set; no duplicate side anatomy is added here.
 
@@ -1407,7 +1408,7 @@ for _o in list(bpy.data.objects):
  _reparent_keep_world(_o,_target)
 # Keep the existing dynamic pony root working, but move the complete hair subsystem under its own asset root.
 _reparent_keep_world(PONY,HAIR_ASSET)
-ROOT['character_revision']='v12.4';ROOT['assembly_workflow']='body-head-hair';BODY_ASSET['scale_reference']=True;BODY_ASSET['tps_silhouette_review']=True;HEAD_ASSET['profile_review']=True;HAIR_ASSET['scalp_fit_review']=True;HAIR_ASSET['hero_silhouette_review']=True;FACE_ASSET['expression_ready']=True;FACE_ASSET['blink_system']='morph-eyelids';EYE_L['expression_pivot']='left-eye';EYE_R['expression_pivot']='right-eye';MOUTH_ASSET['expression_pivot']='mouth'
+ROOT['character_revision']='v12.5';ROOT['assembly_workflow']='body-head-hair';BODY_ASSET['scale_reference']=True;BODY_ASSET['tps_silhouette_review']=True;HEAD_ASSET['profile_review']=True;HEAD_ASSET['facial_depth_review']=True;HAIR_ASSET['scalp_fit_review']=True;HAIR_ASSET['hero_silhouette_review']=True;FACE_ASSET['expression_ready']=True;FACE_ASSET['blink_system']='morph-eyelids';FACE_ASSET['mobile_gaze_review']=True;EYE_L['expression_pivot']='left-eye';EYE_R['expression_pivot']='right-eye';MOUTH_ASSET['expression_pivot']='mouth'
 
 
 bpy.context.scene.render.engine='BLENDER_EEVEE'
