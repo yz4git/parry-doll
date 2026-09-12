@@ -1,0 +1,41 @@
+{
+  "version": 4,
+  "source_design": "Parry Doll v12 modular portrait: preserve v11.9 identity while improving adult-anime front/profile agreement for Body/Head/Hair assembly review",
+  "notes": "v12.0 slightly reduces the doll-like eye aperture, keeps the strong mobile-readable contour, preserves the compact V-line and rebalances nose/chin projection for cleaner front, profile and 3/4 agreement.",
+  "frontal": {
+    "faceWidth": 0.93,
+    "jaw": 0.83,
+    "eyeSpacing": 0.99,
+    "eyeSize": 1.16,
+    "mouthWidth": 1.11,
+    "cheekVolume": 1.10
+  },
+  "profile": {
+    "noseProjection": 1.43,
+    "noseWidth": 0.92,
+    "foreheadDepth": 1.02,
+    "mouthProjection": 1.14,
+    "chinProjection": 1.11,
+    "chinLength": 0.80
+  },
+  "surface": {
+    "orbitalDepth": 1.20,
+    "malarSupport": 1.13,
+    "lowerCheekHollow": 1.16,
+    "lipThickness": 1.30,
+    "upperLidThickness": 1.16,
+    "nostrilScale": 1.13,
+    "alarVolume": 1.09,
+    "philtrumDepth": 1.10,
+    "mouthCornerDepth": 1.14,
+    "labiomentalDepth": 1.10,
+    "glabellaRelief": 1.06,
+    "bridgeRelief": 1.17,
+    "tipRelief": 1.18,
+    "columellaRelief": 1.12,
+    "infraorbitalSoftness": 1.07,
+    "nasolabialDepth": 1.06,
+    "irisScale": 1.14,
+    "eyeContrast": 1.18
+  }
+}
