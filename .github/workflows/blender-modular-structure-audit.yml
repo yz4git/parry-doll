@@ -52,8 +52,11 @@ jobs:
           names = [n.get('name') for n in nodes if n.get('name')]
           counts = {n: names.count(n) for n in set(names)}
 
+          # BLENDER_HEROINE is the long-standing exported compatibility root. Keep it stable;
+          # the v12 modular assets live beneath/alongside the legacy runtime hierarchy.
+          root = 'BLENDER_HEROINE'
           modular = [
-              'BL_ROOT','BL_BODY_ASSET','BL_HEAD_ASSET','BL_HAIR_ASSET','BL_FACE_ASSET',
+              'BL_BODY_ASSET','BL_HEAD_ASSET','BL_HAIR_ASSET','BL_FACE_ASSET',
               'BL_EYE_L','BL_EYE_R','BL_MOUTH'
           ]
           legacy = [
@@ -63,41 +66,55 @@ jobs:
               'BL_THIGH_L','BL_SHIN_L','BL_FOOT_L',
               'BL_THIGH_R','BL_SHIN_R','BL_FOOT_R'
           ]
-          required = modular + legacy
+          required = [root] + modular + legacy
           missing = [n for n in required if counts.get(n, 0) == 0]
           duplicate = [n for n in required if counts.get(n, 0) != 1 and n not in missing]
 
-          # Build parent table so the audit records the exported hierarchy for future regressions.
           parents = {}
           for i, node in enumerate(nodes):
               for child in node.get('children', []):
                   parents[child] = i
           index_by_name = {n.get('name'): i for i, n in enumerate(nodes) if n.get('name')}
-          hierarchy = {}
-          for name in modular:
+
+          def chain_for(name):
               i = index_by_name.get(name)
-              chain = []
-              seen = set()
+              chain, seen = [], set()
               while i is not None and i not in seen:
                   seen.add(i)
                   node = nodes[i]
                   chain.append(node.get('name') or f'node:{i}')
                   i = parents.get(i)
-              hierarchy[name] = chain
+              return chain
 
-          # Preserve the old game runtime contract while adding the new asset organization.
+          hierarchy = {name: chain_for(name) for name in modular + legacy}
           runtime_contract = all(counts.get(n) == 1 for n in legacy)
-          modular_contract = all(counts.get(n) == 1 for n in modular)
+          modular_nodes = all(counts.get(n) == 1 for n in [root] + modular)
+
+          # Assert the relationships that make the v12 organization useful, without renaming
+          # or nesting legacy motion nodes in a way that would change local transform semantics.
+          relationship_checks = {
+              'bodyAnchoredToCompatibilityRoot': root in hierarchy['BL_BODY_ASSET'],
+              'headAssetUnderRuntimeHead': 'BL_HEAD' in hierarchy['BL_HEAD_ASSET'] and root in hierarchy['BL_HEAD_ASSET'],
+              'hairAssetUnderRuntimeHead': 'BL_HEAD' in hierarchy['BL_HAIR_ASSET'] and root in hierarchy['BL_HAIR_ASSET'],
+              'faceAssetUnderRuntimeHead': 'BL_HEAD' in hierarchy['BL_FACE_ASSET'] and root in hierarchy['BL_FACE_ASSET'],
+              'leftEyeControlUnderFace': 'BL_FACE_ASSET' in hierarchy['BL_EYE_L'],
+              'rightEyeControlUnderFace': 'BL_FACE_ASSET' in hierarchy['BL_EYE_R'],
+              'mouthControlUnderFace': 'BL_FACE_ASSET' in hierarchy['BL_MOUTH'],
+          }
+          relationships_ok = all(relationship_checks.values())
+          modular_contract = modular_nodes and relationships_ok
           pass_gate = runtime_contract and modular_contract and not missing and not duplicate
 
           report = {
               'pass': pass_gate,
               'glbBytes': len(data),
               'nodeCount': len(nodes),
+              'compatibilityRoot': root,
               'requiredModularNodes': modular,
               'requiredLegacyRuntimeNodes': legacy,
               'missing': missing,
               'duplicate': duplicate,
+              'relationshipChecks': relationship_checks,
               'hierarchy': hierarchy,
               'runtimeContract': runtime_contract,
               'modularContract': modular_contract,
