@@ -696,9 +696,9 @@ def add_reference_head_v120(p,name,mat,segments=112):
  surface={**surface,'irisScale':assembly_head['irisScale'],'eyeContrast':assembly_head['eyeContrast']}
  fw=frontal['faceWidth']*1.025;jaw=frontal['jaw']*.975;cheek=frontal['cheekVolume']*1.045
  eye_spacing=frontal['eyeSpacing'];eye_size=frontal['eyeSize']
- nose_proj=profile_ctrl['noseProjection']*.88;nose_width=profile_ctrl['noseWidth']
- forehead_depth=profile_ctrl['foreheadDepth']*1.01;mouth_proj=profile_ctrl['mouthProjection']*1.02
- chin_proj=profile_ctrl['chinProjection']*1.05;chin_len=profile_ctrl['chinLength']*.82
+ nose_proj=profile_ctrl['noseProjection']*.80;nose_width=profile_ctrl['noseWidth']
+ forehead_depth=profile_ctrl['foreheadDepth']*1.01;mouth_proj=profile_ctrl['mouthProjection']*1.00
+ chin_proj=profile_ctrl['chinProjection']*1.08;chin_len=profile_ctrl['chinLength']*.86
  orbital=surface['orbitalDepth'];malar=surface['malarSupport'];hollow=surface['lowerCheekHollow']
  alar=surface['alarVolume'];philtrum=surface['philtrumDepth'];corner=surface['mouthCornerDepth']
  labiomental=surface['labiomentalDepth'];lip_volume=surface['lipThickness']
@@ -724,9 +724,10 @@ def add_reference_head_v120(p,name,mat,segments=112):
   sections.append((y2,w*width_scale,back,front,zoff))
 
  base_profile=[
-  (.090,.0990),(.060,.1000),(.035,.1030),(.015,.1080),(-.005,.1140),(-.025,.1240),
-  (-.044,.1450),(-.054,.1320),(-.063,.1190),(-.069,.1080),(-.077,.1145),(-.086,.1200),
-  (-.094,.1215),(-.103,.1130),(-.110,.1050),(-.119,.1160),(-.128,.1120),(-.137,.1000),(-.145,.0860)
+  (.090,.0990),(.060,.1000),(.035,.1025),(.015,.1065),(-.005,.1115),(-.025,.1195),
+  (-.040,.1300),(-.048,.1350),(-.055,.1325),(-.062,.1220),(-.068,.1110),
+  (-.077,.1135),(-.086,.1195),(-.094,.1215),(-.103,.1130),(-.110,.1055),
+  (-.119,.1165),(-.128,.1135),(-.137,.1025),(-.145,.0890)
  ]
  profile=[]
  for yy,z in base_profile:
@@ -796,10 +797,10 @@ def add_reference_head_v120(p,name,mat,segments=112):
     mouth_w=frontal['mouthWidth']
     ul=(math.exp(-((x-.0105*mouth_w)/(.0120*mouth_w))**2-((yy+.0845)/.0080)**2)+
         math.exp(-((x+.0105*mouth_w)/(.0120*mouth_w))**2-((yy+.0845)/.0080)**2))
-    z+=fm*.00265*lip_volume*ul
+    z+=fm*.00282*lip_volume*ul
     z-=fm*.00075*lip_volume*math.exp(-(x/.0055)**2-((yy+.0847)/.0055)**2)
     ll=math.exp(-(x/(.0255*mouth_w))**2-((yy+.0940)/.0085)**2)
-    z+=fm*.00310*lip_volume*ll
+    z+=fm*.00330*lip_volume*ll
     # Mouth seam and corners recess into the muzzle rather than floating as a drawn line.
     z-=fm*.00080*math.exp(-(x/(.0280*mouth_w))**4-((yy+.0887)/.0032)**2)
     for side in (-1,1):
@@ -807,15 +808,15 @@ def add_reference_head_v120(p,name,mat,segments=112):
      z-=fm*.00135*corner*mc
 
     # Labiomental fold separates the lower lip from a more feminine, compact chin pad.
-    z-=fm*.00165*labiomental*math.exp(-(x/.0245)**2-((yy+.1060)/.0075)**2)
-    z+=fm*.00495*math.exp(-(x/.0315)**2-((yy+.119)/.0180)**2)
+    z-=fm*.00135*labiomental*math.exp(-(x/.0245)**2-((yy+.1060)/.0082)**2)
+    z+=fm*.00465*math.exp(-(x/.0305)**2-((yy+.121)/.0195)**2)
 
     # v11.8 adult facial planes. These are local depth fields, not detached feature meshes,
     # so the silhouette remains one continuous head surface from front through three-quarter views.
     z+=fm*.00215*glabella*math.exp(-(x/.0220)**2-((yy-.0470)/.0180)**2)
-    z+=fm*.00380*bridge_relief*math.exp(-(x/.0145)**2-((yy+.0100)/.0340)**2)
-    z+=fm*.00585*tip_relief*math.exp(-(x/.0115)**2-((yy+.0475)/.0105)**2)
-    z+=fm*.00225*columella*math.exp(-(x/.0095)**2-((yy+.0615)/.0080)**2)
+    z+=fm*.00345*bridge_relief*math.exp(-(x/.0145)**2-((yy+.0100)/.0340)**2)
+    z+=fm*.00470*tip_relief*math.exp(-(x/.0115)**2-((yy+.0475)/.0115)**2)
+    z+=fm*.00195*columella*math.exp(-(x/.0095)**2-((yy+.0615)/.0085)**2)
 
     # Soften the lower-orbit to malar transition but keep a readable cheek plane under cinematic light.
     for side in (-1,1):
@@ -968,6 +969,7 @@ TH_L=empty('BL_THIGH_L',BODY_ASSET);SH_L=empty('BL_SHIN_L',BODY_ASSET);FOOT_L=em
 # REFERENCE_V127: profile-balance pass reduces excessive nasal projection and restores a cleaner nose-lip-chin S-curve while preserving the accepted v12.6 frontal mask.
 # REFERENCE_V128: portrait PBR pass adds mobile-safe eye wetline geometry plus skin/sclera/iris/lip specular tuning without changing accepted v12.7 proportions.
 # REFERENCE_V129: texture-like radial iris detail uses one tiny indexed mesh per eye, adding warm/dark spokes without image textures or extra draw-call-heavy strand objects.
+# REFERENCE_V130: user-profile reference pass reshapes the nose/lip/chin silhouette toward a smaller rounded nose, flatter muzzle and longer elegant chin without changing the accepted frontal mask.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
@@ -1167,7 +1169,7 @@ add_panel(HEAD,'UpperLipV119_R',[(0,-.0827,.1302),(.0135,-.0796,.1284),(.0294*FA
 add_panel(HEAD,'LowerLipV119',[(-.0282*FACE120['frontal']['mouthWidth'],-.0880,.1272),(0,-.0879,.1301),(.0282*FACE120['frontal']['mouthWidth'],-.0880,.1272),(.0238*FACE120['frontal']['mouthWidth'],-.0944,.1270),(0,-.0985,.1291),(-.0238*FACE120['frontal']['mouthWidth'],-.0944,.1270)],.00039*FACE120['surface']['lipThickness'],LIP)
 add_strand(HEAD,'MouthSeamV119',[(-.0300,-.0868,.1272),(-.0135,-.0860,.1290),(0,-.0869,.1307),(.0135,-.0860,.1290),(.0300,-.0868,.1272)],.000075,FACE_DARK)
 for side in(-1,1):
- add_ellipse_surface(HEAD,f'NostrilTintV119_{side}',side*.0065*FACE120['profile']['noseWidth'],-.0580,.1432,.00215*FACE120['surface']['nostrilScale'],.00088*FACE120['surface']['nostrilScale'],FACE_DARK,20)
+ add_ellipse_surface(HEAD,f'NostrilTintV119_{side}',side*.0065*FACE120['profile']['noseWidth'],-.0580,.1368,.00205*FACE120['surface']['nostrilScale'],.00088*FACE120['surface']['nostrilScale'],FACE_DARK,20)
 
 # v9.7: EarV78 is the single canonical ear set; no duplicate side anatomy is added here.
 
@@ -1460,7 +1462,7 @@ for _o in list(bpy.data.objects):
  _reparent_keep_world(_o,_target)
 # Keep the existing dynamic pony root working, but move the complete hair subsystem under its own asset root.
 _reparent_keep_world(PONY,HAIR_ASSET)
-ROOT['character_revision']='v12.9';ROOT['assembly_workflow']='body-head-hair';BODY_ASSET['scale_reference']=True;BODY_ASSET['tps_silhouette_review']=True;HEAD_ASSET['profile_review']=True;HEAD_ASSET['facial_depth_review']=True;HEAD_ASSET['compact_face_review']=True;HEAD_ASSET['balanced_profile_review']=True;HAIR_ASSET['scalp_fit_review']=True;HAIR_ASSET['hero_silhouette_review']=True;FACE_ASSET['expression_ready']=True;FACE_ASSET['blink_system']='morph-eyelids';FACE_ASSET['mobile_gaze_review']=True;FACE_ASSET['portrait_material_revision']='v12.8-pbr';FACE_ASSET['iris_detail_revision']='v12.9-radial';EYE_L['expression_pivot']='left-eye';EYE_R['expression_pivot']='right-eye';MOUTH_ASSET['expression_pivot']='mouth'
+ROOT['character_revision']='v13.0';ROOT['assembly_workflow']='body-head-hair';BODY_ASSET['scale_reference']=True;BODY_ASSET['tps_silhouette_review']=True;HEAD_ASSET['profile_review']=True;HEAD_ASSET['facial_depth_review']=True;HEAD_ASSET['compact_face_review']=True;HEAD_ASSET['balanced_profile_review']=True;HEAD_ASSET['user_reference_profile_review']=True;HAIR_ASSET['scalp_fit_review']=True;HAIR_ASSET['hero_silhouette_review']=True;FACE_ASSET['expression_ready']=True;FACE_ASSET['blink_system']='morph-eyelids';FACE_ASSET['mobile_gaze_review']=True;FACE_ASSET['portrait_material_revision']='v12.8-pbr';FACE_ASSET['iris_detail_revision']='v12.9-radial';EYE_L['expression_pivot']='left-eye';EYE_R['expression_pivot']='right-eye';MOUTH_ASSET['expression_pivot']='mouth'
 
 
 bpy.context.scene.render.engine='BLENDER_EEVEE'
