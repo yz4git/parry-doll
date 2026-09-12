@@ -6,13 +6,15 @@ REF_PATH=os.path.join(ROOT_DIR,'tools','heroine-reference-proportions.json')
 FACE75_PATH=os.path.join(ROOT_DIR,'tools','heroine-face-profile-v75.json')
 CC0_FACE_PATH=os.path.join(ROOT_DIR,'tools','cc0-face-topology-template-v1.json')
 CC0_STATS_PATH=os.path.join(ROOT_DIR,'tools','cc0-face-topology-stats.json')
-FACE119_PATH=os.path.join(ROOT_DIR,'tools','heroine-face-controls-v119.json')
+FACE120_PATH=os.path.join(ROOT_DIR,'tools','heroine-face-controls-v120.json')
+ASSEMBLY120_PATH=os.path.join(ROOT_DIR,'tools','heroine-assembly-v120.json')
 os.makedirs(os.path.dirname(OUT),exist_ok=True)
 with open(REF_PATH,'r',encoding='utf-8') as f:REF=json.load(f)
 with open(FACE75_PATH,'r',encoding='utf-8') as f:FACE75=json.load(f)
 with open(CC0_FACE_PATH,'r',encoding='utf-8') as f:CC0_FACE=json.load(f)
 with open(CC0_STATS_PATH,'r',encoding='utf-8') as f:CC0_STATS=json.load(f)
-with open(FACE119_PATH,'r',encoding='utf-8') as f:FACE119=json.load(f)
+with open(FACE120_PATH,'r',encoding='utf-8') as f:FACE120=json.load(f)
+with open(ASSEMBLY120_PATH,'r',encoding='utf-8') as f:ASSEMBLY120=json.load(f)
 if CC0_FACE.get('version')!=2 or CC0_FACE.get('license')!='CC0-1.0':
  raise RuntimeError('v7.7 requires the local CC0 hm08 topology template v2')
 H=float(REF['derived_world_units']['nominal_height'])
@@ -640,10 +642,14 @@ def add_anime_head_v60(p,name,mat,segments=96,rings=48):
  o=bpy.data.objects.new(name,mesh);bpy.context.scene.collection.objects.link(o);o.data.materials.append(mat);smooth(o)
  return parent(o,p)
 
-def add_reference_head_v119(p,name,mat,segments=112):
+def add_reference_head_v120(p,name,mat,segments=112):
  # Parameter grouping follows yz4git/model-editor: frontal metrics and side-depth metrics are
  # independent. This keeps profile edits from changing face width/jaw/eye spacing in front view.
- frontal=FACE119['frontal'];profile_ctrl=FACE119['profile'];surface=FACE119['surface']
+ frontal=FACE120['frontal'];profile_ctrl=FACE120['profile'];surface=FACE120['surface']
+ assembly_head=ASSEMBLY120['head']
+ frontal={**frontal,'eyeSize':assembly_head['eyeSize'],'eyeSpacing':assembly_head['eyeSpacing'],'faceWidth':assembly_head['faceWidth'],'jaw':assembly_head['jaw'],'cheekVolume':assembly_head['cheekVolume'],'mouthWidth':assembly_head['mouthWidth']}
+ profile_ctrl={**profile_ctrl,'noseProjection':assembly_head['noseProjection'],'noseWidth':assembly_head['noseWidth'],'foreheadDepth':assembly_head['foreheadDepth'],'mouthProjection':assembly_head['mouthProjection'],'chinProjection':assembly_head['chinProjection'],'chinLength':assembly_head['chinLength']}
+ surface={**surface,'irisScale':assembly_head['irisScale'],'eyeContrast':assembly_head['eyeContrast']}
  fw=frontal['faceWidth'];jaw=frontal['jaw'];cheek=frontal['cheekVolume']
  eye_spacing=frontal['eyeSpacing'];eye_size=frontal['eyeSize']
  nose_proj=profile_ctrl['noseProjection'];nose_width=profile_ctrl['noseWidth']
@@ -792,9 +798,13 @@ def add_reference_head_v119(p,name,mat,segments=112):
  bpy.context.view_layer.objects.active=o;bpy.ops.object.modifier_apply(modifier=mod.name)
  return parent(o,p)
 
-ROOT=empty('BLENDER_HEROINE');PELVIS=empty('BL_PELVIS',ROOT);TORSO=empty('BL_TORSO',ROOT);HEAD=empty('BL_HEAD',ROOT)
-UA_L=empty('BL_UPPER_ARM_L',ROOT);FA_L=empty('BL_FOREARM_L',ROOT);HAND_L=empty('BL_HAND_L',ROOT);UA_R=empty('BL_UPPER_ARM_R',ROOT);FA_R=empty('BL_FOREARM_R',ROOT);HAND_R=empty('BL_HAND_R',ROOT)
-TH_L=empty('BL_THIGH_L',ROOT);SH_L=empty('BL_SHIN_L',ROOT);FOOT_L=empty('BL_FOOT_L',ROOT);TH_R=empty('BL_THIGH_R',ROOT);SH_R=empty('BL_SHIN_R',ROOT);FOOT_R=empty('BL_FOOT_R',ROOT);SWORD=empty('BL_SWORD',ROOT)
+ROOT=empty('BLENDER_HEROINE')
+BODY_ASSET=empty('BL_BODY_ASSET',ROOT)
+PELVIS=empty('BL_PELVIS',BODY_ASSET);TORSO=empty('BL_TORSO',BODY_ASSET);HEAD=empty('BL_HEAD',ROOT)
+HEAD_ASSET=empty('BL_HEAD_ASSET',HEAD);HAIR_ASSET=empty('BL_HAIR_ASSET',HEAD);FACE_ASSET=empty('BL_FACE_ASSET',HEAD)
+EYE_L=empty('BL_EYE_L',FACE_ASSET);EYE_R=empty('BL_EYE_R',FACE_ASSET);MOUTH_ASSET=empty('BL_MOUTH',FACE_ASSET)
+UA_L=empty('BL_UPPER_ARM_L',BODY_ASSET);FA_L=empty('BL_FOREARM_L',BODY_ASSET);HAND_L=empty('BL_HAND_L',BODY_ASSET);UA_R=empty('BL_UPPER_ARM_R',BODY_ASSET);FA_R=empty('BL_FOREARM_R',BODY_ASSET);HAND_R=empty('BL_HAND_R',BODY_ASSET)
+TH_L=empty('BL_THIGH_L',BODY_ASSET);SH_L=empty('BL_SHIN_L',BODY_ASSET);FOOT_L=empty('BL_FOOT_L',BODY_ASSET);TH_R=empty('BL_THIGH_R',BODY_ASSET);SH_R=empty('BL_SHIN_R',BODY_ASSET);FOOT_R=empty('BL_FOOT_R',BODY_ASSET);SWORD=empty('BL_SWORD',ROOT)
 
 # === REFERENCE-LOCKED BODY ENVELOPE ===
 # Source sheet measured at H=961 px and normalized in heroine-reference-proportions.json.
@@ -904,6 +914,7 @@ TH_L=empty('BL_THIGH_L',ROOT);SH_L=empty('BL_SHIN_L',ROOT);FOOT_L=empty('BL_FOOT
 # REFERENCE_V117: model-editor-style local Gaussian/RBF fields sculpt alar wings, philtrum, volumetric lips, mouth corners and the labiomental fold directly into the single-shell face.
 # REFERENCE_V118: reference-locked adult portrait pass narrows the lower face, strengthens brow/bridge/tip/columella profile planes and upgrades the cinematic almond-eye treatment.
 # REFERENCE_V119: visual-audit portrait pass boosts iPhone-scale eye contrast, shortens the lower face, exaggerates the key-art profile and adds layered asymmetric brow-length bangs.
+# REFERENCE_V120: Tripo/Astra-inspired modular assembly pass separates body/head/hair/face assets, adds expression pivots and rebalances the close-up eye/profile read without changing combat rig names.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
@@ -1010,7 +1021,7 @@ add_box(PELVIS,'WaistCenterGem',(0,.102,.184),(.026,.050,.018),SILVER,.005)
 # === HEAD / FACE ===
 # v11.2 full rebuild: a single new independently generated shell owns the visible face.
 # The legacy HeadShellV60 and FaceQuadPatchV77 remain as unused historical helpers only.
-add_reference_head_v119(HEAD,'HeadShellV119',SKIN,128)
+add_reference_head_v120(HEAD,'HeadShellV120',SKIN,128)
 add_cylinder(HEAD,'Neck',(0,-.158,-.008),W('neck')*.33,.084,SKIN,26)
 add_cylinder(HEAD,'Choker',(0,-.139,-.006),W('neck')*.46,.034,BLACK,28)
 add_cylinder(HEAD,'ChokerTrim',(0,-.124,-.006),W('neck')*.47,.009,SILVER,28)
@@ -1035,12 +1046,12 @@ for side in(-1,1):
 # preserve the expressive anime-real portrait read at actual iPhone gameplay distance.
 face_front=.0974
 eye_y=.0295
-eye_x=.0450*FACE119['frontal']['eyeSpacing']
-eye_rx=.0308*FACE119['frontal']['eyeSize']
-eye_ry=.0109*FACE119['frontal']['eyeSize']
-eye_tilt=.00315
-iris_scale=FACE119['surface']['irisScale']
-eye_contrast=FACE119['surface']['eyeContrast']
+eye_x=.0452*ASSEMBLY120['head']['eyeSpacing']
+eye_rx=.0302*ASSEMBLY120['head']['eyeSize']
+eye_ry=.01055*ASSEMBLY120['head']['eyeSize']
+eye_tilt=.00300
+iris_scale=ASSEMBLY120['head']['irisScale']
+eye_contrast=ASSEMBLY120['head']['eyeContrast']
 for side in(-1,1):
  ex=side*eye_x
  add_almond_surface(HEAD,f'EyeScleraV119_{side}',ex,eye_y,.10310,eye_rx,eye_ry,.00128,SCLERA,96,side,eye_tilt*.74)
@@ -1062,12 +1073,12 @@ for side in(-1,1):
 # v7.1 integrated portrait accents: head topology owns all nose/mouth depth.
 # Only a shallow colour patch remains for the lips, following the actual mouth plane instead of floating in front of it.
 # v11.4 surface accents follow the rebuilt shell instead of the retired v8 face depth.
-add_panel(HEAD,'UpperLipV119_L',[(-.0280*FACE119['frontal']['mouthWidth'],-.0845,.1268),(-.0135,-.0796,.1284),(0,-.0827,.1302),(0,-.0867,.1305),(-.0115,-.0860,.1292),(-.0268*FACE119['frontal']['mouthWidth'],-.0884,.1273)],.00034*FACE119['surface']['lipThickness'],LIP)
-add_panel(HEAD,'UpperLipV119_R',[(0,-.0827,.1302),(.0135,-.0796,.1284),(.0280*FACE119['frontal']['mouthWidth'],-.0845,.1268),(.0268*FACE119['frontal']['mouthWidth'],-.0884,.1273),(.0115,-.0860,.1292),(0,-.0867,.1305)],.00034*FACE119['surface']['lipThickness'],LIP)
-add_panel(HEAD,'LowerLipV119',[(-.0268*FACE119['frontal']['mouthWidth'],-.0886,.1272),(0,-.0879,.1301),(.0268*FACE119['frontal']['mouthWidth'],-.0886,.1272),(.0228*FACE119['frontal']['mouthWidth'],-.0952,.1270),(0,-.0985,.1291),(-.0228*FACE119['frontal']['mouthWidth'],-.0952,.1270)],.00039*FACE119['surface']['lipThickness'],LIP)
+add_panel(HEAD,'UpperLipV119_L',[(-.0280*FACE120['frontal']['mouthWidth'],-.0845,.1268),(-.0135,-.0796,.1284),(0,-.0827,.1302),(0,-.0867,.1305),(-.0115,-.0860,.1292),(-.0268*FACE120['frontal']['mouthWidth'],-.0884,.1273)],.00034*FACE120['surface']['lipThickness'],LIP)
+add_panel(HEAD,'UpperLipV119_R',[(0,-.0827,.1302),(.0135,-.0796,.1284),(.0280*FACE120['frontal']['mouthWidth'],-.0845,.1268),(.0268*FACE120['frontal']['mouthWidth'],-.0884,.1273),(.0115,-.0860,.1292),(0,-.0867,.1305)],.00034*FACE120['surface']['lipThickness'],LIP)
+add_panel(HEAD,'LowerLipV119',[(-.0268*FACE120['frontal']['mouthWidth'],-.0886,.1272),(0,-.0879,.1301),(.0268*FACE120['frontal']['mouthWidth'],-.0886,.1272),(.0228*FACE120['frontal']['mouthWidth'],-.0952,.1270),(0,-.0985,.1291),(-.0228*FACE120['frontal']['mouthWidth'],-.0952,.1270)],.00039*FACE120['surface']['lipThickness'],LIP)
 add_strand(HEAD,'MouthSeamV119',[(-.0282,-.0871,.1272),(-.0128,-.0863,.1290),(0,-.0872,.1307),(.0128,-.0863,.1290),(.0282,-.0871,.1272)],.000075,FACE_DARK)
 for side in(-1,1):
- add_ellipse_surface(HEAD,f'NostrilTintV119_{side}',side*.0065*FACE119['profile']['noseWidth'],-.0580,.1485,.00195*FACE119['surface']['nostrilScale'],.00072*FACE119['surface']['nostrilScale'],FACE_DARK,20)
+ add_ellipse_surface(HEAD,f'NostrilTintV119_{side}',side*.0065*FACE120['profile']['noseWidth'],-.0580,.1485,.00195*FACE120['surface']['nostrilScale'],.00072*FACE120['surface']['nostrilScale'],FACE_DARK,20)
 
 # v9.7: EarV78 is the single canonical ear set; no duplicate side anatomy is added here.
 
@@ -1177,6 +1188,14 @@ for _name,_pts in (
  ('C',[(-.013,.191,.054),(.001,.153,.095),(.016,.112,.115),(.011,.065,.114)]),
  ('D',[(.022,.190,.054),(.033,.151,.093),(.047,.112,.112),(.056,.073,.110)])):
  add_strand(HEAD,f'KeyArtBangHiV119_{_name}',_pts,.000055,HAIR_HI)
+# v12.0 modular hair-fit pass: broad temple layers bridge fringe to side/back mass.
+for _side in (-1,1):
+ _sw=ASSEMBLY120['hair']['templeLockWidth'];_sd=ASSEMBLY120['hair']['templeLockDepth']
+ _pts=[(_side*.086,.170,.055),(_side*.098,.132,.083),(_side*.106,.090,.100),(_side*.108,.045,.103),(_side*.102,.000,.097),(_side*.094,-.036,.086)]
+ _widths=[_sw*.70,_sw, _sw*1.04,_sw*.88,_sw*.62,_sw*.24]
+ _depths=[_sd*.72,_sd,_sd*1.02,_sd*.88,_sd*.60,_sd*.20]
+ add_smooth_lock(HEAD,f'TempleLayerV120_{_side}',_pts,_widths,_depths,HAIR,12,6)
+ add_strand(HEAD,f'TempleLayerHiV120_{_side}',[(_side*.087,.165,.060),(_side*.099,.126,.089),(_side*.106,.080,.102),(_side*.101,.002,.098)],.000050,HAIR_HI)
 # v8.2 deliberately omits isolated cheek wisps. At portrait scale even a physically thin curve
 # reads as a detached black scratch in profile; the existing broad temple/face locks carry the hairstyle.
 
@@ -1296,7 +1315,41 @@ for group,name in[(FOOT_L,'L'),(FOOT_R,'R')]:
 # Slim sword retained as a gameplay-readable prop.
 add_box(SWORD,'SwordBlade',(0,.63,0),(.043,1.26,.018),WHITE,.008);add_box(SWORD,'SwordEdge',(.020,.65,.013),(.010,1.22,.010),GLOW,.003);add_box(SWORD,'SwordGuard',(0,-.03,0),(.245,.040,.085),SILVER,.012);add_cylinder(SWORD,'SwordGrip',(0,-.17,0),.026,.23,BLACK,20);add_box(SWORD,'SwordPommel',(0,-.31,0),(.050,.050,.050),SILVER,.009)
 
-for o in[ROOT,PELVIS,TORSO,HEAD,UA_L,FA_L,HAND_L,UA_R,FA_R,HAND_R,TH_L,SH_L,FOOT_L,TH_R,SH_R,FOOT_R,SWORD,PONY]:o.location=(0,0,0);o.rotation_euler=(0,0,0);o.scale=(1,1,1)
+# v12.0 modular assembly: Body is the scale reference; Head and Hair remain separately selectable/reviewable.
+def _under(obj,ancestor):
+ q=obj.parent
+ while q:
+  if q is ancestor:return True
+  q=q.parent
+ return False
+def _reparent_keep_world(obj,target):
+ mw=obj.matrix_world.copy();obj.parent=target;obj.matrix_world=mw
+def _materials(obj):
+ return {m.name for m in getattr(obj.data,'materials',[]) if m}
+
+for o in[ROOT,BODY_ASSET,PELVIS,TORSO,HEAD,HEAD_ASSET,HAIR_ASSET,FACE_ASSET,UA_L,FA_L,HAND_L,UA_R,FA_R,HAND_R,TH_L,SH_L,FOOT_L,TH_R,SH_R,FOOT_R,SWORD,PONY]:
+ o.location=(0,0,0);o.rotation_euler=(0,0,0);o.scale=(1,1,1)
+# Expression pivots use the same measured eye/mouth centers as the visible v12 geometry.
+EYE_L.location=bpos((-.0452*ASSEMBLY120['head']['eyeSpacing'],.0295,.1040));EYE_R.location=bpos((.0452*ASSEMBLY120['head']['eyeSpacing'],.0295,.1040));MOUTH_ASSET.location=bpos((0,-.0880,.1290))
+EYE_L.rotation_euler=EYE_R.rotation_euler=MOUTH_ASSET.rotation_euler=(0,0,0);EYE_L.scale=EYE_R.scale=MOUTH_ASSET.scale=(1,1,1)
+
+_eye_tokens=('EyeSclera','IrisOuter','IrisInner','Pupil','EyeLight','UpperLash','OuterLash','LowerLid','UpperLid')
+_mouth_tokens=('UpperLip','LowerLip','MouthSeam')
+_face_tokens=('Brow','Nostril','Ear','Face','Philtrum','Chin','Nose')
+for _o in list(bpy.data.objects):
+ if _o.type!='MESH' or not _under(_o,HEAD) or _under(_o,PONY):continue
+ _name=_o.name;_mats=_materials(_o);_target=None
+ if any(t in _name for t in _eye_tokens):
+  _target=EYE_L if _name.endswith('_-1') else EYE_R if _name.endswith('_1') else FACE_ASSET
+ elif any(t in _name for t in _mouth_tokens):_target=MOUTH_ASSET
+ elif any(t in _name for t in _face_tokens):_target=FACE_ASSET
+ elif 'Hair' in _mats or 'Hair Highlight' in _mats or 'HairTie' in _name or 'Fringe' in _name or 'Bang' in _name or 'TempleLayer' in _name:_target=HAIR_ASSET
+ else:_target=HEAD_ASSET
+ _reparent_keep_world(_o,_target)
+# Keep the existing dynamic pony root working, but move the complete hair subsystem under its own asset root.
+_reparent_keep_world(PONY,HAIR_ASSET)
+ROOT['character_revision']='v12.0';ROOT['assembly_workflow']='body-head-hair';BODY_ASSET['scale_reference']=True;HEAD_ASSET['profile_review']=True;HAIR_ASSET['scalp_fit_review']=True;FACE_ASSET['expression_ready']=True
+
 
 bpy.context.scene.render.engine='BLENDER_EEVEE'
 bpy.ops.wm.save_as_mainfile(filepath=os.path.splitext(OUT)[0]+'.blend')
