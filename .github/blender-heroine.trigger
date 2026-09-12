@@ -1,1 +1,1 @@
-2026-09-13 build Blender heroine v12.4 layered crown and hero ponytail silhouette
+2026-09-13 build Blender heroine v12.5 facial depth mobile gaze portrait materials
