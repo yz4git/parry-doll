@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - dist/assets/models/heroine-blender.glb
+      - .github/blender-blink-audit.trigger
       - .github/workflows/blender-blink-webkit-audit.yml
   workflow_dispatch:
 
