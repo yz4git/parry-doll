@@ -6,6 +6,7 @@ on:
     paths:
       - dist/assets/models/heroine-blender.glb
       - tools/make-blender-heroine.py
+      - tools/refine-blender-reference-v122.py
       - tools/heroine-assembly-v120.json
       - tools/heroine-face-controls-v120.json
       - .github/blender-structure-audit.trigger
@@ -52,12 +53,10 @@ jobs:
           names = [n.get('name') for n in nodes if n.get('name')]
           counts = {n: names.count(n) for n in set(names)}
 
-          # BLENDER_HEROINE is the long-standing exported compatibility root. Keep it stable;
-          # the v12 modular assets live beneath/alongside the legacy runtime hierarchy.
           root = 'BLENDER_HEROINE'
           modular = [
               'BL_BODY_ASSET','BL_HEAD_ASSET','BL_HAIR_ASSET','BL_FACE_ASSET',
-              'BL_EYE_L','BL_EYE_R','BL_MOUTH'
+              'BL_EYE_L','BL_EYE_R','BL_MOUTH','BL_EYELID_L','BL_EYELID_R'
           ]
           legacy = [
               'BL_PELVIS','BL_TORSO','BL_HEAD','BL_PONY_DYNAMIC','BL_SWORD',
@@ -89,9 +88,6 @@ jobs:
           hierarchy = {name: chain_for(name) for name in modular + legacy}
           runtime_contract = all(counts.get(n) == 1 for n in legacy)
           modular_nodes = all(counts.get(n) == 1 for n in [root] + modular)
-
-          # Assert the relationships that make the v12 organization useful, without renaming
-          # or nesting legacy motion nodes in a way that would change local transform semantics.
           relationship_checks = {
               'bodyAnchoredToCompatibilityRoot': root in hierarchy['BL_BODY_ASSET'],
               'headAssetUnderRuntimeHead': 'BL_HEAD' in hierarchy['BL_HEAD_ASSET'] and root in hierarchy['BL_HEAD_ASSET'],
@@ -100,6 +96,8 @@ jobs:
               'leftEyeControlUnderFace': 'BL_FACE_ASSET' in hierarchy['BL_EYE_L'],
               'rightEyeControlUnderFace': 'BL_FACE_ASSET' in hierarchy['BL_EYE_R'],
               'mouthControlUnderFace': 'BL_FACE_ASSET' in hierarchy['BL_MOUTH'],
+              'leftEyelidUnderFace': 'BL_FACE_ASSET' in hierarchy['BL_EYELID_L'],
+              'rightEyelidUnderFace': 'BL_FACE_ASSET' in hierarchy['BL_EYELID_R'],
           }
           relationships_ok = all(relationship_checks.values())
           modular_contract = modular_nodes and relationships_ok
