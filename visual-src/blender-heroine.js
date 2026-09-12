@@ -10,6 +10,38 @@ const INSTANCES=new Set();
 const REF_SHOULDER_HALF=.172;
 const REF_HIP_HALF=.151;
 
+// PORTRAIT_MATERIAL_V128: keep the exported PBR intent stable in Three.js/iPhone Safari.
+function tunePortraitMaterials(root){
+ const seen=new Set();
+ root.traverse(o=>{
+  if(!o.isMesh)return;
+  const mats=Array.isArray(o.material)?o.material:[o.material];
+  for(const m of mats){
+   if(!m||seen.has(m))continue;seen.add(m);
+   const n=(m.name||'').toLowerCase();
+   if(n==='skin'){
+    m.metalness=0;m.roughness=.62;m.envMapIntensity=.72;
+    if(m.isMeshPhysicalMaterial){m.clearcoat=Math.max(m.clearcoat||0,.035);m.clearcoatRoughness=.70}
+   }else if(n==='sclera'){
+    m.metalness=0;m.roughness=.36;m.envMapIntensity=1.05;
+    if(m.isMeshPhysicalMaterial){m.clearcoat=Math.max(m.clearcoat||0,.32);m.clearcoatRoughness=.18}
+   }else if(n==='iris'||n==='iris inner'){
+    m.metalness=0;m.roughness=.40;m.envMapIntensity=.92;
+    if(m.isMeshPhysicalMaterial){m.clearcoat=Math.max(m.clearcoat||0,n==='iris inner'?.22:.18);m.clearcoatRoughness=.20}
+   }else if(n==='pupil'){
+    m.metalness=0;m.roughness=.26;m.envMapIntensity=.70;
+   }else if(n==='lip'){
+    m.metalness=0;m.roughness=.40;m.envMapIntensity=.88;
+    if(m.isMeshPhysicalMaterial){m.clearcoat=Math.max(m.clearcoat||0,.30);m.clearcoatRoughness=.24}
+   }else if(n==='eye wetline'){
+    m.metalness=0;m.roughness=.20;m.envMapIntensity=1.18;
+    if(m.isMeshPhysicalMaterial){m.clearcoat=Math.max(m.clearcoat||0,.52);m.clearcoatRoughness=.12}
+   }
+   m.needsUpdate=true;
+  }
+ });
+}
+
 function referenceRetarget(d,base){
  const s=d.spec.scale,right=new THREE.Vector3(Math.cos(d.face),0,-Math.sin(d.face)),forward=new THREE.Vector3(Math.sin(d.face),0,Math.cos(d.face)),up=base.neck.clone().sub(base.pelvis).normalize();
  const p={};for(const [name,q] of Object.entries(base))p[name]=q.clone();
@@ -33,7 +65,7 @@ export class BlenderHeroine{
   this.weapon=new THREE.Group();this.weapon.name='blender-heroine-weapon-runtime';this.root.add(this.weapon);
   const url=new URL('assets/models/heroine-blender.glb',assetBase).href;
   new GLTFLoader().load(url,gltf=>{
-   this.model=gltf.scene;this.model.name='blender-heroine-model';this.model.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false}});this.root.add(this.model);
+   this.model=gltf.scene;this.model.name='blender-heroine-model';this.model.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false}});tunePortraitMaterials(this.model);this.root.add(this.model);
    for(const name of ['BL_PELVIS','BL_TORSO','BL_HEAD','BL_UPPER_ARM_L','BL_FOREARM_L','BL_HAND_L','BL_UPPER_ARM_R','BL_FOREARM_R','BL_HAND_R','BL_THIGH_L','BL_SHIN_L','BL_FOOT_L','BL_THIGH_R','BL_SHIN_R','BL_FOOT_R'])this.groups[name]=this.model.getObjectByName(name)||null;
    this.face.eyeL=this.model.getObjectByName('BL_EYE_L')||null;this.face.eyeR=this.model.getObjectByName('BL_EYE_R')||null;this.face.mouth=this.model.getObjectByName('BL_MOUTH')||null;this.face.hair=this.model.getObjectByName('BL_HAIR_ASSET')||null;this.face.lidL=this.model.getObjectByName('BL_EYELID_L')||null;this.face.lidR=this.model.getObjectByName('BL_EYELID_R')||null;
    const lidReady=lid=>{const index=lid?.morphTargetDictionary?.Blink;return !!lid&&Number.isInteger(index)&&!!lid.morphTargetInfluences};

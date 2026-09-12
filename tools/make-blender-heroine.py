@@ -28,6 +28,21 @@ def bpos(v):x,y,z=v;return(x,-z,y)
 def bscale(v):x,y,z=v;return(x,z,y)
 def material(name,color,metallic=0.0,roughness=.45):
  m=bpy.data.materials.new(name);m.use_nodes=True;b=m.node_tree.nodes.get('Principled BSDF');b.inputs['Base Color'].default_value=(*color,1);b.inputs['Metallic'].default_value=metallic;b.inputs['Roughness'].default_value=roughness;return m
+
+def tune_principled(mat,specular=None,coat=None,coat_roughness=None):
+ b=mat.node_tree.nodes.get('Principled BSDF') if mat and mat.use_nodes else None
+ if not b:return mat
+ def set_any(names,value):
+  if value is None:return
+  for name in names:
+   inp=b.inputs.get(name)
+   if inp is not None:
+    inp.default_value=value
+    return
+ set_any(('Specular IOR Level','Specular'),specular)
+ set_any(('Coat Weight','Clearcoat'),coat)
+ set_any(('Coat Roughness','Clearcoat Roughness'),coat_roughness)
+ return mat
 SKIN=material('Skin',(0.375,0.245,0.225),0,.68)
 BLACK=material('Suit Black',(0.014,0.018,0.027),.08,.30)
 BLACK_SOFT=material('Suit Soft',(0.030,0.035,0.048),.02,.44)
@@ -43,14 +58,22 @@ for _hair_mat,_spec in ((HAIR,.14),(HAIR_HI,.18)):
   _old=_bsdf.inputs.get('Specular')
   if _ior:_ior.default_value=_spec
   elif _old:_old.default_value=_spec
-SCLERA=material('Sclera',(0.60,0.575,0.555),0,.66)
-IRIS=material('Iris',(0.052,0.032,0.030),.01,.56)
-IRIS_INNER=material('Iris Inner',(0.175,0.105,0.082),.01,.58)
-PUPIL=material('Pupil',(0.004,0.005,0.006),0,.30)
-LIP=material('Lip',(0.285,0.105,0.125),0,.67)
+SCLERA=material('Sclera',(0.60,0.575,0.555),0,.42)
+IRIS=material('Iris',(0.052,0.032,0.030),.01,.42)
+IRIS_INNER=material('Iris Inner',(0.175,0.105,0.082),.01,.40)
+PUPIL=material('Pupil',(0.004,0.005,0.006),0,.28)
+LIP=material('Lip',(0.285,0.105,0.125),0,.42)
 FACE_DARK=material('Face Detail',(0.20,0.075,0.070),0,.68)
+EYE_WET=material('Eye Wetline',(0.34,0.155,0.145),0,.24)
 EAR_SHADOW=material('Ear Inner',(0.255,0.145,0.135),0,.78)
 GLOW=material('Cyan Accent',(0.20,0.56,0.61),.38,.18)
+tune_principled(SKIN,specular=.32,coat=.035,coat_roughness=.70)
+tune_principled(SCLERA,specular=.52,coat=.32,coat_roughness=.18)
+tune_principled(IRIS,specular=.46,coat=.18,coat_roughness=.22)
+tune_principled(IRIS_INNER,specular=.48,coat=.22,coat_roughness=.20)
+tune_principled(PUPIL,specular=.34,coat=.12,coat_roughness=.20)
+tune_principled(LIP,specular=.44,coat=.30,coat_roughness=.24)
+tune_principled(EYE_WET,specular=.58,coat=.52,coat_roughness=.12)
 
 def parent(o,p):o.parent=p;return o
 def empty(name,p=None):
@@ -922,6 +945,7 @@ TH_L=empty('BL_THIGH_L',BODY_ASSET);SH_L=empty('BL_SHIN_L',BODY_ASSET);FOOT_L=em
 # REFERENCE_V125: facial-depth and eye-material pass strengthens orbital/nasal/cheek planes and mobile-scale gaze without changing the modular expression pivots.
 # REFERENCE_V126: compact adult-anime face pass shortens the lower face, opens the gaze slightly and broadens the cheek plane without changing combat/head pivots.
 # REFERENCE_V127: profile-balance pass reduces excessive nasal projection and restores a cleaner nose-lip-chin S-curve while preserving the accepted v12.6 frontal mask.
+# REFERENCE_V128: portrait PBR pass adds mobile-safe eye wetline geometry plus skin/sclera/iris/lip specular tuning without changing accepted v12.7 proportions.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
@@ -1105,6 +1129,9 @@ for side in(-1,1):
  add_strand(HEAD,f'OuterLashV119_{side}',[(outer-side*.0040,eye_y+eye_tilt+.0015,.10416),(outer+side*.0048,eye_y+eye_tilt+.0042,.10418),(outer+side*.0080,eye_y+eye_tilt+.0030,.10405)],.00048*eye_contrast,HAIR)
  add_strand(HEAD,f'LowerLidV119_{side}',[(inner+side*.0040,eye_y-eye_tilt-.0004,.10372),(ex,eye_y-.00855,.10400),(outer-side*.0030,eye_y+eye_tilt-.0003,.10380)],.00019*eye_contrast,FACE_DARK)
  add_strand(HEAD,f'UpperLidFoldV119_{side}',[(inner+side*.0050,eye_y-eye_tilt+.0038,.10340),(ex,eye_y+.0153,.10375),(outer-side*.0060,eye_y+eye_tilt+.0036,.10342)],.00017,FACE_DARK)
+ # v12.8 glossy waterline follows only the inner two-thirds of the lower lid so it reads as moisture, not eyeliner.
+ add_strand(HEAD,f'EyeWetlineV128_{side}',[(inner+side*.0050,eye_y-eye_tilt-.00005,.10404),(ex,eye_y-.00785,.10412),(outer-side*.0100,eye_y+eye_tilt-.00005,.10403)],.00011,EYE_WET)
+ add_ellipse_surface(HEAD,f'InnerCanthusV128_{side}',inner+side*.0014,eye_y-eye_tilt+.00025,.10408,.00135,.00058,EYE_WET,18)
  # Lower, fuller brows match the key-art expression and visually reduce the oversized forehead.
  add_strand(HEAD,f'BrowV119_{side}',[(ex-side*.0240,.0580,.1030),(ex,.0634,.10355),(ex+side*.0265,.0560,.10305)],.00068,HAIR)
  add_blink_lid_surface(HEAD,'BL_EYELID_L' if side<0 else 'BL_EYELID_R',ex,eye_y,eye_rx,eye_ry,SKIN)
@@ -1410,7 +1437,7 @@ for _o in list(bpy.data.objects):
  _reparent_keep_world(_o,_target)
 # Keep the existing dynamic pony root working, but move the complete hair subsystem under its own asset root.
 _reparent_keep_world(PONY,HAIR_ASSET)
-ROOT['character_revision']='v12.7';ROOT['assembly_workflow']='body-head-hair';BODY_ASSET['scale_reference']=True;BODY_ASSET['tps_silhouette_review']=True;HEAD_ASSET['profile_review']=True;HEAD_ASSET['facial_depth_review']=True;HEAD_ASSET['compact_face_review']=True;HEAD_ASSET['balanced_profile_review']=True;HAIR_ASSET['scalp_fit_review']=True;HAIR_ASSET['hero_silhouette_review']=True;FACE_ASSET['expression_ready']=True;FACE_ASSET['blink_system']='morph-eyelids';FACE_ASSET['mobile_gaze_review']=True;EYE_L['expression_pivot']='left-eye';EYE_R['expression_pivot']='right-eye';MOUTH_ASSET['expression_pivot']='mouth'
+ROOT['character_revision']='v12.8';ROOT['assembly_workflow']='body-head-hair';BODY_ASSET['scale_reference']=True;BODY_ASSET['tps_silhouette_review']=True;HEAD_ASSET['profile_review']=True;HEAD_ASSET['facial_depth_review']=True;HEAD_ASSET['compact_face_review']=True;HEAD_ASSET['balanced_profile_review']=True;HAIR_ASSET['scalp_fit_review']=True;HAIR_ASSET['hero_silhouette_review']=True;FACE_ASSET['expression_ready']=True;FACE_ASSET['blink_system']='morph-eyelids';FACE_ASSET['mobile_gaze_review']=True;FACE_ASSET['portrait_material_revision']='v12.8-pbr';EYE_L['expression_pivot']='left-eye';EYE_R['expression_pivot']='right-eye';MOUTH_ASSET['expression_pivot']='mouth'
 
 
 bpy.context.scene.render.engine='BLENDER_EEVEE'
