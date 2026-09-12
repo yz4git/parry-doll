@@ -1,1 +1,1 @@
-2026-09-11 build Blender heroine v11.9 key-art eye contrast compact V-line stronger profile layered asymmetric bangs
+2026-09-12 build Blender heroine v12 modular Body Head Hair assembly expression pivots profile review
