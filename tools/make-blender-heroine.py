@@ -696,9 +696,9 @@ def add_reference_head_v120(p,name,mat,segments=112):
  surface={**surface,'irisScale':assembly_head['irisScale'],'eyeContrast':assembly_head['eyeContrast']}
  fw=frontal['faceWidth']*1.025;jaw=frontal['jaw']*.975;cheek=frontal['cheekVolume']*1.045
  eye_spacing=frontal['eyeSpacing'];eye_size=frontal['eyeSize']
- nose_proj=profile_ctrl['noseProjection']*.80;nose_width=profile_ctrl['noseWidth']
- forehead_depth=profile_ctrl['foreheadDepth']*1.01;mouth_proj=profile_ctrl['mouthProjection']*1.00
- chin_proj=profile_ctrl['chinProjection']*1.115;chin_len=profile_ctrl['chinLength']*1.045
+ nose_proj=profile_ctrl['noseProjection']*.76;nose_width=profile_ctrl['noseWidth']
+ forehead_depth=profile_ctrl['foreheadDepth']*1.01;mouth_proj=profile_ctrl['mouthProjection']*1.08
+ chin_proj=profile_ctrl['chinProjection']*1.13;chin_len=profile_ctrl['chinLength']*1.06
  orbital=surface['orbitalDepth'];malar=surface['malarSupport'];hollow=surface['lowerCheekHollow']
  alar=surface['alarVolume'];philtrum=surface['philtrumDepth'];corner=surface['mouthCornerDepth']
  labiomental=surface['labiomentalDepth'];lip_volume=surface['lipThickness']
@@ -724,10 +724,10 @@ def add_reference_head_v120(p,name,mat,segments=112):
   sections.append((y2,w*width_scale,back,front,zoff))
 
  base_profile=[
-  (.090,.0990),(.060,.0995),(.035,.0985),(.015,.1020),(-.005,.1070),(-.025,.1150),
-  (-.040,.1275),(-.048,.1345),(-.055,.1320),(-.062,.1220),(-.068,.1110),
-  (-.077,.1130),(-.086,.1190),(-.094,.1215),(-.103,.1125),(-.110,.1045),
-  (-.121,.1182),(-.132,.1148),(-.143,.1000),(-.153,.0815)
+  (.090,.1005),(.060,.1020),(.035,.1010),(.015,.0995),(-.005,.1035),(-.025,.1125),
+  (-.040,.1255),(-.048,.1315),(-.055,.1295),(-.062,.1185),(-.068,.1085),
+  (-.077,.1105),(-.086,.1175),(-.094,.1205),(-.103,.1110),(-.111,.1030),
+  (-.123,.1200),(-.135,.1155),(-.146,.0975),(-.155,.0755)
  ]
  profile=[]
  for yy,z in base_profile:
@@ -797,10 +797,10 @@ def add_reference_head_v120(p,name,mat,segments=112):
     mouth_w=frontal['mouthWidth']
     ul=(math.exp(-((x-.0105*mouth_w)/(.0120*mouth_w))**2-((yy+.0845)/.0080)**2)+
         math.exp(-((x+.0105*mouth_w)/(.0120*mouth_w))**2-((yy+.0845)/.0080)**2))
-    z+=fm*.00282*lip_volume*ul
+    z+=fm*.00322*lip_volume*ul
     z-=fm*.00075*lip_volume*math.exp(-(x/.0055)**2-((yy+.0847)/.0055)**2)
     ll=math.exp(-(x/(.0255*mouth_w))**2-((yy+.0940)/.0085)**2)
-    z+=fm*.00330*lip_volume*ll
+    z+=fm*.00378*lip_volume*ll
     # Mouth seam and corners recess into the muzzle rather than floating as a drawn line.
     z-=fm*.00080*math.exp(-(x/(.0280*mouth_w))**4-((yy+.0887)/.0032)**2)
     for side in (-1,1):
@@ -829,6 +829,9 @@ def add_reference_head_v120(p,name,mat,segments=112):
     under=max(0.0,min(1.0,(-yy-.112)/.045))
     frontness=max(0.0,sp)
     render_y+=.0105*under*(1.0-frontness**1.55)
+    # Keep the chin tip low, but lift the throat-side continuation after it so the underside rises toward the neck.
+    throat=max(0.0,min(1.0,(-yy-.132)/.023))
+    render_y+=.0038*throat*frontness
    verts.append(bpos((x,render_y,z)))
 
  top_idx=len(verts);verts.append(bpos((0,.176,-.006)))
@@ -979,6 +982,7 @@ TH_L=empty('BL_THIGH_L',BODY_ASSET);SH_L=empty('BL_SHIN_L',BODY_ASSET);FOOT_L=em
 # REFERENCE_V132: profile-eye/jaw pass strengthens the side-view lash silhouette, clears the near-eye fringe and extends the chin-underjaw flow toward the supplied portrait while preserving the accepted frontal mask.
 # REFERENCE_V133: volumetric profile-eye pass embeds a shallow sclera globe and side-swept lash fin so the eye remains readable in exact profile instead of collapsing to an edge-on plane.
 # REFERENCE_V134: profile-iris/underjaw pass embeds a mostly buried iris volume for side-view gaze and lifts the rear under-chin cap toward the neck for the supplied elegant jawline.
+# REFERENCE_V135: supplied-reference silhouette pass refines the small nose/lip/chin S-curve, exposes more neck below the jaw and adds a near-side iris crescent for exact-profile readability.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
@@ -1086,9 +1090,9 @@ add_box(PELVIS,'WaistCenterGem',(0,.102,.184),(.026,.050,.018),SILVER,.005)
 # v11.2 full rebuild: a single new independently generated shell owns the visible face.
 # The legacy HeadShellV60 and FaceQuadPatchV77 remain as unused historical helpers only.
 add_reference_head_v120(HEAD,'HeadShellV120',SKIN,128)
-add_cylinder(HEAD,'Neck',(0,-.158,-.008),W('neck')*.33,.084,SKIN,26)
-add_cylinder(HEAD,'Choker',(0,-.139,-.006),W('neck')*.46,.034,BLACK,28)
-add_cylinder(HEAD,'ChokerTrim',(0,-.124,-.006),W('neck')*.47,.009,SILVER,28)
+add_cylinder(HEAD,'Neck',(0,-.181,-.010),W('neck')*.305,.132,SKIN,28)
+add_cylinder(HEAD,'Choker',(0,-.204,-.009),W('neck')*.44,.038,BLACK,30)
+add_cylinder(HEAD,'ChokerTrim',(0,-.184,-.009),W('neck')*.45,.008,SILVER,30)
 for side in(-1,1):
  add_sphere(HEAD,f'EarV103_{side}',(side*.1265,-.020,-.020),(.0120,.0305,.0145),SKIN,28,18)
  # A restrained helix/concha line is enough to read as an ear at iPhone portrait scale without becoming a dark decal.
@@ -1152,6 +1156,8 @@ for side in(-1,1):
  add_sphere(HEAD,f'EyeScleraGlobeV133_{side}',(ex,eye_y,.0936),(eye_rx*.82,eye_ry*.88,.0107),SCLERA,34,22)
  add_sphere(HEAD,f'EyeIrisVolumeV134_{side}',(ex,eye_y-.00010,.09915),(eye_rx*.285,eye_ry*.48,.00495),IRIS,28,18)
  add_sphere(HEAD,f'EyePupilVolumeV134_{side}',(ex,eye_y-.00025,.10055),(eye_rx*.105,eye_ry*.235,.00355),PUPIL,24,16)
+ add_sphere(HEAD,f'EyeProfileIrisV135_{side}',(ex+side*eye_rx*.70,eye_y+.00010,.10010),(eye_rx*.175,eye_ry*.34,.00325),IRIS_INNER,22,14)
+ add_sphere(HEAD,f'EyeProfilePupilV135_{side}',(ex+side*eye_rx*.765,eye_y-.00005,.10105),(eye_rx*.060,eye_ry*.17,.00225),PUPIL,18,12)
  add_almond_surface(HEAD,f'EyeScleraV119_{side}',ex,eye_y,.10310,eye_rx,eye_ry,.00128,SCLERA,96,side,eye_tilt*.74)
  # Dark outer iris first, then a smaller warm inner iris and pupil; this gives a readable limbal ring.
  add_ellipse_surface(HEAD,f'IrisOuterV119_{side}',ex,eye_y-.00025,.10448,.01155*iris_scale,.00915*iris_scale,IRIS,52)
@@ -1483,7 +1489,7 @@ for _o in list(bpy.data.objects):
  _reparent_keep_world(_o,_target)
 # Keep the existing dynamic pony root working, but move the complete hair subsystem under its own asset root.
 _reparent_keep_world(PONY,HAIR_ASSET)
-ROOT['character_revision']='v13.4';ROOT['assembly_workflow']='body-head-hair';BODY_ASSET['scale_reference']=True;BODY_ASSET['tps_silhouette_review']=True;HEAD_ASSET['profile_review']=True;HEAD_ASSET['facial_depth_review']=True;HEAD_ASSET['compact_face_review']=True;HEAD_ASSET['balanced_profile_review']=True;HEAD_ASSET['user_reference_profile_review']=True;HEAD_ASSET['reference_profile_silhouette']='v13.4';HEAD_ASSET['chin_underjaw_flow_review']=True;HEAD_ASSET['underjaw_slope_revision']='v13.4';HAIR_ASSET['scalp_fit_review']=True;HAIR_ASSET['hero_silhouette_review']=True;HAIR_ASSET['profile_eye_clearance_review']=True;HAIR_ASSET['profile_eye_frame_revision']='v13.3';FACE_ASSET['expression_ready']=True;FACE_ASSET['blink_system']='morph-eyelids';FACE_ASSET['mobile_gaze_review']=True;FACE_ASSET['profile_eye_review']=True;FACE_ASSET['profile_eye_volume_revision']='v13.4';FACE_ASSET['profile_iris_volume_revision']='v13.4';FACE_ASSET['portrait_material_revision']='v12.8-pbr';FACE_ASSET['iris_detail_revision']='v12.9-radial';EYE_L['expression_pivot']='left-eye';EYE_R['expression_pivot']='right-eye';MOUTH_ASSET['expression_pivot']='mouth'
+ROOT['character_revision']='v13.5';ROOT['assembly_workflow']='body-head-hair';BODY_ASSET['scale_reference']=True;BODY_ASSET['tps_silhouette_review']=True;HEAD_ASSET['profile_review']=True;HEAD_ASSET['facial_depth_review']=True;HEAD_ASSET['compact_face_review']=True;HEAD_ASSET['balanced_profile_review']=True;HEAD_ASSET['user_reference_profile_review']=True;HEAD_ASSET['reference_profile_silhouette']='v13.5';HEAD_ASSET['chin_underjaw_flow_review']=True;HEAD_ASSET['underjaw_slope_revision']='v13.5';HEAD_ASSET['reference_neck_revision']='v13.5';HAIR_ASSET['scalp_fit_review']=True;HAIR_ASSET['hero_silhouette_review']=True;HAIR_ASSET['profile_eye_clearance_review']=True;HAIR_ASSET['profile_eye_frame_revision']='v13.3';FACE_ASSET['expression_ready']=True;FACE_ASSET['blink_system']='morph-eyelids';FACE_ASSET['mobile_gaze_review']=True;FACE_ASSET['profile_eye_review']=True;FACE_ASSET['profile_eye_volume_revision']='v13.5';FACE_ASSET['profile_iris_volume_revision']='v13.5';FACE_ASSET['portrait_material_revision']='v12.8-pbr';FACE_ASSET['iris_detail_revision']='v12.9-radial';EYE_L['expression_pivot']='left-eye';EYE_R['expression_pivot']='right-eye';MOUTH_ASSET['expression_pivot']='mouth'
 
 
 bpy.context.scene.render.engine='BLENDER_EEVEE'
