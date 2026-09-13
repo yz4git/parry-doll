@@ -1,1 +1,1 @@
-2026-09-13 Blender heroine v13.11 swept temple exposed ear rearward hair flow front 3q profile audit cf948bab4347e9370fa6327917bdc000d4a547cc
+2026-09-14 Blender heroine v13.12 explicit ear silhouette temple recess fine sideburn front 3q profile audit 8007ef6bc48f99eb050becc313b2f7fe27828a20
