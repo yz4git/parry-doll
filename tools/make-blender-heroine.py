@@ -48,10 +48,10 @@ BLACK=material('Suit Black',(0.014,0.018,0.027),.08,.30)
 BLACK_SOFT=material('Suit Soft',(0.030,0.035,0.048),.02,.44)
 WHITE=material('Porcelain White',(0.86,0.88,0.88),.18,.28)
 SILVER=material('Silver',(0.50,0.53,0.56),.78,.19)
-HAIR=material('Hair',(0.020,0.014,0.019),0.0,.54)
-HAIR_HI=material('Hair Highlight',(0.045,0.029,0.036),0.0,.54)
+HAIR=material('Hair',(0.028,0.019,0.022),0.0,.51)
+HAIR_HI=material('Hair Highlight',(0.072,0.046,0.050),0.0,.50)
 # Reduce Principled specular so dark hair does not blow out to a silver ribbon under bright sky lighting.
-for _hair_mat,_spec in ((HAIR,.14),(HAIR_HI,.18)):
+for _hair_mat,_spec in ((HAIR,.16),(HAIR_HI,.21)):
  _bsdf=_hair_mat.node_tree.nodes.get('Principled BSDF')
  if _bsdf:
   _ior=_bsdf.inputs.get('Specular IOR Level')
@@ -983,6 +983,7 @@ TH_L=empty('BL_THIGH_L',BODY_ASSET);SH_L=empty('BL_SHIN_L',BODY_ASSET);FOOT_L=em
 # REFERENCE_V133: volumetric profile-eye pass embeds a shallow sclera globe and side-swept lash fin so the eye remains readable in exact profile instead of collapsing to an edge-on plane.
 # REFERENCE_V134: profile-iris/underjaw pass embeds a mostly buried iris volume for side-view gaze and lifts the rear under-chin cap toward the neck for the supplied elegant jawline.
 # REFERENCE_V135: supplied-reference silhouette pass refines the small nose/lip/chin S-curve, exposes more neck below the jaw and adds a near-side iris crescent for exact-profile readability.
+# REFERENCE_V136: supplied-reference hair-profile pass warms the dark hair, reveals the ear, converts the cheek-side slab into fine layered locks and adds a restrained metallic pony ornament plus loose wisps.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
@@ -1094,7 +1095,7 @@ add_cylinder(HEAD,'Neck',(0,-.181,-.010),W('neck')*.305,.132,SKIN,28)
 add_cylinder(HEAD,'Choker',(0,-.204,-.009),W('neck')*.44,.038,BLACK,30)
 add_cylinder(HEAD,'ChokerTrim',(0,-.184,-.009),W('neck')*.45,.008,SILVER,30)
 for side in(-1,1):
- add_sphere(HEAD,f'EarV103_{side}',(side*.1265,-.020,-.020),(.0120,.0305,.0145),SKIN,28,18)
+ add_sphere(HEAD,f'EarV103_{side}',(side*.1265,-.020,-.012),(.0122,.0350,.0170),SKIN,30,20)
  # A restrained helix/concha line is enough to read as an ear at iPhone portrait scale without becoming a dark decal.
  add_strand(HEAD,f'EarHelixV103_{side}',[
   (side*.1380,.004,-.021),
@@ -1239,10 +1240,10 @@ for side in (-1,1):
   (side*head_w*.350,.174, head_d*.026),
   (side*head_w*.420,.145, head_d*.018),
   (side*head_w*.468,.108, head_d*.006),
-  (side*head_w*.486,.068,-head_d*.010),
-  (side*head_w*.482,.028,-head_d*.027),
-  (side*head_w*.468,.010,-head_d*.050),
-  (side*head_w*.442,-.004,-head_d*.075)
+  (side*head_w*.486,.068,-head_d*.018),
+  (side*head_w*.482,.028,-head_d*.052),
+  (side*head_w*.468,.010,-head_d*.088),
+  (side*head_w*.442,-.004,-head_d*.118)
  ],[.003,.006,.009,.010,.0085,.005,.0012],[.007,.012,.016,.019,.015,.009,.0028],HAIR,14,6)
 
  add_smooth_lock(HEAD,f'TemporalLockV101_Mid_{side}',[
@@ -1318,19 +1319,28 @@ add_strand(HEAD,'ProfileEyeFrameV132_L_Lower',[(-.074,.040,.106),(-.071,.016,.10
 add_strand(HEAD,'ProfileWispV131_L',[(-.076,.122,.108),(-.083,.082,.107),(-.080,.045,.097),(-.068,-.006,.093),(-.058,-.060,.094)],.000040,HAIR)
 add_strand(HEAD,'ProfileWispV131_R',[(.078,.126,.106),(.086,.086,.109),(.084,.042,.106),(.073,.004,.100),(.064,-.032,.095)],.000042,HAIR_HI)
 
+# v13.6 supplied-reference loose profile wisps.
+for _side in (-1,1):
+ add_strand(HEAD,f'ReferenceWispV136_A_{_side}',[(_side*.080,.118,.103),(_side*.085,.072,.107),(_side*.078,.020,.103),(_side*.066,-.035,.095),(_side*.057,-.082,.086)],.000032,HAIR)
+ add_strand(HEAD,f'ReferenceWispV136_B_{_side}',[(_side*.067,.145,.094),(_side*.073,.098,.102),(_side*.070,.052,.104),(_side*.058,.006,.098),(_side*.050,-.050,.091)],.000028,HAIR_HI)
+ add_strand(HEAD,f'ReferenceWispV136_C_{_side}',[(_side*.095,.088,.080),(_side*.098,.040,.086),(_side*.090,-.010,.083),(_side*.078,-.055,.077)],.000026,HAIR)
+
 # v12.0 modular hair-fit pass: broad temple layers bridge fringe to side/back mass.
 for _side in (-1,1):
- _sw=ASSEMBLY120['hair']['templeLockWidth'];_sd=ASSEMBLY120['hair']['templeLockDepth']
- _pts=[(_side*.086,.170,.055),(_side*.098,.132,.083),(_side*.106,.090,.100),(_side*.108,.045,.103),(_side*.102,.000,.097),(_side*.094,-.036,.086)]
- _widths=[_sw*.70,_sw, _sw*1.04,_sw*.88,_sw*.62,_sw*.24]
- _depths=[_sd*.72,_sd,_sd*1.02,_sd*.88,_sd*.60,_sd*.20]
+ _sw=ASSEMBLY120['hair']['templeLockWidth']*.62;_sd=ASSEMBLY120['hair']['templeLockDepth']*.56
+ _pts=[(_side*.086,.170,.052),(_side*.098,.132,.075),(_side*.106,.090,.090),(_side*.108,.045,.084),(_side*.102,.000,.069),(_side*.094,-.036,.054)]
+ _widths=[_sw*.70,_sw, _sw*1.04,_sw*.88,_sw*.62,_sw*.20]
+ _depths=[_sd*.72,_sd,_sd*1.02,_sd*.88,_sd*.60,_sd*.18]
  add_smooth_lock(HEAD,f'TempleLayerV120_{_side}',_pts,_widths,_depths,HAIR,12,6)
- add_strand(HEAD,f'TempleLayerHiV120_{_side}',[(_side*.087,.165,.060),(_side*.099,.126,.089),(_side*.106,.080,.102),(_side*.101,.002,.098)],.000050,HAIR_HI)
+ add_strand(HEAD,f'TempleLayerHiV120_{_side}',[(_side*.087,.165,.057),(_side*.099,.126,.081),(_side*.106,.080,.091),(_side*.101,.002,.070)],.000038,HAIR_HI)
 # v8.2 deliberately omits isolated cheek wisps. At portrait scale even a physically thin curve
 # reads as a detached black scratch in profile; the existing broad temple/face locks carry the hairstyle.
 
 # v8.3: no isolated front temple locks; the rear shell/fringe own this silhouette continuously.
 
+for _side in (-1,1):
+ add_box(HEAD,f'ProfileHairOrnamentV136_{_side}',(_side*.105,.090,-head_d*.365),(.011,.145,.013),SILVER,.0025,rot=(0,0,-_side*.055))
+ add_box(HEAD,f'ProfileHairOrnamentTipV136_{_side}',(_side*.106,.016,-head_d*.365),(.016,.026,.016),SILVER,.003)
 add_box(HEAD,'HairTieV59',(.014,.138,-head_d*.530),(.072,.017,.027),SILVER,.003)
 PONY=empty('BL_PONY_DYNAMIC',HEAD)
 # v6.5 overlapping foundation: broad spline locks eliminate the separated vertical-string silhouette.
@@ -1489,7 +1499,7 @@ for _o in list(bpy.data.objects):
  _reparent_keep_world(_o,_target)
 # Keep the existing dynamic pony root working, but move the complete hair subsystem under its own asset root.
 _reparent_keep_world(PONY,HAIR_ASSET)
-ROOT['character_revision']='v13.5';ROOT['assembly_workflow']='body-head-hair';BODY_ASSET['scale_reference']=True;BODY_ASSET['tps_silhouette_review']=True;HEAD_ASSET['profile_review']=True;HEAD_ASSET['facial_depth_review']=True;HEAD_ASSET['compact_face_review']=True;HEAD_ASSET['balanced_profile_review']=True;HEAD_ASSET['user_reference_profile_review']=True;HEAD_ASSET['reference_profile_silhouette']='v13.5';HEAD_ASSET['chin_underjaw_flow_review']=True;HEAD_ASSET['underjaw_slope_revision']='v13.5';HEAD_ASSET['reference_neck_revision']='v13.5';HAIR_ASSET['scalp_fit_review']=True;HAIR_ASSET['hero_silhouette_review']=True;HAIR_ASSET['profile_eye_clearance_review']=True;HAIR_ASSET['profile_eye_frame_revision']='v13.3';FACE_ASSET['expression_ready']=True;FACE_ASSET['blink_system']='morph-eyelids';FACE_ASSET['mobile_gaze_review']=True;FACE_ASSET['profile_eye_review']=True;FACE_ASSET['profile_eye_volume_revision']='v13.5';FACE_ASSET['profile_iris_volume_revision']='v13.5';FACE_ASSET['portrait_material_revision']='v12.8-pbr';FACE_ASSET['iris_detail_revision']='v12.9-radial';EYE_L['expression_pivot']='left-eye';EYE_R['expression_pivot']='right-eye';MOUTH_ASSET['expression_pivot']='mouth'
+ROOT['character_revision']='v13.6';ROOT['assembly_workflow']='body-head-hair';BODY_ASSET['scale_reference']=True;BODY_ASSET['tps_silhouette_review']=True;HEAD_ASSET['profile_review']=True;HEAD_ASSET['facial_depth_review']=True;HEAD_ASSET['compact_face_review']=True;HEAD_ASSET['balanced_profile_review']=True;HEAD_ASSET['user_reference_profile_review']=True;HEAD_ASSET['reference_profile_silhouette']='v13.6';HEAD_ASSET['chin_underjaw_flow_review']=True;HEAD_ASSET['underjaw_slope_revision']='v13.5';HEAD_ASSET['reference_neck_revision']='v13.5';HAIR_ASSET['scalp_fit_review']=True;HAIR_ASSET['hero_silhouette_review']=True;HAIR_ASSET['profile_eye_clearance_review']=True;HAIR_ASSET['profile_eye_frame_revision']='v13.6';HAIR_ASSET['reference_profile_hair_revision']='v13.6';HAIR_ASSET['metal_ornament_revision']='v13.6';FACE_ASSET['expression_ready']=True;FACE_ASSET['blink_system']='morph-eyelids';FACE_ASSET['mobile_gaze_review']=True;FACE_ASSET['profile_eye_review']=True;FACE_ASSET['profile_eye_volume_revision']='v13.5';FACE_ASSET['profile_iris_volume_revision']='v13.5';FACE_ASSET['portrait_material_revision']='v12.8-pbr';FACE_ASSET['iris_detail_revision']='v12.9-radial';EYE_L['expression_pivot']='left-eye';EYE_R['expression_pivot']='right-eye';MOUTH_ASSET['expression_pivot']='mouth'
 
 
 bpy.context.scene.render.engine='BLENDER_EEVEE'
