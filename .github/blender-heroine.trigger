@@ -1,1 +1,1 @@
-2026-09-13 build Blender heroine v13.1 reference profile eye-clear fringe orbital bridge break tapered chin
+2026-09-13 build Blender heroine v13.2 profile eye lashes eye-clear fringe tapered chin underjaw
