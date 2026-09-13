@@ -1,1 +1,1 @@
-2026-09-14 Blender heroine v13.14 ear anatomy layered crown temple hair front 3q profile audit b21d753688fb447593f7bf677fa07a576d591a58
+2026-09-14 Blender heroine v13.15 profile eye lip realism front 3q profile audit de5054f7d94c74e6d1a30a0a100ec8cc5d236eac
