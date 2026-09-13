@@ -1008,6 +1008,7 @@ TH_L=empty('BL_THIGH_L',BODY_ASSET);SH_L=empty('BL_SHIN_L',BODY_ASSET);FOOT_L=em
 # REFERENCE_V143: natural-neck profile pass replaces the mannequin cylinder with a tapered asymmetric neck shell that slopes rearward from jaw to collar, matching the supplied elegant side silhouette.
 # REFERENCE_V144: ear-anatomy/layered-hair pass gives the exposed ear shallow 3D concha/tragus structure and overlays narrow swept crown/temple locks so the supplied profile reads as layered dark-brown hair instead of a smooth helmet mass.
 # REFERENCE_V145: portrait-eye/lip realism pass reduces the front/three-quarter doll-eye vertical aperture and iris dominance, while enlarging only the exact-profile eye aperture and adding restrained lip volume for the supplied elegant side portrait.
+# REFERENCE_V146: visible-profile ornament pass moves the previously buried side hair hardware onto the outer hair surface and rebuilds it as a segmented black/silver vertical spine with a crown cap and pony-root bands, matching the supplied reference silhouette.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
@@ -1448,8 +1449,17 @@ for _side in (-1,1):
 # v8.3: no isolated front temple locks; the rear shell/fringe own this silhouette continuously.
 
 for _side in (-1,1):
- add_box(HEAD,f'ProfileHairOrnamentV136_{_side}',(_side*.105,.090,-head_d*.365),(.011,.145,.013),SILVER,.0025,rot=(0,0,-_side*.055))
- add_box(HEAD,f'ProfileHairOrnamentTipV136_{_side}',(_side*.106,.016,-head_d*.365),(.016,.026,.016),SILVER,.003)
+ # Dark backing keeps the ornament readable against bright sky while the silver faces catch highlights.
+ add_box(HEAD,f'ProfileHairOrnamentBackV146_{_side}',(_side*.140,.092,-head_d*.350),(.014,.154,.016),BLACK,.0030,rot=(0,0,-_side*.050))
+ add_box(HEAD,f'ProfileHairOrnamentTopV146_{_side}',(_side*.141,.159,-head_d*.348),(.026,.034,.022),SILVER,.0040,rot=(0,0,-_side*.050))
+ add_box(HEAD,f'ProfileHairOrnamentSegAV146_{_side}',(_side*.142,.126,-head_d*.347),(.011,.041,.019),SILVER,.0024,rot=(0,0,-_side*.050))
+ add_box(HEAD,f'ProfileHairOrnamentSegBV146_{_side}',(_side*.143,.083,-head_d*.346),(.011,.036,.018),SILVER,.0024,rot=(0,0,-_side*.050))
+ add_box(HEAD,f'ProfileHairOrnamentSegCV146_{_side}',(_side*.144,.045,-head_d*.345),(.010,.030,.017),SILVER,.0022,rot=(0,0,-_side*.050))
+ add_box(HEAD,f'ProfileHairOrnamentTipV146_{_side}',(_side*.145,.020,-head_d*.344),(.017,.020,.019),SILVER,.0030,rot=(0,0,-_side*.050))
+ # A narrow cyan inset makes the hardware feel integrated with the existing futuristic suit language.
+ add_box(HEAD,f'ProfileHairOrnamentInsetV146_{_side}',(_side*.149,.126,-head_d*.340),(.0030,.020,.0065),GLOW,.0010,rot=(0,0,-_side*.050))
+ # Side-visible pony root clamps bridge the ornament into the high pony instead of leaving it floating.
+ add_box(HEAD,f'PonyRootBandV146_{_side}',(_side*.052,.141,-head_d*.528),(.030,.024,.035),SILVER,.0040,rot=(0,0,-_side*.035))
 add_box(HEAD,'HairTieV59',(.014,.138,-head_d*.530),(.072,.017,.027),SILVER,.003)
 PONY=empty('BL_PONY_DYNAMIC',HEAD)
 # v6.5 overlapping foundation: broad spline locks eliminate the separated vertical-string silhouette.
@@ -1608,7 +1618,7 @@ for _o in list(bpy.data.objects):
  _reparent_keep_world(_o,_target)
 # Keep the existing dynamic pony root working, but move the complete hair subsystem under its own asset root.
 _reparent_keep_world(PONY,HAIR_ASSET)
-ROOT['character_revision']='v13.15';ROOT['assembly_workflow']='body-head-hair';BODY_ASSET['scale_reference']=True;BODY_ASSET['tps_silhouette_review']=True;HEAD_ASSET['profile_review']=True;HEAD_ASSET['facial_depth_review']=True;HEAD_ASSET['compact_face_review']=True;HEAD_ASSET['balanced_profile_review']=True;HEAD_ASSET['user_reference_profile_review']=True;HEAD_ASSET['reference_profile_silhouette']='v13.15';HEAD_ASSET['chin_underjaw_flow_review']=True;HEAD_ASSET['underjaw_slope_revision']='v13.7';HEAD_ASSET['reference_neck_revision']='v13.13';HAIR_ASSET['scalp_fit_review']=True;HAIR_ASSET['hero_silhouette_review']=True;HAIR_ASSET['profile_eye_clearance_review']=True;HAIR_ASSET['profile_eye_frame_revision']='v13.9';HAIR_ASSET['reference_profile_hair_revision']='v13.14';HAIR_ASSET['eye_reveal_fringe_revision']='v13.9';HAIR_ASSET['ear_exposure_revision']='v13.12';HAIR_ASSET['temple_sweep_revision']='v13.14';HAIR_ASSET['metal_ornament_revision']='v13.6';HEAD_ASSET['ear_anatomy_revision']='v13.14';HAIR_ASSET['layered_strand_revision']='v13.14';FACE_ASSET['expression_ready']=True;FACE_ASSET['blink_system']='morph-eyelids';FACE_ASSET['mobile_gaze_review']=True;FACE_ASSET['profile_eye_review']=True;FACE_ASSET['profile_eye_volume_revision']='v13.15';FACE_ASSET['profile_iris_volume_revision']='v13.15';FACE_ASSET['profile_side_plane_revision']='v13.10';FACE_ASSET['profile_sclera_aperture_revision']='v13.15';FACE_ASSET['reference_nose_lip_revision']='v13.8';FACE_ASSET['almond_eye_revision']='v13.15';FACE_ASSET['lip_volume_revision']='v13.15';FACE_ASSET['portrait_material_revision']='v12.8-pbr';FACE_ASSET['iris_detail_revision']='v12.9-radial';EYE_L['expression_pivot']='left-eye';EYE_R['expression_pivot']='right-eye';MOUTH_ASSET['expression_pivot']='mouth'
+ROOT['character_revision']='v13.16';ROOT['assembly_workflow']='body-head-hair';BODY_ASSET['scale_reference']=True;BODY_ASSET['tps_silhouette_review']=True;HEAD_ASSET['profile_review']=True;HEAD_ASSET['facial_depth_review']=True;HEAD_ASSET['compact_face_review']=True;HEAD_ASSET['balanced_profile_review']=True;HEAD_ASSET['user_reference_profile_review']=True;HEAD_ASSET['reference_profile_silhouette']='v13.16';HEAD_ASSET['chin_underjaw_flow_review']=True;HEAD_ASSET['underjaw_slope_revision']='v13.7';HEAD_ASSET['reference_neck_revision']='v13.13';HAIR_ASSET['scalp_fit_review']=True;HAIR_ASSET['hero_silhouette_review']=True;HAIR_ASSET['profile_eye_clearance_review']=True;HAIR_ASSET['profile_eye_frame_revision']='v13.9';HAIR_ASSET['reference_profile_hair_revision']='v13.16';HAIR_ASSET['eye_reveal_fringe_revision']='v13.9';HAIR_ASSET['ear_exposure_revision']='v13.12';HAIR_ASSET['temple_sweep_revision']='v13.14';HAIR_ASSET['metal_ornament_revision']='v13.16';HEAD_ASSET['ear_anatomy_revision']='v13.14';HAIR_ASSET['layered_strand_revision']='v13.14';HAIR_ASSET['profile_ornament_visibility_revision']='v13.16';FACE_ASSET['expression_ready']=True;FACE_ASSET['blink_system']='morph-eyelids';FACE_ASSET['mobile_gaze_review']=True;FACE_ASSET['profile_eye_review']=True;FACE_ASSET['profile_eye_volume_revision']='v13.15';FACE_ASSET['profile_iris_volume_revision']='v13.15';FACE_ASSET['profile_side_plane_revision']='v13.10';FACE_ASSET['profile_sclera_aperture_revision']='v13.15';FACE_ASSET['reference_nose_lip_revision']='v13.8';FACE_ASSET['almond_eye_revision']='v13.15';FACE_ASSET['lip_volume_revision']='v13.15';FACE_ASSET['portrait_material_revision']='v12.8-pbr';FACE_ASSET['iris_detail_revision']='v12.9-radial';EYE_L['expression_pivot']='left-eye';EYE_R['expression_pivot']='right-eye';MOUTH_ASSET['expression_pivot']='mouth'
 
 
 bpy.context.scene.render.engine='BLENDER_EEVEE'
