@@ -1,1 +1,1 @@
-2026-09-14 Blender heroine v13.15 profile eye lip realism front 3q profile audit de5054f7d94c74e6d1a30a0a100ec8cc5d236eac
+2026-09-14 Blender heroine v13.16 visible segmented hair ornament pony root bands front 3q profile audit 5475e1ff60709d804893894ab4e50f37a957fe41
