@@ -1006,6 +1006,7 @@ TH_L=empty('BL_THIGH_L',BODY_ASSET);SH_L=empty('BL_SHIN_L',BODY_ASSET);FOOT_L=em
 # REFERENCE_V141: swept-temple/ear-exposure pass recesses the side undercap, pulls the front temporal lock behind the ear and adds fine rearward flow strands to match the supplied ponytail profile.
 # REFERENCE_V142: explicit-ear silhouette pass enlarges and slightly externalizes the canonical ear while further recessing the lower temple mass, leaving only fine sideburn strands across the ear-front region.
 # REFERENCE_V143: natural-neck profile pass replaces the mannequin cylinder with a tapered asymmetric neck shell that slopes rearward from jaw to collar, matching the supplied elegant side silhouette.
+# REFERENCE_V144: ear-anatomy/layered-hair pass gives the exposed ear shallow 3D concha/tragus structure and overlays narrow swept crown/temple locks so the supplied profile reads as layered dark-brown hair instead of a smooth helmet mass.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
@@ -1144,6 +1145,19 @@ for side in(-1,1):
  ],.00022,EAR_SHADOW)
  add_strand(HEAD,f'EarringDropV137_{side}',[(side*.1460,-.043,-.010),(side*.1462,-.057,-.009),(side*.1460,-.071,-.010)],.00032,SILVER)
  add_box(HEAD,f'EarringTipV137_{side}',(side*.1460,-.075,-.010),(.0045,.010,.0045),SILVER,.0015)
+ add_sphere(HEAD,f'EarConchaBowlV144_{side}',(side*.1451,-.020,-.016),(.0023,.0128,.0064),EAR_SHADOW,22,14)
+ add_sphere(HEAD,f'EarTragusV144_{side}',(side*.1460,-.019,-.0065),(.0022,.0048,.0034),SKIN,20,12)
+ add_strand(HEAD,f'EarAntihelixV144_{side}',[
+  (side*.1455,-.003,-.017),
+  (side*.1458,-.012,-.012),
+  (side*.1457,-.022,-.013),
+  (side*.1453,-.032,-.018)
+ ],.00016,EAR_SHADOW)
+ add_strand(HEAD,f'EarLobeFoldV144_{side}',[
+  (side*.1449,-.035,-.022),
+  (side*.1443,-.042,-.025),
+  (side*.1434,-.047,-.024)
+ ],.00011,EAR_SHADOW)
 
 
 
@@ -1329,6 +1343,35 @@ for _name,_pts,_widths,_depths,_mat in _crown_v124:
 # A pair of long direction lines makes the crown read as hair rather than a smooth helmet under mobile lighting.
 add_strand(HEAD,'HeroCrownHiV124_L',[(-.026,.207,.010),(-.058,.191,.025),(-.092,.158,.016),(-.106,.132,-.004)],.000075,HAIR_HI)
 add_strand(HEAD,'HeroCrownHiV124_R',[(.038,.205,.007),(.070,.189,.023),(.099,.154,.012),(.106,.126,-.010)],.000060,HAIR_HI)
+
+# v13.14 reference-style layered crown and temple grouping.
+_crown_layers_v144=[
+ ('L0',[(-.020,.211,.012),(-.052,.199,.025),(-.084,.180,.024),(-.110,.151,.006),(-.119,.118,-.024)]),
+ ('L1',[(-.004,.216,.002),(-.038,.205,.018),(-.073,.188,.028),(-.105,.161,.016),(-.119,.129,-.013)]),
+ ('R0',[(.020,.211,.010),(.052,.199,.024),(.082,.181,.025),(.105,.154,.008),(.116,.121,-.022)]),
+ ('R1',[(.004,.215,.000),(.038,.204,.017),(.071,.187,.027),(.101,.159,.015),(.116,.127,-.012)])
+]
+for _name,_pts in _crown_layers_v144:
+ add_smooth_lock(HEAD,f'CrownLayerV144_{_name}',_pts,[.0018,.0068,.0090,.0064,.0012],[.0014,.0034,.0044,.0032,.0010],HAIR_HI if _name.endswith('1') else HAIR,12,5)
+
+for _side in (-1,1):
+ add_smooth_lock(HEAD,f'TempleRibbonV144_A_{_side}',[
+  (_side*head_w*.330,.174,head_d*.016),
+  (_side*head_w*.382,.145,-head_d*.004),
+  (_side*head_w*.418,.110,-head_d*.030),
+  (_side*head_w*.432,.070,-head_d*.061),
+  (_side*head_w*.421,.030,-head_d*.098),
+  (_side*head_w*.394,-.004,-head_d*.128)
+ ],[.0015,.0052,.0070,.0064,.0040,.0008],[.0018,.0040,.0052,.0048,.0030,.0008],HAIR_HI,12,5)
+ add_smooth_lock(HEAD,f'TempleRibbonV144_B_{_side}',[
+  (_side*head_w*.300,.168,head_d*.005),
+  (_side*head_w*.352,.136,-head_d*.016),
+  (_side*head_w*.391,.099,-head_d*.041),
+  (_side*head_w*.409,.057,-head_d*.071),
+  (_side*head_w*.400,.015,-head_d*.104)
+ ],[.0012,.0044,.0061,.0051,.0007],[.0015,.0034,.0045,.0038,.0007],HAIR,12,5)
+ add_strand(HEAD,f'TempleFineV144_A_{_side}',[(_side*head_w*.318,.160,head_d*.012),(_side*head_w*.367,.126,-head_d*.012),(_side*head_w*.405,.086,-head_d*.044),(_side*head_w*.420,.043,-head_d*.080),(_side*head_w*.404,.002,-head_d*.113)],.000024,HAIR_HI)
+ add_strand(HEAD,f'TempleFineV144_B_{_side}',[(_side*head_w*.286,.154,head_d*.002),(_side*head_w*.338,.119,-head_d*.022),(_side*head_w*.382,.079,-head_d*.050),(_side*head_w*.397,.036,-head_d*.083)],.000018,HAIR)
 
 # v9.0: the fringe is born inside the existing crown cap instead of being patched to it with blobs.
 # The first two samples are narrow and hidden under the cap; width only opens after the path exits the crown.
@@ -1564,7 +1607,7 @@ for _o in list(bpy.data.objects):
  _reparent_keep_world(_o,_target)
 # Keep the existing dynamic pony root working, but move the complete hair subsystem under its own asset root.
 _reparent_keep_world(PONY,HAIR_ASSET)
-ROOT['character_revision']='v13.13';ROOT['assembly_workflow']='body-head-hair';BODY_ASSET['scale_reference']=True;BODY_ASSET['tps_silhouette_review']=True;HEAD_ASSET['profile_review']=True;HEAD_ASSET['facial_depth_review']=True;HEAD_ASSET['compact_face_review']=True;HEAD_ASSET['balanced_profile_review']=True;HEAD_ASSET['user_reference_profile_review']=True;HEAD_ASSET['reference_profile_silhouette']='v13.13';HEAD_ASSET['chin_underjaw_flow_review']=True;HEAD_ASSET['underjaw_slope_revision']='v13.7';HEAD_ASSET['reference_neck_revision']='v13.13';HAIR_ASSET['scalp_fit_review']=True;HAIR_ASSET['hero_silhouette_review']=True;HAIR_ASSET['profile_eye_clearance_review']=True;HAIR_ASSET['profile_eye_frame_revision']='v13.9';HAIR_ASSET['reference_profile_hair_revision']='v13.12';HAIR_ASSET['eye_reveal_fringe_revision']='v13.9';HAIR_ASSET['ear_exposure_revision']='v13.12';HAIR_ASSET['temple_sweep_revision']='v13.12';HAIR_ASSET['metal_ornament_revision']='v13.6';FACE_ASSET['expression_ready']=True;FACE_ASSET['blink_system']='morph-eyelids';FACE_ASSET['mobile_gaze_review']=True;FACE_ASSET['profile_eye_review']=True;FACE_ASSET['profile_eye_volume_revision']='v13.10';FACE_ASSET['profile_iris_volume_revision']='v13.10';FACE_ASSET['profile_side_plane_revision']='v13.10';FACE_ASSET['profile_sclera_aperture_revision']='v13.10';FACE_ASSET['reference_nose_lip_revision']='v13.8';FACE_ASSET['portrait_material_revision']='v12.8-pbr';FACE_ASSET['iris_detail_revision']='v12.9-radial';EYE_L['expression_pivot']='left-eye';EYE_R['expression_pivot']='right-eye';MOUTH_ASSET['expression_pivot']='mouth'
+ROOT['character_revision']='v13.14';ROOT['assembly_workflow']='body-head-hair';BODY_ASSET['scale_reference']=True;BODY_ASSET['tps_silhouette_review']=True;HEAD_ASSET['profile_review']=True;HEAD_ASSET['facial_depth_review']=True;HEAD_ASSET['compact_face_review']=True;HEAD_ASSET['balanced_profile_review']=True;HEAD_ASSET['user_reference_profile_review']=True;HEAD_ASSET['reference_profile_silhouette']='v13.14';HEAD_ASSET['chin_underjaw_flow_review']=True;HEAD_ASSET['underjaw_slope_revision']='v13.7';HEAD_ASSET['reference_neck_revision']='v13.13';HAIR_ASSET['scalp_fit_review']=True;HAIR_ASSET['hero_silhouette_review']=True;HAIR_ASSET['profile_eye_clearance_review']=True;HAIR_ASSET['profile_eye_frame_revision']='v13.9';HAIR_ASSET['reference_profile_hair_revision']='v13.14';HAIR_ASSET['eye_reveal_fringe_revision']='v13.9';HAIR_ASSET['ear_exposure_revision']='v13.12';HAIR_ASSET['temple_sweep_revision']='v13.14';HAIR_ASSET['metal_ornament_revision']='v13.6';HEAD_ASSET['ear_anatomy_revision']='v13.14';HAIR_ASSET['layered_strand_revision']='v13.14';FACE_ASSET['expression_ready']=True;FACE_ASSET['blink_system']='morph-eyelids';FACE_ASSET['mobile_gaze_review']=True;FACE_ASSET['profile_eye_review']=True;FACE_ASSET['profile_eye_volume_revision']='v13.10';FACE_ASSET['profile_iris_volume_revision']='v13.10';FACE_ASSET['profile_side_plane_revision']='v13.10';FACE_ASSET['profile_sclera_aperture_revision']='v13.10';FACE_ASSET['reference_nose_lip_revision']='v13.8';FACE_ASSET['portrait_material_revision']='v12.8-pbr';FACE_ASSET['iris_detail_revision']='v12.9-radial';EYE_L['expression_pivot']='left-eye';EYE_R['expression_pivot']='right-eye';MOUTH_ASSET['expression_pivot']='mouth'
 
 
 bpy.context.scene.render.engine='BLENDER_EEVEE'
