@@ -1,1 +1,1 @@
-2026-09-14 build Blender heroine v13.13 natural neck profile tapered rear slope nape wisps
+2026-09-14 build Blender heroine v13.14 ear anatomy layered crown temple hair
