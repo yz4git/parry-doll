@@ -1,1 +1,1 @@
-2026-09-14 build Blender heroine v13.20 facial plane refinement
+2026-09-14 build Blender heroine v13.21 eyelid integration
