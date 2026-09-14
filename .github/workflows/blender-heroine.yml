@@ -64,8 +64,14 @@ jobs:
               m=re.search(r'v(\d+)\.py$', p.name)
               if m:
                   scripts.append((int(m.group(1)), p))
+          generator=Path('tools/make-blender-heroine.py')
           for version, script in sorted(scripts):
               if version < 14:
+                  continue
+              marker=f'# REFERENCE_V{version}'
+              current=generator.read_text(encoding='utf-8')
+              if marker in current:
+                  print(f'Skipping {script} (v{version}); marker already integrated', flush=True)
                   continue
               print(f'Applying {script} (v{version})', flush=True)
               subprocess.run([sys.executable, str(script)], check=True)
