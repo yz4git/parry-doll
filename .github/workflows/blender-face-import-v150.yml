@@ -1,0 +1,94 @@
+name: Imported Blender face v15
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/blender-face-import.trigger'
+      - '.github/workflows/blender-face-import-v150.yml'
+      - 'tools/rebuild-imported-face-v150.py'
+      - 'tools/heroine-face-import-v150.json'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: blender-face-import-v150
+  cancel-in-progress: false
+
+jobs:
+  rebuild-imported-face:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout current main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Blender
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender
+          blender --version
+
+      - name: Validate source model and scripts
+        run: |
+          set -euxo pipefail
+          test -s dist/assets/models/heroine-blender.glb
+          test -s tools/cc0-face-topology-stats.json
+          python3 -m py_compile tools/rebuild-imported-face-v150.py
+          python3 -m json.tool tools/heroine-face-import-v150.json >/dev/null
+          cp dist/assets/models/heroine-blender.glb /tmp/heroine-existing-v150.glb
+          sha256sum /tmp/heroine-existing-v150.glb
+
+      - name: Import existing GLB and rebuild face in Blender
+        run: |
+          set -euxo pipefail
+          blender --background \
+            --python tools/rebuild-imported-face-v150.py -- \
+            --input /tmp/heroine-existing-v150.glb \
+            --output dist/assets/models/heroine-blender.glb \
+            --config tools/heroine-face-import-v150.json
+
+      - name: Re-import audit
+        run: |
+          set -euxo pipefail
+          test -s dist/assets/models/heroine-blender.glb
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('dist/assets/models/heroine-blender.glb')
+          data=p.read_bytes()
+          assert len(data) > 100_000, len(data)
+          assert data[:4] == b'glTF', data[:4]
+          print('GLB bytes', len(data))
+          PY
+          blender --background \
+            --python tools/rebuild-imported-face-v150.py -- \
+            --audit-only \
+            --input dist/assets/models/heroine-blender.glb \
+            --config tools/heroine-face-import-v150.json
+
+      - name: Ensure Blender changed the model
+        run: |
+          set -euxo pipefail
+          old="$(sha256sum /tmp/heroine-existing-v150.glb | cut -d' ' -f1)"
+          new="$(sha256sum dist/assets/models/heroine-blender.glb | cut -d' ' -f1)"
+          echo "old=$old"
+          echo "new=$new"
+          test "$old" != "$new"
+
+      - name: Commit rebuilt game model
+        run: |
+          set -euxo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add dist/assets/models/heroine-blender.glb
+          if git diff --cached --quiet; then
+            echo "No generated face-model change"
+            exit 1
+          fi
+          git commit -m "feat: rebuild imported Blender face v15.0"
+          git push
