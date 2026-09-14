@@ -2,7 +2,7 @@
   "version": 1,
   "name": "PARRY DOLL v14.0 face rebuild cage",
   "purpose": "Replace accumulated v13 local face edits with one multiview-constrained continuous head base while preserving the existing BL_HEAD runtime attachment, neck connection and modular eye/blink assets.",
-  "reference_intent": "adult realistic-anime heroine; true open orbital apertures in unified head shell; one embedded spherical eye per side shared by front/3q/profile; curved iris and pupil stack; compact soft jaw and v14.5 nose/lips retained",
+  "reference_intent": "adult realistic-anime heroine; actual HeadShellV140 orbital holes; outer canthus wraps into side plane; one shared embedded globe per eye; visible warm iris and pupil restored on globe surface; compact v14.5 nose/lips/jaw retained",
   "coordinate_note": "logical authoring coordinates used by make-blender-heroine.py: X left-right, Y vertical, Z front-back; values are world units for the existing 2.42u heroine scale",
   "sections": [
     [
@@ -287,5 +287,5 @@
     "tilt": 0.00355,
     "iris_scale_multiplier": 0.865
   },
-  "revision": "v14.6"
+  "revision": "v14.7"
 }
