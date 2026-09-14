@@ -1,0 +1,76 @@
+{
+  "version": 1,
+  "revision": "v15.0",
+  "name": "PARRY DOLL imported Blender face rebuild",
+  "style": "adult realistic-anime game heroine",
+  "topology_reference": "CC0 hm08 / MakeHuman-MPFB topology analysis already pinned in repository; proportions from supplied front + right-profile key art",
+  "intent": [
+    "import the current heroine-blender.glb into Blender instead of regenerating the whole character",
+    "preserve runtime hierarchy and existing hair/body/animation-facing nodes",
+    "rebuild the face silhouette toward the supplied game/anime references",
+    "keep a delicate exact side profile and a symmetric front view",
+    "do not copy commercial game geometry"
+  ],
+  "shape": {
+    "front_weight_start_z": 0.04,
+    "front_weight_full_z": 0.095,
+    "jaw_start_y": -0.04,
+    "jaw_end_y": -0.142,
+    "jaw_narrow": 0.072,
+    "chin_start_y": -0.104,
+    "chin_end_y": -0.142,
+    "chin_narrow": 0.045,
+    "cheek_center_y": -0.045,
+    "cheek_radius_y": 0.052,
+    "cheek_narrow": 0.018,
+    "nose_center_y": -0.028,
+    "nose_radius_x": 0.026,
+    "nose_radius_y": 0.07,
+    "nose_plane_z": 0.099,
+    "nose_projection_reduce": 0.105,
+    "nasion_center_y": 0.03,
+    "nasion_radius_x": 0.03,
+    "nasion_radius_y": 0.046,
+    "nasion_plane_z": 0.098,
+    "nasion_projection_reduce": 0.045,
+    "chin_center_y": -0.126,
+    "chin_radius_x": 0.034,
+    "chin_radius_y": 0.026,
+    "chin_forward": 0.0028
+  },
+  "eyes": {
+    "center_x": 0.0455,
+    "center_y": 0.03,
+    "width_scale": 1.035,
+    "height_scale": 1.018,
+    "max_radius_x": 0.05,
+    "max_radius_y": 0.034,
+    "mesh_name_tokens": [
+      "EyeSclera",
+      "IrisOuter",
+      "IrisInner",
+      "IrisRay",
+      "Pupil",
+      "EyeLight",
+      "UpperLash",
+      "OuterLash",
+      "LowerLid",
+      "UpperLid",
+      "Wetline",
+      "Canthus",
+      "SkinRim",
+      "ProfileLid",
+      "Blink"
+    ]
+  },
+  "nostrils": {
+    "inset": 0.0013,
+    "width_scale": 0.965
+  },
+  "audit": {
+    "min_head_vertices": 3000,
+    "min_eye_meshes": 8,
+    "min_changed_head_vertices": 250,
+    "min_retargeted_eye_meshes": 8
+  }
+}
