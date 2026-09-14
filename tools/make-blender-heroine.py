@@ -180,17 +180,21 @@ def add_portrait_head_v44(p,name,sections,mat,segments=96):
     # Temples tuck in while the upper cheekbone projects; this removes the round mask silhouette.
     for side in(-1,1):
      temple_x=side*head_w*.345
-     z-=fm*.0068*math.exp(-((x-temple_x)/(head_w*.105))**2-((yy-.055)/.050)**2)
+     z-=fm*.0075*math.exp(-((x-temple_x)/(head_w*.105))**2-((yy-.055)/.050)**2)
      cheek_x=side*head_w*.225
-     z+=fm*.0125*math.exp(-((x-cheek_x)/(head_w*.112))**2-((yy+.010)/.045)**2)
+     z+=fm*.0139*math.exp(-((x-cheek_x)/(head_w*.110))**2-((yy+.010)/.043)**2)
      # Deep orbital bowl with a softer lower lid shelf.
      eye_x=side*head_w*.148
-     z-=fm*.0165*math.exp(-((x-eye_x)/(head_w*.124))**2-((yy-.030)/.027)**2)
-     z+=fm*.0048*math.exp(-((x-eye_x)/(head_w*.120))**2-((yy-.068)/.024)**2)
-     z+=fm*.0030*math.exp(-((x-eye_x)/(head_w*.115))**2-((yy+.002)/.020)**2)
+     z-=fm*.0180*math.exp(-((x-eye_x)/(head_w*.123))**2-((yy-.030)/.027)**2)
+     z+=fm*.00535*math.exp(-((x-eye_x)/(head_w*.118))**2-((yy-.068)/.023)**2)
+     z+=fm*.00345*math.exp(-((x-eye_x)/(head_w*.113))**2-((yy+.002)/.019)**2)
      # Lower-cheek hollow and nasolabial transition form a readable adult mid-face plane.
-     z-=fm*.0048*math.exp(-((x-side*head_w*.275)/(head_w*.095))**2-((yy+.052)/.038)**2)
-     z-=fm*.0022*math.exp(-((x-side*head_w*.105)/(head_w*.070))**2-((yy+.065)/.028)**2)
+     z-=fm*.00555*math.exp(-((x-side*head_w*.275)/(head_w*.093))**2-((yy+.052)/.037)**2)
+     z-=fm*.00275*math.exp(-((x-side*head_w*.105)/(head_w*.067))**2-((yy+.065)/.027)**2)
+     # v13.20 local plane breaks: subtle enough to read in 3/4 lighting without becoming carved lines.
+     z-=fm*.00120*math.exp(-((x-side*head_w*.072)/(head_w*.043))**2-((yy+.055)/.014)**2)
+     z-=fm*.00095*math.exp(-((x-side*head_w*.118)/(head_w*.050))**2-((yy+.086)/.018)**2)
+     z-=fm*.00155*math.exp(-((x-side*head_w*.305)/(head_w*.086))**2-((yy+.118)/.027)**2)
     # Continuous nose bridge, dorsum, tip and columella.
     z+=fm*.0065*math.exp(-(x/(head_w*.072))**2-((yy-.036)/.082)**2)
     z+=fm*.0105*math.exp(-(x/(head_w*.070))**2-((yy+.005)/.066)**2)
@@ -1013,6 +1017,7 @@ TH_L=empty('BL_THIGH_L',BODY_ASSET);SH_L=empty('BL_SHIN_L',BODY_ASSET);FOOT_L=em
 # REFERENCE_V147: continuous-profile silhouette pass rebuilds the centre-line forehead/nasal-root/nose/lip/chin S-curve from the supplied side portrait while leaving frontal widths, eye spacing, jaw width and the accepted neck/hair systems unchanged.
 # REFERENCE_V148: exact-profile eye-readability pass enlarges only the YZ side-facing sclera/iris/pupil aperture and moves the profile lids/lashes slightly outward, matching the supplied portrait without changing frontal eye spacing or width.
 # REFERENCE_V149: lower profile refinement increases the rear-side lift while preserving the accepted front silhouette.
+# REFERENCE_V150: facial-plane refinement deepens the orbital bowl, strengthens the zygomatic plane and adds restrained alar, mouth-corner and jaw-angle breaks for a more premium three-quarter read without changing frontal proportions.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
@@ -1622,7 +1627,7 @@ for _o in list(bpy.data.objects):
  _reparent_keep_world(_o,_target)
 # Keep the existing dynamic pony root working, but move the complete hair subsystem under its own asset root.
 _reparent_keep_world(PONY,HAIR_ASSET)
-ROOT['character_revision']='v13.19';ROOT['assembly_workflow']='body-head-hair';BODY_ASSET['scale_reference']=True;BODY_ASSET['tps_silhouette_review']=True;HEAD_ASSET['profile_review']=True;HEAD_ASSET['facial_depth_review']=True;HEAD_ASSET['compact_face_review']=True;HEAD_ASSET['balanced_profile_review']=True;HEAD_ASSET['user_reference_profile_review']=True;HEAD_ASSET['reference_profile_silhouette']='v13.19';HEAD_ASSET['chin_underjaw_flow_review']=True;HEAD_ASSET['underjaw_slope_revision']='v13.19';HEAD_ASSET['reference_neck_revision']='v13.13';HAIR_ASSET['scalp_fit_review']=True;HAIR_ASSET['hero_silhouette_review']=True;HAIR_ASSET['profile_eye_clearance_review']=True;HAIR_ASSET['profile_eye_frame_revision']='v13.9';HAIR_ASSET['reference_profile_hair_revision']='v13.16';HAIR_ASSET['eye_reveal_fringe_revision']='v13.9';HAIR_ASSET['ear_exposure_revision']='v13.12';HAIR_ASSET['temple_sweep_revision']='v13.14';HAIR_ASSET['metal_ornament_revision']='v13.16';HEAD_ASSET['ear_anatomy_revision']='v13.14';HAIR_ASSET['layered_strand_revision']='v13.14';HAIR_ASSET['profile_ornament_visibility_revision']='v13.16';HEAD_ASSET['continuous_profile_revision']='v13.17';FACE_ASSET['profile_lid_readability_revision']='v13.18';FACE_ASSET['expression_ready']=True;FACE_ASSET['blink_system']='morph-eyelids';FACE_ASSET['mobile_gaze_review']=True;FACE_ASSET['profile_eye_review']=True;FACE_ASSET['profile_eye_volume_revision']='v13.18';FACE_ASSET['profile_iris_volume_revision']='v13.18';FACE_ASSET['profile_side_plane_revision']='v13.10';FACE_ASSET['profile_sclera_aperture_revision']='v13.18';FACE_ASSET['reference_nose_lip_revision']='v13.17';FACE_ASSET['almond_eye_revision']='v13.15';FACE_ASSET['lip_volume_revision']='v13.15';FACE_ASSET['portrait_material_revision']='v12.8-pbr';FACE_ASSET['iris_detail_revision']='v12.9-radial';EYE_L['expression_pivot']='left-eye';EYE_R['expression_pivot']='right-eye';MOUTH_ASSET['expression_pivot']='mouth'
+ROOT['character_revision']='v13.20';ROOT['assembly_workflow']='body-head-hair';BODY_ASSET['scale_reference']=True;BODY_ASSET['tps_silhouette_review']=True;HEAD_ASSET['profile_review']=True;HEAD_ASSET['facial_depth_review']=True;HEAD_ASSET['compact_face_review']=True;HEAD_ASSET['balanced_profile_review']=True;HEAD_ASSET['user_reference_profile_review']=True;HEAD_ASSET['reference_profile_silhouette']='v13.20';HEAD_ASSET['chin_underjaw_flow_review']=True;HEAD_ASSET['underjaw_slope_revision']='v13.19';HEAD_ASSET['reference_neck_revision']='v13.13';HAIR_ASSET['scalp_fit_review']=True;HAIR_ASSET['hero_silhouette_review']=True;HAIR_ASSET['profile_eye_clearance_review']=True;HAIR_ASSET['profile_eye_frame_revision']='v13.9';HAIR_ASSET['reference_profile_hair_revision']='v13.16';HAIR_ASSET['eye_reveal_fringe_revision']='v13.9';HAIR_ASSET['ear_exposure_revision']='v13.12';HAIR_ASSET['temple_sweep_revision']='v13.14';HAIR_ASSET['metal_ornament_revision']='v13.16';HEAD_ASSET['ear_anatomy_revision']='v13.14';HAIR_ASSET['layered_strand_revision']='v13.14';HAIR_ASSET['profile_ornament_visibility_revision']='v13.16';HEAD_ASSET['continuous_profile_revision']='v13.17';HEAD_ASSET['facial_plane_revision']='v13.20';FACE_ASSET['profile_lid_readability_revision']='v13.18';FACE_ASSET['expression_ready']=True;FACE_ASSET['blink_system']='morph-eyelids';FACE_ASSET['mobile_gaze_review']=True;FACE_ASSET['profile_eye_review']=True;FACE_ASSET['profile_eye_volume_revision']='v13.18';FACE_ASSET['profile_iris_volume_revision']='v13.18';FACE_ASSET['profile_side_plane_revision']='v13.10';FACE_ASSET['profile_sclera_aperture_revision']='v13.18';FACE_ASSET['reference_nose_lip_revision']='v13.17';FACE_ASSET['almond_eye_revision']='v13.15';FACE_ASSET['lip_volume_revision']='v13.15';FACE_ASSET['portrait_material_revision']='v12.8-pbr';FACE_ASSET['iris_detail_revision']='v12.9-radial';EYE_L['expression_pivot']='left-eye';EYE_R['expression_pivot']='right-eye';MOUTH_ASSET['expression_pivot']='mouth'
 
 
 bpy.context.scene.render.engine='BLENDER_EEVEE'
