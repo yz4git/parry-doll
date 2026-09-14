@@ -2,7 +2,7 @@
   "version": 1,
   "name": "PARRY DOLL v14.0 face rebuild cage",
   "purpose": "Replace accumulated v13 local face edits with one multiview-constrained continuous head base while preserving the existing BL_HEAD runtime attachment, neck connection and modular eye/blink assets.",
-  "reference_intent": "adult realistic-anime heroine; supplied side reference: deeper orbit, visible almond eye in true profile, narrow nasion, smooth projected bridge, small rounded tip, embedded full lips, soft chin, steep rising jaw-to-ear plane",
+  "reference_intent": "adult realistic-anime heroine; compact lower face, soft but readable jaw angle, narrow nasion and small projected tip, embedded lips, visible almond eye in exact profile with the eye seated on the lateral orbital surface",
   "coordinate_note": "logical authoring coordinates used by make-blender-heroine.py: X left-right, Y vertical, Z front-back; values are world units for the existing 2.42u heroine scale",
   "sections": [
     [
@@ -97,50 +97,50 @@
       0.0
     ],
     [
-      -0.078,
-      0.095,
+      -0.075,
+      0.097,
       0.1,
       0.103,
       -0.001
     ],
     [
-      -0.092,
-      0.089,
+      -0.088,
+      0.092,
       0.099,
       0.103,
       -0.002
     ],
     [
-      -0.104,
-      0.083,
+      -0.099,
+      0.087,
       0.098,
       0.102,
       -0.003
     ],
     [
-      -0.116,
-      0.076,
+      -0.109,
+      0.081,
       0.096,
       0.1,
       -0.004
     ],
     [
-      -0.128,
-      0.068,
+      -0.118,
+      0.074,
       0.093,
       0.097,
       -0.006
     ],
     [
-      -0.138,
-      0.057,
+      -0.127,
+      0.064,
       0.088,
       0.092,
       -0.008
     ],
     [
-      -0.146,
-      0.043,
+      -0.134,
+      0.05,
       0.082,
       0.086,
       -0.01
@@ -157,98 +157,98 @@
     ],
     [
       0.05,
-      0.1005
+      0.1002
     ],
     [
       0.034,
-      0.099
+      0.0982
     ],
     [
       0.022,
-      0.0965
+      0.0952
     ],
     [
       0.01,
-      0.0968
+      0.0958
     ],
     [
       -0.004,
-      0.1025
+      0.103
     ],
     [
       -0.018,
-      0.1115
+      0.1132
     ],
     [
       -0.032,
-      0.1215
+      0.124
     ],
     [
       -0.044,
-      0.129
-    ],
-    [
-      -0.052,
       0.133
     ],
     [
-      -0.058,
-      0.132
+      -0.051,
+      0.137
+    ],
+    [
+      -0.057,
+      0.135
     ],
     [
       -0.064,
-      0.126
+      0.127
     ],
     [
       -0.071,
-      0.1145
+      0.114
     ],
     [
       -0.077,
-      0.1122
+      0.112
     ],
     [
       -0.083,
-      0.1188
+      0.119
     ],
     [
       -0.089,
-      0.122
+      0.123
     ],
     [
       -0.095,
-      0.1235
+      0.1242
     ],
     [
       -0.101,
-      0.1192
+      0.1195
     ],
     [
       -0.108,
       0.1115
     ],
     [
-      -0.116,
-      0.107
+      -0.114,
+      0.108
     ],
     [
-      -0.123,
-      0.1188
+      -0.12,
+      0.1185
     ],
     [
-      -0.131,
-      0.1195
+      -0.126,
+      0.119
     ],
     [
-      -0.139,
-      0.111
+      -0.132,
+      0.11
     ],
     [
-      -0.147,
-      0.095
+      -0.138,
+      0.094
     ],
     [
-      -0.154,
+      -0.144,
       0.075
     ]
   ],
@@ -261,15 +261,15 @@
     "malar_y": -0.002,
     "mouth_center_y": -0.09,
     "mouth_half_width": 0.031,
-    "chin_y": -0.126,
+    "chin_y": -0.118,
     "jaw_hinge_x": 0.091,
-    "jaw_hinge_y": -0.082
+    "jaw_hinge_y": -0.076
   },
   "surface_strength": {
     "orbit_recess": 0.00715,
     "brow_support": 0.00275,
     "malar_projection": 0.00595,
-    "buccal_hollow": 0.00295,
+    "buccal_hollow": 0.0027,
     "temple_tuck": 0.0017,
     "alar_projection": 0.0022,
     "philtrum_recess": 0.00205,
@@ -277,15 +277,15 @@
     "lower_lip": 0.00455,
     "mouth_corner": 0.0015,
     "labiomental_recess": 0.00185,
-    "chin_pad": 0.0042
+    "chin_pad": 0.00395
   },
   "eye_target": {
     "center_y": 0.03,
     "spacing_scale": 1.0,
-    "aperture_rx": 0.02835,
-    "aperture_ry": 0.0092,
+    "aperture_rx": 0.02855,
+    "aperture_ry": 0.00935,
     "tilt": 0.00355,
-    "iris_scale_multiplier": 0.845
+    "iris_scale_multiplier": 0.875
   },
-  "revision": "v14.1"
+  "revision": "v14.2"
 }
