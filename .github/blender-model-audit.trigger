@@ -1,1 +1,1 @@
-2026-09-15 v15.0 4e8b4e18a2909144c1b3f1b036d73ff3599a350e imported-blender-face-front-profile-reference
+2026-09-15 v16.0 2ae61dc071928eb8f4d89ff914d8bd6a1cedd30c ccby-anime-donor-front-profile-visual-audit
