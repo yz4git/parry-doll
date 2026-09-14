@@ -1,1 +1,1 @@
-2026-09-15 v14.7 37c7574b5096f8b0e9a2f6ff955a6402cb0d00d9 live-head-orbits-visible-iris
+2026-09-15 v15.0 4e8b4e18a2909144c1b3f1b036d73ff3599a350e imported-blender-face-front-profile-reference
