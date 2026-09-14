@@ -31,8 +31,9 @@ jobs:
       - name: Install Blender
         run: |
           sudo apt-get update
-          sudo apt-get install -y blender
+          sudo apt-get install -y blender python3-numpy
           blender --version
+          blender --background --python-exit-code 1 --python-expr "import numpy; print('Blender numpy', numpy.__version__)"
 
       - name: Validate source model and scripts
         run: |
@@ -47,7 +48,7 @@ jobs:
       - name: Import existing GLB and rebuild face in Blender
         run: |
           set -euxo pipefail
-          blender --background \
+          blender --background --python-exit-code 1 \
             --python tools/rebuild-imported-face-v150.py -- \
             --input /tmp/heroine-existing-v150.glb \
             --output dist/assets/models/heroine-blender.glb \
@@ -65,7 +66,7 @@ jobs:
           assert data[:4] == b'glTF', data[:4]
           print('GLB bytes', len(data))
           PY
-          blender --background \
+          blender --background --python-exit-code 1 \
             --python tools/rebuild-imported-face-v150.py -- \
             --audit-only \
             --input dist/assets/models/heroine-blender.glb \
