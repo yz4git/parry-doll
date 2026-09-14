@@ -1,1 +1,1 @@
-2026-09-14 v14.1 face cage profile jaw eye seating
+2026-09-15 v14.2 compact jaw lateral profile eye
