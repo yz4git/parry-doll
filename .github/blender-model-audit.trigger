@@ -1,1 +1,1 @@
-2026-09-15 v16.0 2ae61dc071928eb8f4d89ff914d8bd6a1cedd30c ccby-anime-donor-front-profile-visual-audit
+2026-09-15 v17.0 ff135e507f5d44cc4bce6d49915aa4719105dd29 fresh-david-onizaki-heroine-front-profile-webgl-audit
