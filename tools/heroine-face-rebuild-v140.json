@@ -2,7 +2,7 @@
   "version": 1,
   "name": "PARRY DOLL v14.0 face rebuild cage",
   "purpose": "Replace accumulated v13 local face edits with one multiview-constrained continuous head base while preserving the existing BL_HEAD runtime attachment, neck connection and modular eye/blink assets.",
-  "reference_intent": "adult realistic-anime heroine; compact lower face and soft jaw retained from v14.2; exact profile eye must be a narrow continuation of the real eye at the lateral canthus, never a detached side-eye plate",
+  "reference_intent": "adult realistic-anime heroine; compact soft lower face retained; eyes seated inside stronger sockets; nose root, cheekbone, philtrum and lips must read as continuous facial planes in front and 3/4 without detached helper geometry",
   "coordinate_note": "logical authoring coordinates used by make-blender-heroine.py: X left-right, Y vertical, Z front-back; values are world units for the existing 2.42u heroine scale",
   "sections": [
     [
@@ -266,26 +266,26 @@
     "jaw_hinge_y": -0.076
   },
   "surface_strength": {
-    "orbit_recess": 0.00715,
-    "brow_support": 0.00275,
-    "malar_projection": 0.00595,
-    "buccal_hollow": 0.0027,
+    "orbit_recess": 0.0081,
+    "brow_support": 0.00315,
+    "malar_projection": 0.00665,
+    "buccal_hollow": 0.0031,
     "temple_tuck": 0.0017,
     "alar_projection": 0.0022,
-    "philtrum_recess": 0.00205,
-    "upper_lip": 0.00395,
-    "lower_lip": 0.00455,
-    "mouth_corner": 0.0015,
-    "labiomental_recess": 0.00185,
-    "chin_pad": 0.00395
+    "philtrum_recess": 0.00225,
+    "upper_lip": 0.0043,
+    "lower_lip": 0.00495,
+    "mouth_corner": 0.00172,
+    "labiomental_recess": 0.00205,
+    "chin_pad": 0.00385
   },
   "eye_target": {
     "center_y": 0.03,
     "spacing_scale": 1.0,
     "aperture_rx": 0.02855,
-    "aperture_ry": 0.00935,
+    "aperture_ry": 0.00905,
     "tilt": 0.00355,
-    "iris_scale_multiplier": 0.875
+    "iris_scale_multiplier": 0.865
   },
-  "revision": "v14.3"
+  "revision": "v14.4"
 }
