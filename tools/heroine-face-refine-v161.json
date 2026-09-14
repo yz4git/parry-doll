@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "revision": "v16.1",
+  "goal": "Refine the CC-BY anime donor head already embedded in the current game GLB toward the supplied adult realistic-anime front/profile key art while preserving hair, body, runtime hierarchy and eye placement.",
+  "forehead": {
+    "start_above_eye": 0.012,
+    "compression": 0.38,
+    "frontness_start": 0.16,
+    "frontness_full": 0.72
+  },
+  "eye_socket": {
+    "radius_x": 0.046,
+    "radius_z": 0.038,
+    "vertical_compression": 0.23,
+    "horizontal_expansion": 0.045,
+    "frontness_min": 0.2
+  },
+  "nose": {
+    "center_below_eye": 0.035,
+    "radius_x": 0.026,
+    "radius_z": 0.046,
+    "forward": 0.0032
+  },
+  "jaw": {
+    "start_below_eye": 0.045,
+    "max_width_gain": 0.022
+  },
+  "eyes": {
+    "iris_radius_from_sclera_width": 0.27,
+    "iris_radius_from_sclera_height": 0.31,
+    "iris_min_radius": 0.0075,
+    "iris_max_radius": 0.0135,
+    "surface_offset": 0.0012,
+    "outer_color": [0.12, 0.10, 0.095, 1.0],
+    "iris_color": [0.29, 0.25, 0.23, 1.0],
+    "inner_color": [0.18, 0.16, 0.15, 1.0],
+    "pupil_color": [0.025, 0.02, 0.022, 1.0],
+    "highlight_color": [1.0, 0.98, 0.96, 1.0],
+    "sclera_color": [0.94, 0.925, 0.91, 1.0]
+  },
+  "lips": {
+    "upper_color": [0.44, 0.18, 0.19, 1.0],
+    "lower_color": [0.58, 0.27, 0.28, 1.0],
+    "seam_color": [0.20, 0.075, 0.08, 1.0]
+  },
+  "audit": {
+    "min_head_vertices": 8000,
+    "min_eye_scleras": 2,
+    "min_new_iris_parts": 8,
+    "max_head_height": 0.34
+  }
+}
