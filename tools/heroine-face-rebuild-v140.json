@@ -2,7 +2,7 @@
   "version": 1,
   "name": "PARRY DOLL v14.0 face rebuild cage",
   "purpose": "Replace accumulated v13 local face edits with one multiview-constrained continuous head base while preserving the existing BL_HEAD runtime attachment, neck connection and modular eye/blink assets.",
-  "reference_intent": "adult realistic-anime heroine; compact soft lower face retained; eyes seated inside stronger sockets; nose root, cheekbone, philtrum and lips must read as continuous facial planes in front and 3/4 without detached helper geometry",
+  "reference_intent": "adult realistic-anime heroine; larger almond aperture seated deeper in a real orbit; narrow readable nose root/alar base; fuller cupid upper lip and rounded lower lip; compact soft jaw retained; no detached profile-eye geometry",
   "coordinate_note": "logical authoring coordinates used by make-blender-heroine.py: X left-right, Y vertical, Z front-back; values are world units for the existing 2.42u heroine scale",
   "sections": [
     [
@@ -266,26 +266,26 @@
     "jaw_hinge_y": -0.076
   },
   "surface_strength": {
-    "orbit_recess": 0.0081,
-    "brow_support": 0.00315,
-    "malar_projection": 0.00665,
-    "buccal_hollow": 0.0031,
+    "orbit_recess": 0.00875,
+    "brow_support": 0.00335,
+    "malar_projection": 0.0069,
+    "buccal_hollow": 0.0032,
     "temple_tuck": 0.0017,
-    "alar_projection": 0.0022,
-    "philtrum_recess": 0.00225,
-    "upper_lip": 0.0043,
-    "lower_lip": 0.00495,
-    "mouth_corner": 0.00172,
-    "labiomental_recess": 0.00205,
-    "chin_pad": 0.00385
+    "alar_projection": 0.00265,
+    "philtrum_recess": 0.00245,
+    "upper_lip": 0.00475,
+    "lower_lip": 0.00545,
+    "mouth_corner": 0.00186,
+    "labiomental_recess": 0.00218,
+    "chin_pad": 0.0038
   },
   "eye_target": {
     "center_y": 0.03,
     "spacing_scale": 1.0,
-    "aperture_rx": 0.02855,
-    "aperture_ry": 0.00905,
+    "aperture_rx": 0.03025,
+    "aperture_ry": 0.00958,
     "tilt": 0.00355,
-    "iris_scale_multiplier": 0.865
+    "iris_scale_multiplier": 0.855
   },
-  "revision": "v14.4"
+  "revision": "v14.5"
 }
