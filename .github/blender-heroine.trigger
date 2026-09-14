@@ -1,1 +1,1 @@
-2026-09-15 v14.4 deep socket restrained canthus mid-face planes
+2026-09-15 v14.5 larger deeper almond eye clearer nose fuller lips
