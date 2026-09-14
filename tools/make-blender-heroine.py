@@ -862,10 +862,27 @@ def add_reference_head_v120(p,name,mat,segments=112):
  bottom_y=-.105+(-.147+.105)*chin_len*.58
  bottom_idx=len(verts);verts.append(bpos((0,bottom_y,-.011)))
  faces=[];rows=len(sections)
+ hole_rx=FACE140['eye_target']['aperture_rx']*.97
+ hole_ry=FACE140['eye_target']['aperture_ry']*1.08
  for r in range(rows-1):
   a=r*segments;b=a+segments
   for i in range(segments):
-   j=(i+1)%segments;faces.append((a+i,a+j,b+j,b+i))
+   j=(i+1)%segments
+   ids=(a+i,a+j,b+j,b+i)
+   cx=sum(logical[k][0] for k in ids)*.25
+   cy=sum(logical[k][1] for k in ids)*.25
+   cz=sum(logical[k][2] for k in ids)*.25
+   orbital_open=False
+   if cz>.087:
+    for side in (-1,1):
+     ex=side*lm['eye_center_x']
+     nx=(cx-ex)/max(hole_rx,1e-6)
+     ny=(cy-lm['eye_center_y'])/max(hole_ry,1e-6)
+     # Wider at the centre, slightly tighter toward canthi for an adult almond opening.
+     if nx*nx+ny*ny < .93:
+      orbital_open=True;break
+   if not orbital_open:
+    faces.append(ids)
  for i in range(segments):
   j=(i+1)%segments;faces.append((top_idx,j,i))
   a=(rows-1)*segments;faces.append((bottom_idx,a+i,a+j))
@@ -1158,6 +1175,7 @@ TH_L=empty('BL_THIGH_L',BODY_ASSET);SH_L=empty('BL_SHIN_L',BODY_ASSET);FOOT_L=em
 # REFERENCE_V163: v14.3 removes the detached lateral profile-eye plate after 3/4 audit exposed a duplicate-eye artifact; profile readability now comes from the original eye canthus wrapping farther around the orbital rim.
 # REFERENCE_V164: v14.4 seats the real eye deeper, turns the side helper into a restrained canthus glint, and strengthens orbital, nasal, malar and mouth planes for a less mannequin-like close portrait.
 # REFERENCE_V165: v14.5 rebuilds portrait readability around a larger but deeper-set almond aperture, clearer alar/nostril anatomy and fuller integrated lips while keeping the compact v14 jaw and single wrapped profile eye.
+# REFERENCE_V166: v14.6 cuts true orbital apertures into the v14 head cage and replaces flat/profile eye helper plates with one embedded spherical sclera and shallow curved iris stack, so front, 3/4 and profile share the same physical eye.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
@@ -1320,15 +1338,15 @@ def add_blink_lid_surface(p,name,ex,cy,rx,ry,mat):
   edge=cy+ry*(.10+.86*bow);top=edge+.00415+.00055*bow
   opened.append((x,top,z-.00008));closed.append((x,top,z-.00008))
  for u in us:
-  bow=max(0.0,1.0-u*u);x=ex+u*rx*.985;z=.10550+.00042*bow
+  bow=max(0.0,1.0-u*u);x=ex+u*rx*.985;z=.10228+.00036*bow
   edge=cy+ry*(.10+.86*bow);close_y=cy-.00030+ry*.075*bow-.00022
   opened.append((x,edge,z));closed.append((x,close_y,z+.00016))
  for u in us:
-  bow=max(0.0,1.0-u*u);x=ex+u*rx*.985;z=.10544+.00038*bow
+  bow=max(0.0,1.0-u*u);x=ex+u*rx*.985;z=.10220+.00034*bow
   edge=cy-ry*(.08+.60*bow);close_y=cy-.00030+ry*.075*bow+.00022
   opened.append((x,edge,z));closed.append((x,close_y,z+.00010))
  for u in us:
-  bow=max(0.0,1.0-u*u);x=ex+u*rx*.985;z=.10531+.00028*bow
+  bow=max(0.0,1.0-u*u);x=ex+u*rx*.985;z=.10208+.00025*bow
   edge=cy-ry*(.08+.60*bow);bottom=edge-.00330-.00038*bow
   opened.append((x,bottom,z-.00008));closed.append((x,bottom,z-.00008))
  verts=[bpos(v) for v in opened];faces=[]
@@ -1355,26 +1373,28 @@ iris_scale=ASSEMBLY120['head']['irisScale']*FACE140['eye_target']['iris_scale_mu
 eye_contrast=ASSEMBLY120['head']['eyeContrast']*1.08
 for side in(-1,1):
  ex=side*eye_x
- add_sphere(HEAD,f'EyeScleraGlobeV165_{side}',(ex,eye_y,.0917),(eye_rx*.79,eye_ry*.81,.00895),SCLERA,36,24)
- add_sphere(HEAD,f'EyeIrisVolumeV165_{side}',(ex,eye_y-.00010,.09750),(eye_rx*.258,eye_ry*.412,.00385),IRIS,30,20)
- add_sphere(HEAD,f'EyePupilVolumeV165_{side}',(ex,eye_y-.00025,.09882),(eye_rx*.094,eye_ry*.198,.00270),PUPIL,24,16)
- add_sphere(HEAD,f'EyeProfileIrisV164_{side}',(ex+side*eye_rx*.70,eye_y+.00010,.09915),(eye_rx*.165,eye_ry*.31,.00285),IRIS_INNER,22,14)
- add_sphere(HEAD,f'EyeProfilePupilV164_{side}',(ex+side*eye_rx*.765,eye_y-.00005,.10005),(eye_rx*.056,eye_ry*.155,.00195),PUPIL,18,12)
- add_profile_ellipse_yz_v137(HEAD,f'EyeProfileScleraYZV140_{side}',ex+side*eye_rx*1.095,eye_y+.0001,.10055,eye_ry*.72,.00860,SCLERA,48)
- add_profile_ellipse_yz_v137(HEAD,f'EyeProfileIrisYZV137_{side}',ex+side*eye_rx*1.102,eye_y+.0002,.10125,eye_ry*.43,.00465,IRIS_INNER,42)
- add_profile_ellipse_yz_v137(HEAD,f'EyeProfilePupilYZV137_{side}',ex+side*eye_rx*1.106,eye_y+.0001,.10152,eye_ry*.18,.00205,PUPIL,30)
- add_almond_surface(HEAD,f'EyeScleraV165_{side}',ex,eye_y,.10028,eye_rx,eye_ry,.00092,SCLERA,112,side,eye_tilt*.72)
+ add_sphere(HEAD,f'EyeScleraGlobeV166_{side}',(ex,eye_y,.0832),(eye_rx*.620,eye_rx*.620,eye_rx*.620),SCLERA,48,32)
+ # v14.6 removed: sclera/profile helper replaced by shared embedded globe
+ # v14.6 removed: sclera/profile helper replaced by shared embedded globe
+ # v14.6 removed: sclera/profile helper replaced by shared embedded globe
+ # v14.6 removed: sclera/profile helper replaced by shared embedded globe
+ # v14.6 removed: sclera/profile helper replaced by shared embedded globe
+ # v14.6 removed: sclera/profile helper replaced by shared embedded globe
+ # v14.6 removed: sclera/profile helper replaced by shared embedded globe
+ # v14.6 removed: sclera/profile helper replaced by shared embedded globe
  # Dark outer iris first, then a smaller warm inner iris and pupil; this gives a readable limbal ring.
- add_ellipse_surface(HEAD,f'IrisOuterV165_{side}',ex,eye_y-.00025,.10142,.01120*iris_scale,.00865*iris_scale,IRIS,56)
- add_ellipse_surface(HEAD,f'IrisInnerV165_{side}',ex,eye_y-.00005,.10165,.00840*iris_scale,.00628*iris_scale,IRIS_INNER,52)
- add_iris_rays_v129(HEAD,f'IrisRaysV165_{side}',ex,eye_y-.00005,.10178,.00755*iris_scale,.00562*iris_scale,.34,(IRIS_RAY_WARM,IRIS_RAY_DARK),26)
- add_ellipse_surface(HEAD,f'PupilV165_{side}',ex,eye_y-.00045,.10192,.00288*iris_scale,.00352*iris_scale,PUPIL,38)
- add_ellipse_surface(HEAD,f'EyeLightV119A_{side}',ex-side*.00355,eye_y+.00335,.10520,.00135,.00103,SCLERA,20)
- add_ellipse_surface(HEAD,f'EyeLightV119B_{side}',ex+side*.00205,eye_y+.00105,.10518,.00048,.00040,SCLERA,16)
+ add_sphere(HEAD,f'IrisOuterV166_{side}',(ex,eye_y-.00018,.09955),(.01115*iris_scale,.00855*iris_scale,.00220),IRIS,36,24)
+ add_sphere(HEAD,f'IrisInnerV166_{side}',(ex,eye_y-.00004,.10005),(.00835*iris_scale,.00620*iris_scale,.00178),IRIS_INNER,34,22)
+ add_iris_rays_v129(HEAD,f'IrisRaysV166_{side}',ex,eye_y-.00005,.10192,.00745*iris_scale,.00552*iris_scale,.31,(IRIS_RAY_WARM,IRIS_RAY_DARK),28)
+ add_sphere(HEAD,f'PupilV166_{side}',(ex,eye_y-.00038,.10062),(.00282*iris_scale,.00342*iris_scale,.00142),PUPIL,30,20)
+ add_ellipse_surface(HEAD,f'EyeLightV166A_{side}',ex-side*.00355,eye_y+.00335,.10208,.00128,.00096,SCLERA,20)
+ add_ellipse_surface(HEAD,f'EyeLightV166B_{side}',ex+side*.00205,eye_y+.00105,.10204,.00044,.00036,SCLERA,16)
  inner=ex-side*eye_rx*.965;outer=ex+side*eye_rx*1.035
  # Explicit dark eyelid silhouette. The previous skin-coloured rim disappeared against the face at mobile scale.
  add_strand(HEAD,f'UpperLashV119_{side}',[(inner,eye_y-eye_tilt+.0002,.10310),(ex-side*.0030,eye_y+.01055,.10378),(outer+side*.0012,eye_y+eye_tilt+.00045,.10322)],.00116*eye_contrast,HAIR)
  add_strand(HEAD,f'OuterLashV119_{side}',[(outer-side*.0036,eye_y+eye_tilt+.0017,.10325),(outer+side*.0058,eye_y+eye_tilt+.0052,.10330),(outer+side*.0108,eye_y+eye_tilt+.0037,.10318)],.00066*eye_contrast,HAIR)
+ add_strand(HEAD,f'UpperSkinRimV166_{side}',[(inner+side*.0020,eye_y-eye_tilt+.0001,.10055),(ex,eye_y+.00925,.10105),(outer-side*.0015,eye_y+eye_tilt+.0002,.10062)],.00058,SKIN)
+ add_strand(HEAD,f'LowerSkinRimV166_{side}',[(inner+side*.0030,eye_y-eye_tilt-.0002,.10048),(ex,eye_y-.00725,.10078),(outer-side*.0030,eye_y+eye_tilt-.0001,.10052)],.00042,SKIN)
  add_strand(HEAD,f'ProfileLashV133_{side}',[(outer-side*.0015,eye_y+eye_tilt+.0030,.10425),(outer+side*.0010,eye_y+eye_tilt+.0050,.1068),(outer+side*.0028,eye_y+eye_tilt+.0042,.1092)],.00031*eye_contrast,HAIR)
  add_strand(HEAD,f'ProfileUpperLidV140_{side}',[(ex+side*eye_rx*1.075,eye_y+eye_ry*.66,.10015),(ex+side*eye_rx*1.098,eye_y+eye_ry*.30,.10655),(ex+side*eye_rx*1.105,eye_y-.0001,.10835)],.00029*eye_contrast,FACE_DARK)
  add_strand(HEAD,f'ProfileLowerLidV140_{side}',[(ex+side*eye_rx*1.075,eye_y-eye_ry*.61,.10030),(ex+side*eye_rx*1.098,eye_y-eye_ry*.28,.10630),(ex+side*eye_rx*1.105,eye_y-.0001,.10805)],.00018*eye_contrast,EYE_WET)
@@ -1769,7 +1789,7 @@ for _o in list(bpy.data.objects):
  _reparent_keep_world(_o,_target)
 # Keep the existing dynamic pony root working, but move the complete hair subsystem under its own asset root.
 _reparent_keep_world(PONY,HAIR_ASSET)
-ROOT['character_revision']='v14.5';ROOT['assembly_workflow']='body-head-hair';BODY_ASSET['scale_reference']=True;BODY_ASSET['tps_silhouette_review']=True;HEAD_ASSET['profile_review']=True;HEAD_ASSET['facial_depth_review']=True;HEAD_ASSET['compact_face_review']=True;HEAD_ASSET['balanced_profile_review']=True;HEAD_ASSET['user_reference_profile_review']=True;HEAD_ASSET['reference_profile_silhouette']='v13.20';HEAD_ASSET['chin_underjaw_flow_review']=True;HEAD_ASSET['underjaw_slope_revision']='v13.19';HEAD_ASSET['reference_neck_revision']='v13.13';HAIR_ASSET['scalp_fit_review']=True;HAIR_ASSET['hero_silhouette_review']=True;HAIR_ASSET['profile_eye_clearance_review']=True;HAIR_ASSET['profile_eye_frame_revision']='v13.9';HAIR_ASSET['reference_profile_hair_revision']='v13.16';HAIR_ASSET['eye_reveal_fringe_revision']='v13.9';HAIR_ASSET['ear_exposure_revision']='v13.12';HAIR_ASSET['temple_sweep_revision']='v13.14';HAIR_ASSET['metal_ornament_revision']='v13.16';HEAD_ASSET['ear_anatomy_revision']='v13.14';HAIR_ASSET['layered_strand_revision']='v13.14';HAIR_ASSET['profile_ornament_visibility_revision']='v13.16';HEAD_ASSET['continuous_profile_revision']='v13.17';HEAD_ASSET['facial_plane_revision']='v13.20';FACE_ASSET['profile_lid_readability_revision']='v13.18';FACE_ASSET['eyelid_integration_revision']='v13.21';MOUTH_ASSET['nose_philtrum_lip_revision']='v13.22';HEAD_ASSET['nasion_bridge_revision']='v13.23';FACE_ASSET['exact_profile_eye_revision']='v13.24';HEAD_ASSET['face_rebuild_revision']='v14.5';HEAD_ASSET['face_topology']='continuous_multiview_quad_cage';FACE_ASSET['v14_socket_retarget']=True;FACE_ASSET['v14_eye_seating_revision']='v14.1';FACE_ASSET['profile_ocular_revision']='v14.5-deeper-almond-canthus';FACE_ASSET['midface_plane_revision']='v14.5';FACE_ASSET['expression_ready']=True;FACE_ASSET['blink_system']='morph-eyelids';FACE_ASSET['mobile_gaze_review']=True;FACE_ASSET['profile_eye_review']=True;FACE_ASSET['profile_eye_volume_revision']='v13.18';FACE_ASSET['profile_iris_volume_revision']='v13.18';FACE_ASSET['profile_side_plane_revision']='v13.10';FACE_ASSET['profile_sclera_aperture_revision']='v13.18';FACE_ASSET['reference_nose_lip_revision']='v13.17';FACE_ASSET['almond_eye_revision']='v13.21';FACE_ASSET['lip_volume_revision']='v13.15';FACE_ASSET['portrait_material_revision']='v12.8-pbr';FACE_ASSET['iris_detail_revision']='v12.9-radial';EYE_L['expression_pivot']='left-eye';EYE_R['expression_pivot']='right-eye';MOUTH_ASSET['expression_pivot']='mouth'
+ROOT['character_revision']='v14.6';ROOT['assembly_workflow']='body-head-hair';BODY_ASSET['scale_reference']=True;BODY_ASSET['tps_silhouette_review']=True;HEAD_ASSET['profile_review']=True;HEAD_ASSET['facial_depth_review']=True;HEAD_ASSET['compact_face_review']=True;HEAD_ASSET['balanced_profile_review']=True;HEAD_ASSET['user_reference_profile_review']=True;HEAD_ASSET['reference_profile_silhouette']='v13.20';HEAD_ASSET['chin_underjaw_flow_review']=True;HEAD_ASSET['underjaw_slope_revision']='v13.19';HEAD_ASSET['reference_neck_revision']='v13.13';HAIR_ASSET['scalp_fit_review']=True;HAIR_ASSET['hero_silhouette_review']=True;HAIR_ASSET['profile_eye_clearance_review']=True;HAIR_ASSET['profile_eye_frame_revision']='v13.9';HAIR_ASSET['reference_profile_hair_revision']='v13.16';HAIR_ASSET['eye_reveal_fringe_revision']='v13.9';HAIR_ASSET['ear_exposure_revision']='v13.12';HAIR_ASSET['temple_sweep_revision']='v13.14';HAIR_ASSET['metal_ornament_revision']='v13.16';HEAD_ASSET['ear_anatomy_revision']='v13.14';HAIR_ASSET['layered_strand_revision']='v13.14';HAIR_ASSET['profile_ornament_visibility_revision']='v13.16';HEAD_ASSET['continuous_profile_revision']='v13.17';HEAD_ASSET['facial_plane_revision']='v13.20';FACE_ASSET['profile_lid_readability_revision']='v13.18';FACE_ASSET['eyelid_integration_revision']='v13.21';MOUTH_ASSET['nose_philtrum_lip_revision']='v13.22';HEAD_ASSET['nasion_bridge_revision']='v13.23';FACE_ASSET['exact_profile_eye_revision']='v13.24';HEAD_ASSET['face_rebuild_revision']='v14.6';HEAD_ASSET['face_topology']='continuous_multiview_quad_cage';FACE_ASSET['v14_socket_retarget']=True;FACE_ASSET['v14_eye_seating_revision']='v14.1';FACE_ASSET['profile_ocular_revision']='v14.6-shared-physical-globe';FACE_ASSET['midface_plane_revision']='v14.6';FACE_ASSET['orbital_topology']='open-physical-eye-v14.6';FACE_ASSET['expression_ready']=True;FACE_ASSET['blink_system']='morph-eyelids';FACE_ASSET['mobile_gaze_review']=True;FACE_ASSET['profile_eye_review']=True;FACE_ASSET['profile_eye_volume_revision']='v13.18';FACE_ASSET['profile_iris_volume_revision']='v13.18';FACE_ASSET['profile_side_plane_revision']='v13.10';FACE_ASSET['profile_sclera_aperture_revision']='v13.18';FACE_ASSET['reference_nose_lip_revision']='v13.17';FACE_ASSET['almond_eye_revision']='v13.21';FACE_ASSET['lip_volume_revision']='v13.15';FACE_ASSET['portrait_material_revision']='v12.8-pbr';FACE_ASSET['iris_detail_revision']='v12.9-radial';EYE_L['expression_pivot']='left-eye';EYE_R['expression_pivot']='right-eye';MOUTH_ASSET['expression_pivot']='mouth'
 
 
 bpy.context.scene.render.engine='BLENDER_EEVEE'
