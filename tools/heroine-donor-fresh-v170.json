@@ -1,0 +1,87 @@
+{
+  "version": 1,
+  "revision": "v17.0",
+  "name": "PARRY DOLL fresh David Onizaki donor heroine",
+  "build_policy": "Start from an empty Blender scene. Rebuild the Parry Doll body, outfit, hair and runtime hierarchy procedurally, then use the pinned David Onizaki CC-BY anime female head as the actual head shell before the final export. The previous heroine GLB must not be imported or used as a geometry source.",
+  "donor": {
+    "author": "David Onizaki",
+    "license": "CC-ATTRIBUTION / CC BY as recorded by the pinned carrier repository",
+    "source": "https://sketchfab.com/3d-models/genshin-style-anime-female-base-mesh-for-blender-c2d6727e8c9742feb9a4a3bccac6e0e0",
+    "carrier_repo": "https://github.com/TjhaiME/Godot-Active-Rigid-Ragdoll",
+    "carrier_commit": "5328516c87d56c90e409dfd09b1c7694e37696fb",
+    "mesh_resource": "addons/rigidRagdoll/Characters/GeneralRagdoll_Simple.tscn / HeadMesh / ArrayMesh surface 0"
+  },
+  "fit": {
+    "width_factor": 0.955,
+    "height_factor": 0.985,
+    "depth_factor_from_uniform": 0.955,
+    "center_x_offset": 0.0,
+    "center_y_offset": -0.0015,
+    "center_z_offset": -0.003
+  },
+  "sculpt": {
+    "jaw_start_from_bottom": 0.40,
+    "jaw_narrow_at_bottom": 0.082,
+    "chin_start_from_bottom": 0.18,
+    "chin_extra_narrow": 0.045,
+    "cheek_soften": 0.012,
+    "nose_projection_reduce": 0.020,
+    "forehead_compress_start": 0.73,
+    "forehead_compress": 0.018
+  },
+  "surface": {
+    "subdivision_levels": 1,
+    "roughness": 0.52,
+    "specular": 0.34,
+    "normal_strength": 0.24,
+    "subsurface": 0.03
+  },
+  "cleanup": {
+    "delete_face_overlay_tokens": [
+      "Nostril",
+      "UpperLid",
+      "LowerLid",
+      "SkinRim",
+      "ProfileLid",
+      "Blink",
+      "UpperLip",
+      "LowerLip",
+      "MouthSeam"
+    ]
+  },
+  "eyes": {
+    "iris_scale": 1.10,
+    "pupil_scale": 1.06,
+    "iris_forward": 0.0015
+  },
+  "audit": {
+    "min_head_vertices": 7000,
+    "min_head_polygons": 7000,
+    "min_eye_meshes": 8,
+    "required_runtime_nodes": [
+      "BLENDER_HEROINE",
+      "BL_PELVIS",
+      "BL_TORSO",
+      "BL_HEAD",
+      "BL_HEAD_ASSET",
+      "BL_FACE_ASSET",
+      "BL_HAIR_ASSET",
+      "BL_EYE_L",
+      "BL_EYE_R",
+      "BL_MOUTH",
+      "BL_UPPER_ARM_L",
+      "BL_FOREARM_L",
+      "BL_HAND_L",
+      "BL_UPPER_ARM_R",
+      "BL_FOREARM_R",
+      "BL_HAND_R",
+      "BL_THIGH_L",
+      "BL_SHIN_L",
+      "BL_FOOT_L",
+      "BL_THIGH_R",
+      "BL_SHIN_R",
+      "BL_FOOT_R",
+      "BL_SWORD"
+    ]
+  }
+}
