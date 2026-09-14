@@ -55,12 +55,21 @@ jobs:
           print(max(versions))
           PY
           )
-          echo "Applying Blender refinement chain through v${latest}"
-          for v in $(seq 14 "$latest"); do
-            script="tools/refine-blender-reference-v${v}.py"
-            test -f "$script"
-            python "$script"
-          done
+          echo "Applying available Blender refinement scripts through v${latest}"
+          python - <<'PY'
+          from pathlib import Path
+          import re, subprocess, sys
+          scripts=[]
+          for p in Path('tools').glob('refine-blender-reference-v*.py'):
+              m=re.search(r'v(\d+)\.py$', p.name)
+              if m:
+                  scripts.append((int(m.group(1)), p))
+          for version, script in sorted(scripts):
+              if version < 14:
+                  continue
+              print(f'Applying {script} (v{version})', flush=True)
+              subprocess.run([sys.executable, str(script)], check=True)
+          PY
           grep -q "REFERENCE_V${latest}" tools/make-blender-heroine.py
           python -m py_compile tools/make-blender-heroine.py tools/refine-blender-reference-v*.py tools/enable-blender-heroine.py
           python - <<'PY'
@@ -101,7 +110,7 @@ jobs:
           )
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add visual-src/engine.js visual-src/blender-heroine.js dist/visual-engine.js dist/visual-engine.js.LEGAL.txt dist/model-viewer.js dist/style.css dist/assets/models/heroine-blender.glb tools/make-blender-heroine.py tools/enable-blender-heroine.py tools/refine-blender-reference-v*.py tools/heroine-reference-proportions.json docs/BLENDER_CHARACTER_RESEARCH.md
+          git add visual-src/engine.js visual-src/blender-heroine.js dist/visual-engine.js dist/visual-engine.js.LEGAL.txt dist/model-viewer.js dist/style.css dist/assets/models/heroine-blender.glb tools/make-blender-heroine.py tools/enable-blender-heroine.py tools/refine-blender-reference-v*.py tools/heroine-reference-proportions.json tools/heroine-face-rebuild-v140.json docs/BLENDER_CHARACTER_RESEARCH.md
           if git diff --cached --quiet; then
             echo "Blender heroine already current"
             exit 0
