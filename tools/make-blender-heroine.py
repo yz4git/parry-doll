@@ -798,33 +798,33 @@ def add_reference_head_v120(p,name,mat,segments=112):
     # Each field is deliberately local so nose/mouth depth can change without widening the frontal jaw.
     for side in (-1,1):
      # Alar wings move slightly outward and forward around the nasal base.
-     aw=math.exp(-((x-side*.0115)/(.0105*nose_width))**2-((yy+.0555)/.0115)**2)
-     x+=side*.00155*alar*aw
-     z+=fm*.0035*alar*aw
+     aw=math.exp(-((x-side*.0108)/(.0098*nose_width))**2-((yy+.0555)/.0110)**2)
+     x+=side*.00110*alar*aw
+     z+=fm*.00310*alar*aw
      # The nostril floor/alar crease sits just below and medial to the wing.
-     nr=math.exp(-((x-side*.0075)/.0085)**2-((yy+.0630)/.0075)**2)
-     z-=fm*.00175*surface['nostrilScale']*nr
+     nr=math.exp(-((x-side*.0070)/.0078)**2-((yy+.0625)/.0072)**2)
+     z-=fm*.00195*surface['nostrilScale']*nr
 
     # Subnasal break and philtrum groove keep nose and upper lip from melting into one mound.
-    z-=fm*.00155*math.exp(-(x/.0105)**2-((yy+.0665)/.0075)**2)
-    z-=fm*.00145*philtrum*math.exp(-(x/.0070)**2-((yy+.0760)/.0105)**2)
+    z-=fm*.00182*math.exp(-(x/.0102)**2-((yy+.0660)/.0072)**2)
+    z-=fm*.00178*philtrum*math.exp(-(x/.0067)**2-((yy+.0755)/.0100)**2)
 
     # Upper lip is two soft lobes with a shallow central Cupid notch; lower lip is one broad volume.
     mouth_w=frontal['mouthWidth']
-    ul=(math.exp(-((x-.0105*mouth_w)/(.0120*mouth_w))**2-((yy+.0845)/.0080)**2)+
-        math.exp(-((x+.0105*mouth_w)/(.0120*mouth_w))**2-((yy+.0845)/.0080)**2))
-    z+=fm*.00362*lip_volume*ul
-    z-=fm*.00075*lip_volume*math.exp(-(x/.0055)**2-((yy+.0847)/.0055)**2)
-    ll=math.exp(-(x/(.0255*mouth_w))**2-((yy+.0940)/.0085)**2)
-    z+=fm*.00430*lip_volume*ll
+    ul=(math.exp(-((x-.0098*mouth_w)/(.0115*mouth_w))**2-((yy+.0838)/.0077)**2)+
+        math.exp(-((x+.0098*mouth_w)/(.0115*mouth_w))**2-((yy+.0838)/.0077)**2))
+    z+=fm*.00392*lip_volume*ul
+    z-=fm*.00100*lip_volume*math.exp(-(x/.0052)**2-((yy+.0843)/.0051)**2)
+    ll=math.exp(-(x/(.0248*mouth_w))**2-((yy+.0935)/.0083)**2)
+    z+=fm*.00462*lip_volume*ll
     # Mouth seam and corners recess into the muzzle rather than floating as a drawn line.
-    z-=fm*.00080*math.exp(-(x/(.0280*mouth_w))**4-((yy+.0887)/.0032)**2)
+    z-=fm*.00096*math.exp(-(x/(.0274*mouth_w))**4-((yy+.0885)/.0030)**2)
     for side in (-1,1):
-     mc=math.exp(-((x-side*.0285*mouth_w)/.0090)**2-((yy+.0890)/.0070)**2)
-     z-=fm*.00135*corner*mc
+     mc=math.exp(-((x-side*.0278*mouth_w)/.0084)**2-((yy+.0888)/.0066)**2)
+     z-=fm*.00155*corner*mc
 
     # Labiomental fold separates the lower lip from a more feminine, compact chin pad.
-    z-=fm*.00135*labiomental*math.exp(-(x/.0245)**2-((yy+.1060)/.0082)**2)
+    z-=fm*.00158*labiomental*math.exp(-(x/.0238)**2-((yy+.1052)/.0078)**2)
     z+=fm*.00465*math.exp(-(x/.0305)**2-((yy+.121)/.0195)**2)
 
     # v11.8 adult facial planes. These are local depth fields, not detached feature meshes,
@@ -1019,6 +1019,7 @@ TH_L=empty('BL_THIGH_L',BODY_ASSET);SH_L=empty('BL_SHIN_L',BODY_ASSET);FOOT_L=em
 # REFERENCE_V149: lower profile refinement increases the rear-side lift while preserving the accepted front silhouette.
 # REFERENCE_V150: facial-plane refinement deepens the orbital bowl, strengthens the zygomatic plane and adds restrained alar, mouth-corner and jaw-angle breaks for a more premium three-quarter read without changing frontal proportions.
 # REFERENCE_V151: eyelid-integration pass narrows the frontal/three-quarter aperture, reduces iris dominance and increases canthal tilt while preserving the accepted exact-profile eye readability.
+# REFERENCE_V152: nose-philtrum-lip integration pass narrows the alar base, deepens the subnasal/philtrum break and sculpts a cleaner Cupid bow, lower-lip volume and mouth-corner transition while preserving the accepted eye/jaw silhouette.
 bust_w=W('bust');waist_w=W('waist');pelvis_w=W('pelvis');bust_d=D('bust');waist_d=D('waist');pelvis_d=D('pelvis');head_w=W('head');head_d=D('head')
 # Torso follows the measured hourglass envelope as a single continuous surface.
 # Front depth peaks at the bust while the lower back eases toward the high waist, matching the side sheet.
@@ -1253,12 +1254,12 @@ for side in(-1,1):
 # v7.1 integrated portrait accents: head topology owns all nose/mouth depth.
 # Only a shallow colour patch remains for the lips, following the actual mouth plane instead of floating in front of it.
 # v11.4 surface accents follow the rebuilt shell instead of the retired v8 face depth.
-add_panel(HEAD,'UpperLipV119_L',[(-.0294*FACE120['frontal']['mouthWidth'],-.0835,.1268),(-.0135,-.0796,.1284),(0,-.0827,.1302),(0,-.0867,.1305),(-.0115,-.0860,.1292),(-.0282*FACE120['frontal']['mouthWidth'],-.0878,.1273)],.00046*FACE120['surface']['lipThickness'],LIP)
-add_panel(HEAD,'UpperLipV119_R',[(0,-.0827,.1302),(.0135,-.0796,.1284),(.0294*FACE120['frontal']['mouthWidth'],-.0835,.1268),(.0282*FACE120['frontal']['mouthWidth'],-.0878,.1273),(.0115,-.0860,.1292),(0,-.0867,.1305)],.00034*FACE120['surface']['lipThickness'],LIP)
-add_panel(HEAD,'LowerLipV119',[(-.0282*FACE120['frontal']['mouthWidth'],-.0880,.1272),(0,-.0879,.1301),(.0282*FACE120['frontal']['mouthWidth'],-.0880,.1272),(.0238*FACE120['frontal']['mouthWidth'],-.0944,.1270),(0,-.0985,.1291),(-.0238*FACE120['frontal']['mouthWidth'],-.0944,.1270)],.00052*FACE120['surface']['lipThickness'],LIP)
-add_strand(HEAD,'MouthSeamV119',[(-.0300,-.0868,.1272),(-.0135,-.0860,.1290),(0,-.0869,.1307),(.0135,-.0860,.1290),(.0300,-.0868,.1272)],.000095,FACE_DARK)
+add_panel(HEAD,'UpperLipV119_L',[(-.0288*FACE120['frontal']['mouthWidth'],-.0834,.1271),(-.0129,-.0799,.1290),(0,-.0824,.1308),(0,-.0866,.1310),(-.0112,-.0858,.1297),(-.0277*FACE120['frontal']['mouthWidth'],-.0877,.1276)],.00046*FACE120['surface']['lipThickness'],LIP)
+add_panel(HEAD,'UpperLipV119_R',[(0,-.0827,.1302),(.0129,-.0799,.1290),(.0288*FACE120['frontal']['mouthWidth'],-.0834,.1271),(.0277*FACE120['frontal']['mouthWidth'],-.0877,.1276),(.0112,-.0858,.1297),(0,-.0867,.1305)],.00034*FACE120['surface']['lipThickness'],LIP)
+add_panel(HEAD,'LowerLipV119',[(-.0277*FACE120['frontal']['mouthWidth'],-.0880,.1275),(0,-.0878,.1308),(.0277*FACE120['frontal']['mouthWidth'],-.0880,.1275),(.0233*FACE120['frontal']['mouthWidth'],-.0941,.1274),(0,-.0980,.1298),(-.0233*FACE120['frontal']['mouthWidth'],-.0941,.1274)],.00052*FACE120['surface']['lipThickness'],LIP)
+add_strand(HEAD,'MouthSeamV119',[(-.0292,-.0867,.1275),(-.0130,-.0859,.1295),(0,-.0868,.1312),(.0130,-.0859,.1295),(.0292,-.0867,.1275)],.000095,FACE_DARK)
 for side in(-1,1):
- add_ellipse_surface(HEAD,f'NostrilTintV119_{side}',side*.0065*FACE120['profile']['noseWidth'],-.0580,.1368,.00205*FACE120['surface']['nostrilScale'],.00088*FACE120['surface']['nostrilScale'],FACE_DARK,20)
+ add_ellipse_surface(HEAD,f'NostrilTintV119_{side}',side*.0062*FACE120['profile']['noseWidth'],-.0588,.1361,.00190*FACE120['surface']['nostrilScale'],.00078*FACE120['surface']['nostrilScale'],FACE_DARK,20)
 
 # v9.7: EarV78 is the single canonical ear set; no duplicate side anatomy is added here.
 
@@ -1628,7 +1629,7 @@ for _o in list(bpy.data.objects):
  _reparent_keep_world(_o,_target)
 # Keep the existing dynamic pony root working, but move the complete hair subsystem under its own asset root.
 _reparent_keep_world(PONY,HAIR_ASSET)
-ROOT['character_revision']='v13.21';ROOT['assembly_workflow']='body-head-hair';BODY_ASSET['scale_reference']=True;BODY_ASSET['tps_silhouette_review']=True;HEAD_ASSET['profile_review']=True;HEAD_ASSET['facial_depth_review']=True;HEAD_ASSET['compact_face_review']=True;HEAD_ASSET['balanced_profile_review']=True;HEAD_ASSET['user_reference_profile_review']=True;HEAD_ASSET['reference_profile_silhouette']='v13.20';HEAD_ASSET['chin_underjaw_flow_review']=True;HEAD_ASSET['underjaw_slope_revision']='v13.19';HEAD_ASSET['reference_neck_revision']='v13.13';HAIR_ASSET['scalp_fit_review']=True;HAIR_ASSET['hero_silhouette_review']=True;HAIR_ASSET['profile_eye_clearance_review']=True;HAIR_ASSET['profile_eye_frame_revision']='v13.9';HAIR_ASSET['reference_profile_hair_revision']='v13.16';HAIR_ASSET['eye_reveal_fringe_revision']='v13.9';HAIR_ASSET['ear_exposure_revision']='v13.12';HAIR_ASSET['temple_sweep_revision']='v13.14';HAIR_ASSET['metal_ornament_revision']='v13.16';HEAD_ASSET['ear_anatomy_revision']='v13.14';HAIR_ASSET['layered_strand_revision']='v13.14';HAIR_ASSET['profile_ornament_visibility_revision']='v13.16';HEAD_ASSET['continuous_profile_revision']='v13.17';HEAD_ASSET['facial_plane_revision']='v13.20';FACE_ASSET['profile_lid_readability_revision']='v13.18';FACE_ASSET['eyelid_integration_revision']='v13.21';FACE_ASSET['expression_ready']=True;FACE_ASSET['blink_system']='morph-eyelids';FACE_ASSET['mobile_gaze_review']=True;FACE_ASSET['profile_eye_review']=True;FACE_ASSET['profile_eye_volume_revision']='v13.18';FACE_ASSET['profile_iris_volume_revision']='v13.18';FACE_ASSET['profile_side_plane_revision']='v13.10';FACE_ASSET['profile_sclera_aperture_revision']='v13.18';FACE_ASSET['reference_nose_lip_revision']='v13.17';FACE_ASSET['almond_eye_revision']='v13.21';FACE_ASSET['lip_volume_revision']='v13.15';FACE_ASSET['portrait_material_revision']='v12.8-pbr';FACE_ASSET['iris_detail_revision']='v12.9-radial';EYE_L['expression_pivot']='left-eye';EYE_R['expression_pivot']='right-eye';MOUTH_ASSET['expression_pivot']='mouth'
+ROOT['character_revision']='v13.22';ROOT['assembly_workflow']='body-head-hair';BODY_ASSET['scale_reference']=True;BODY_ASSET['tps_silhouette_review']=True;HEAD_ASSET['profile_review']=True;HEAD_ASSET['facial_depth_review']=True;HEAD_ASSET['compact_face_review']=True;HEAD_ASSET['balanced_profile_review']=True;HEAD_ASSET['user_reference_profile_review']=True;HEAD_ASSET['reference_profile_silhouette']='v13.20';HEAD_ASSET['chin_underjaw_flow_review']=True;HEAD_ASSET['underjaw_slope_revision']='v13.19';HEAD_ASSET['reference_neck_revision']='v13.13';HAIR_ASSET['scalp_fit_review']=True;HAIR_ASSET['hero_silhouette_review']=True;HAIR_ASSET['profile_eye_clearance_review']=True;HAIR_ASSET['profile_eye_frame_revision']='v13.9';HAIR_ASSET['reference_profile_hair_revision']='v13.16';HAIR_ASSET['eye_reveal_fringe_revision']='v13.9';HAIR_ASSET['ear_exposure_revision']='v13.12';HAIR_ASSET['temple_sweep_revision']='v13.14';HAIR_ASSET['metal_ornament_revision']='v13.16';HEAD_ASSET['ear_anatomy_revision']='v13.14';HAIR_ASSET['layered_strand_revision']='v13.14';HAIR_ASSET['profile_ornament_visibility_revision']='v13.16';HEAD_ASSET['continuous_profile_revision']='v13.17';HEAD_ASSET['facial_plane_revision']='v13.20';FACE_ASSET['profile_lid_readability_revision']='v13.18';FACE_ASSET['eyelid_integration_revision']='v13.21';MOUTH_ASSET['nose_philtrum_lip_revision']='v13.22';FACE_ASSET['expression_ready']=True;FACE_ASSET['blink_system']='morph-eyelids';FACE_ASSET['mobile_gaze_review']=True;FACE_ASSET['profile_eye_review']=True;FACE_ASSET['profile_eye_volume_revision']='v13.18';FACE_ASSET['profile_iris_volume_revision']='v13.18';FACE_ASSET['profile_side_plane_revision']='v13.10';FACE_ASSET['profile_sclera_aperture_revision']='v13.18';FACE_ASSET['reference_nose_lip_revision']='v13.17';FACE_ASSET['almond_eye_revision']='v13.21';FACE_ASSET['lip_volume_revision']='v13.15';FACE_ASSET['portrait_material_revision']='v12.8-pbr';FACE_ASSET['iris_detail_revision']='v12.9-radial';EYE_L['expression_pivot']='left-eye';EYE_R['expression_pivot']='right-eye';MOUTH_ASSET['expression_pivot']='mouth'
 
 
 bpy.context.scene.render.engine='BLENDER_EEVEE'
