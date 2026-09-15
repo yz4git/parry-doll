@@ -181,7 +181,7 @@ function drawFeel(){
  if(feel.damage>0){ctx.strokeStyle=`rgba(193,62,43,${Math.min(.6,feel.damage)})`;ctx.lineWidth=14;ctx.strokeRect(0,0,W,H)}
 }
 class Doll{
- constructor(spec,isPlayer=false){this.spec=spec;this.player=isPlayer;this.pos=V(0,0,isPlayer?3:-3);this.vel=V();this.face=isPlayer?Math.PI:0;this.hp=spec.hp;this.posture=0;this.stun=0;this.down=0;this.invuln=0;this.attack=0;this.parry=0;this.cool=0;this.parryCool=0;this.ai=1.6;this.wind=0;this.strike=0;this.didHit=false;this.sequence=0;this.comboWindow=0;this.counter=0;this.broken=0;this.swing=null;this.swingClock=0;this.motion=-1;this.motionDuration=.42;this.motionContact=.12;this.dash=0;this.recovery=1;this.airborne=false;this.impactCool=0;this.enraged=false;this.pattern=null;this.windDuration=1;this.aim=0;this.hitIndex=0;this.strikeElapsed=0;this.nodes=[];this.links=[];this.build();}
+ constructor(spec,isPlayer=false){this.spec=spec;this.player=isPlayer;this.pos=V(0,0,isPlayer?3:-3);this.vel=V();this.face=isPlayer?Math.PI:0;this.hp=spec.hp;this.posture=0;this.stun=0;this.down=0;this.invuln=0;this.attack=0;this.parry=0;this.cool=0;this.parryCool=0;this.ai=1.6;this.wind=0;this.strike=0;this.didHit=false;this.sequence=0;this.comboWindow=0;this.attackChain=0;this.attackChainTimer=0;this.counter=0;this.broken=0;this.swing=null;this.swingClock=0;this.motion=-1;this.motionDuration=.42;this.motionContact=.12;this.dash=0;this.recovery=1;this.airborne=false;this.impactCool=0;this.enraged=false;this.pattern=null;this.windDuration=1;this.aim=0;this.hitIndex=0;this.strikeElapsed=0;this.nodes=[];this.links=[];this.build();}
  node(name,p,r){this.nodes.push({name,rest:p,p:add(this.pos,p),prev:add(this.pos,p),r:r*this.spec.scale});return this.nodes.length-1}
  link(a,b,r){this.links.push({a,b,length:len(sub(this.nodes[a].rest,this.nodes[b].rest)),r:r*this.spec.scale})}
  build(){let s=this.spec.scale;const n=(name,x,y,z,r=.17)=>this.node(name,V(x*s,y*s,z*s),r),l=(a,b,r=.14)=>this.link(a,b,r);
@@ -245,16 +245,22 @@ function groundImpact(p,power){
 function hurt(d,amount,force,point){if(d.invuln>0||d.hp<=0)return false;d.hp=Math.max(0,d.hp-amount);d.invuln=d.player?.32:.12;d.stun=d.player?.22:.075;if(d.player){d.swing=null;d.attack=0;d.counter=0;}d.impulse(point,force);burst(point,d.player?'#8ce6df':'#edac73',18,5);shake=Math.max(shake,amount>=25?.25:.12);hitstop=amount>=25?.08:.042;impact(point,amount>=60?'finish':'hit',amount>=25?1.5:1);if(d.player)feel.damage=.5;if(len(force)>24){d.down=amount>=60?1.2:.85;d.stun=amount>=60?1.6:1.15}if(d.hp<=0){d.down=99;d.impulse(point,mul(force,1.8));d.wind=0;if(!d.player){impact(point,'finish',2.3);feel.slow=.65;groundImpact(d.pos,d.spec.scale)}announce(d.player?'敗 北':'討 伐',2.6);transition=2.7}return true}
 let transition=0;
 function playerAttack(){
- if(player.cool>0||player.down>0||player.hp<=0)return false;
+ // A new attack cannot overwrite an active swing. Recovery now starts after the motion,
+ // so mashing no longer short-circuits the commitment of each strike.
+ if(player.cool>0||player.attack>0||player.down>0||player.hp<=0)return false;
  const finisher=boss.broken>0,counter=player.counter>0;
+ if(finisher||counter){player.attackChain=0;player.attackChainTimer=0;player.comboWindow=0}
+ else{player.attackChain=player.attackChainTimer>0?player.attackChain+1:1;player.attackChainTimer=1.05}
  combo=player.comboWindow>0?(combo+1)%3:0;
- const move=MOVES[combo];player.swing={...move,combo,finisher,counter};
+ const move=MOVES[combo],overextended=!finisher&&!counter&&player.attackChain>=3;
+ player.swing={...move,combo,finisher,counter,overextended};
  player.attack=finisher?.68:move.duration;player.swingClock=finisher?.25:move.wind;player.motion=finisher?2:combo;player.motionDuration=player.attack;player.motionContact=player.swingClock;
- player.cool=finisher?.65:move.recover;player.comboWindow=.82;
+ player.cool=player.attack+(finisher?.65:move.recover)+(overextended?.38:0);player.comboWindow=overextended?0:.86;
  player.dash=.13;const v=sub(boss.pos,player.pos);player.face=Math.atan2(v.x,v.z);
  const distance=len(v),u=norm(v),stop=.9+boss.spec.scale*.5;
  const speed=Math.min(finisher?9:move.lunge,Math.max(0,(distance-stop)/.13));
  player.vel.x=u.x*speed;player.vel.z=u.z*speed;
+ if(overextended){attackBuffer=0;announce('攻 め す ぎ — 弾 け',.7)}
  if(counter)player.counter=0;
  sound(220+combo*80,.12,'triangle',.04);
  return true;
@@ -264,22 +270,25 @@ function resolveSwing(){
  if(!move||player.hp<=0||player.down>0||boss.hp<=0)return;
  slash(player,move);const v=sub(boss.pos,player.pos),distance=len(v),reach=2.15+boss.spec.scale*.55;
  if(distance>reach)return;
- const finisher=move.finisher&&boss.broken>0;
+ const finisher=move.finisher&&boss.broken>0,committedBoss=!finisher&&!move.counter&&(boss.wind>0||boss.strike>0);
  const point=boss.nodes[move.combo===1?2:1].p;
- const force=mul(norm(v),finisher?55:move.counter?36:move.force);force.y=finisher?20:move.counter?12:move.combo===2?10:3;
- const damage=finisher?65:move.damage+(move.counter?14:0);
+ // Normal combo hits can stagger, but only counters/finishers may launch the boss into a full knockdown.
+ const force=mul(norm(v),finisher?55:move.counter?36:Math.min(move.force,23));force.y=finisher?20:move.counter?12:move.combo===2?7:3;
+ const rawDamage=finisher?65:move.damage+(move.counter?14:0),damage=Math.max(1,Math.round(rawDamage*(committedBoss?.55:1)));
  if(hurt(boss,damage,force,point)){
-  boss.posture+=finisher?0:move.counter?19:move.combo===2?15:8;
+  // Once the enemy has committed to a telegraphed attack, blind mashing cannot stun-cancel it.
+  if(committedBoss){boss.stun=0;boss.down=0}
+  boss.posture+=finisher?0:move.counter?19:committedBoss?3:move.combo===2?15:8;
   if(finisher){boss.broken=0;boss.posture=0;if(boss.hp>0)announce('決 着 の 一 撃',1.2);ring(point,'#ffd287');hitstop=.15;shake=.5;sound(65,.5,'sawtooth',.1)}
   else if(move.counter){if(boss.hp>0)announce('弾 き 返 し',.7);ring(point,'#baffee');hitstop=.085;shake=.3;}
  }
 }
-function playerParry(){if(player.parryCool>0||player.down>0||player.hp<=0)return false;player.parry=.56;player.parryCool=.62;player.swing=null;player.attack=0;player.cool=Math.min(player.cool,.1);ring(player.nodes[1].p,'#8de7e0');sound(680,.1,'sine',.025);return true}
+function playerParry(){if(player.parryCool>0||player.down>0||player.hp<=0)return false;player.parry=.56;player.parryCool=.62;player.swing=null;player.attack=0;player.cool=Math.min(player.cool,.1);player.attackChain=0;player.attackChainTimer=0;player.comboWindow=0;ring(player.nodes[1].p,'#8de7e0');sound(680,.1,'sine',.025);return true}
 function enemyImpact(move=null){if(boss.hp<=0||boss.stun>0||player.hp<=0)return;const v=sub(player.pos,boss.pos),distance=len(v);if(move?!attackContains(move,boss.pos,boss.aim,player.pos):distance>2.5+boss.spec.scale*.8)return;
  if(player.parry>0){const perfect=player.parry>.22;parries++;if(perfect)perfects++;boss.posture+=perfect?32:24;const followup=move&&boss.hitIndex<move.hits.length;boss.stun=followup?.055:.5;boss.wind=0;if(!followup){boss.strike=0;boss.pattern=null;boss.ai=move?move.recover:.9;}player.invuln=.28;player.counter=1.25;player.parryCool=.1;player.cool=0;const point=boss.nodes[2].p;boss.impulse(point,add(mul(norm(v),-15),V(0,6,0)));burst(player.nodes[1].p,'#ffde8e',45,10);ring(player.nodes[1].p,'#ffdf91');announce(perfect?'PERFECT PARRY':'PARRY',.65);shake=.28;hitstop=.075;impact(player.nodes[1].p,'parry',1.6);player.parry=0;
- }else{const force=add(mul(norm(v),move?move.force:boss.spec.scale>2?29:18),V(0,boss.spec.scale>2?11:5,0));hurt(player,Math.round(boss.spec.damage*(move?move.damage:1)),force,player.nodes[boss.sequence%2?2:1].p)}}
+ }else{const force=add(mul(norm(v),move?move.force:boss.spec.scale>2?29:18),V(0,boss.spec.scale>2?11:5,0)),counterHit=player.attack>0,damageScale=counterHit?1.35:1;if(counterHit)announce('COUNTER HIT — 攻撃を止めて弾け',.75);hurt(player,Math.round(boss.spec.damage*(move?move.damage:1)*damageScale),force,player.nodes[boss.sequence%2?2:1].p)}}
 function updateHUD(){$('bossName').textContent=boss.spec.name;$('phase').textContent=boss.enraged?'覚醒':`0${level+1} / 04`;$('bossHP').style.width=100*boss.hp/boss.spec.hp+'%';$('posture').style.width=clamp(boss.posture,0,100)+'%';$('playerHP').style.width=player.hp+'%';$('stats').textContent=player.counter>0?'反撃チャンス！':`PARRY ${parries} · PERFECT ${perfects}`;$('round').textContent=boss.spec.sub;}
-function step(dt){time+=dt;for(const d of [player,boss]){for(const k of ['invuln','stun','down','attack','parry','cool','parryCool','comboWindow','counter','broken','dash'])d[k]=Math.max(0,d[k]-dt)}if(mode==='play'){
+function step(dt){time+=dt;for(const d of [player,boss]){for(const k of ['invuln','stun','down','attack','parry','cool','parryCool','comboWindow','attackChainTimer','counter','broken','dash'])d[k]=Math.max(0,d[k]-dt)}if(player.attackChainTimer===0)player.attackChain=0;if(mode==='play'){
  if(player.hp>0&&boss.hp>0){if(!boss.enraged&&boss.hp<=boss.spec.hp*.5){boss.enraged=true;ring(boss.pos,'#ff9564');announce('覚 醒 — '+boss.spec.attackName,1);combatSound('break')}if(attackQueued)attackBuffer=.24;if(parryQueued)parryBuffer=.18;attackQueued=parryQueued=false;
  attackBuffer=Math.max(0,attackBuffer-dt);parryBuffer=Math.max(0,parryBuffer-dt);
  if(parryBuffer>0&&playerParry()){parryBuffer=0;attackBuffer=0;}else if(attackBuffer>0&&playerAttack())attackBuffer=0;
