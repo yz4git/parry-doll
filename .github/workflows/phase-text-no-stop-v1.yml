@@ -1,0 +1,35 @@
+name: Phase text non-blocking v1
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/phase-text-no-stop-v1.trigger'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply non-blocking phase text patch
+        run: python3 tools/fix-phase-text-no-stop-v1.py
+      - name: Validate JavaScript
+        run: |
+          node --check dist/phase-break.js
+          node --check dist/phase-break-v2.js
+          node --check dist/phase-break-v3.js
+      - name: Validate no phase freeze
+        run: |
+          grep -q 'Non-blocking phase transition' dist/phase-break.js
+          ! grep -q "player.stun=Math.max(player.stun,duration\*.78)" dist/phase-break-v2.js
+          ! grep -q "boss.stun=Math.max(boss.stun,duration\*.82)" dist/phase-break-v2.js
+          ! grep -q "if(state.cineT>0||state.ultimateT>0)return false" dist/phase-break-v2.js
+          ! grep -q "player.vel=V();boss.vel=V();player.stun" dist/phase-break-v2.js
+      - name: Commit patch
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add dist/phase-break.js dist/phase-break-v2.js dist/phase-break-v3.js
+          git commit -m 'fix: keep combat running during phase title cards'
+          git push
