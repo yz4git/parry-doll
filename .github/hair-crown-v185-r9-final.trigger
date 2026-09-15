@@ -1,0 +1,11 @@
+run=2026-09-15T19:05:00+09:00
+scope=crown-only-final
+face=locked
+main_hair=locked
+bangs=locked
+side_hair=locked
+ponytail=locked
+color=darker-donor-tone
+reflection=low
+relief=directional
+accept=false
