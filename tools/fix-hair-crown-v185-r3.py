@@ -1,10 +1,11 @@
 """Fix only the crown/kappa appearance of accepted v18.5 r2 hair.
 
 Hard constraints:
-- do not modify face/head source geometry;
-- do not modify the accepted Adventurer main hair mesh/transform/material;
-- do not move bangs or ponytail;
-- replace only the smooth scalp-cap look with a subtle layered crown/root treatment.
+- face/head geometry is immutable;
+- accepted Adventurer main hair mesh/transform/material is immutable;
+- bangs and ponytail are not moved;
+- remove only the old smooth scalp-cap and add short crown strands that conform to the
+  existing hair surface so they cannot float above the head.
 """
 from __future__ import annotations
 
@@ -21,7 +22,6 @@ HEAD = "HeadShellV140"
 MAIN_HAIR = "HairPremiumV185_Adventurer"
 OLD_CAP = "HairPremiumV185_ScalpCap"
 ROOT = "BL_HAIR_ASSET"
-CROWN_BASE = "HairPremiumV185_CrownBaseR3"
 CROWN_PREFIX = "HairPremiumV185_CrownStrandR3_"
 
 HAIR_MARKERS = (
@@ -112,7 +112,7 @@ def face_sign(head_center):
     return -1.0 if sum(ys) / len(ys) < head_center.y else 1.0
 
 
-def make_material(name, color, roughness=0.42):
+def make_material(name, color, roughness=0.40):
     mat = bpy.data.materials.new(name)
     mat.use_nodes = True
     bsdf = mat.node_tree.nodes.get("Principled BSDF")
@@ -122,80 +122,59 @@ def make_material(name, color, roughness=0.42):
         bsdf.inputs["Metallic"].default_value = 0.0
         spec = bsdf.inputs.get("Specular IOR Level") or bsdf.inputs.get("Specular")
         if spec is not None:
-            spec.default_value = 0.28
+            spec.default_value = 0.27
     return mat
 
 
-def create_crown_base(head, root, hc, hs, sign):
-    """Copy only upper-head polygons; add subtle radial ridges instead of a smooth helmet dome."""
-    mw = head.matrix_world
-    vertex_map = {}
+def crown_surface_points(hair, hc, hs, sign):
+    pts = []
+    for p in world_points(hair):
+        xr = abs((p.x - hc.x) / max(hs.x, 1e-8))
+        yr = abs((p.y - hc.y) / max(hs.y, 1e-8))
+        zr = (p.z - hc.z) / max(hs.z, 1e-8)
+        front = ((p.y - hc.y) * sign) / max(hs.y, 1e-8)
+        # Keep only the head crown, excluding long ponytail mass behind the skull.
+        if xr < 0.62 and yr < 0.62 and zr > 0.18 and front > -0.32:
+            pts.append(p.copy())
+    if len(pts) < 120:
+        raise RuntimeError(f"insufficient crown surface samples: {len(pts)}")
+    return pts
+
+
+def surface_z(samples, x, y, radius):
+    r2 = radius * radius
+    nearby = [p.z for p in samples if (p.x - x) ** 2 + (p.y - y) ** 2 <= r2]
+    if nearby:
+        return max(nearby)
+    nearest = min(samples, key=lambda p: (p.x - x) ** 2 + (p.y - y) ** 2)
+    return nearest.z
+
+
+def add_conformal_panel(name, root, samples, hc, hs, sign, x0, x1, y0, y1, width0, width1, mat):
+    sections = 9
     verts = []
     faces = []
-    selected = 0
-
-    for poly in head.data.polygons:
-        wps = [mw @ head.data.vertices[i].co for i in poly.vertices]
-        c = sum(wps, Vector()) / len(wps)
-        zrel = (c.z - hc.z) / max(hs.z, 1e-8)
-        front = ((c.y - hc.y) * sign) / max(hs.y, 1e-8)
-        side = abs((c.x - hc.x) / max(hs.x, 1e-8))
-
-        # Crown only: deliberately stop well above ears/temples so accepted side hair is untouched.
-        keep = zrel > 0.20 and front < 0.30 and side < 0.50
-        if not keep:
-            continue
-        selected += 1
-        face = []
-        for old_idx, wp in zip(poly.vertices, wps):
-            key = int(old_idx)
-            if key not in vertex_map:
-                d = wp - hc
-                # Small root-shell offset plus alternating crown ridges. The ridge amplitude fades
-                # toward the perimeter and breaks the single smooth kappa/helmet highlight.
-                angle = math.atan2(d.x / max(hs.x, 1e-8), (-sign * d.y) / max(hs.y, 1e-8))
-                radial = min(1.0, math.sqrt((d.x / (hs.x * 0.52)) ** 2 + (d.y / (hs.y * 0.52)) ** 2))
-                ridge = (0.010 + 0.010 * (0.5 + 0.5 * math.cos(angle * 7.0 + 0.65))) * (1.0 - 0.55 * radial)
-                scale_xy = 1.012 + ridge
-                scale_z = 1.010 + ridge * 0.72
-                out = Vector((hc.x + d.x * scale_xy, hc.y + d.y * scale_xy, hc.z + d.z * scale_z))
-                vertex_map[key] = len(verts)
-                verts.append(tuple(out))
-            face.append(vertex_map[key])
-        faces.append(face)
-
-    if selected < 250:
-        raise RuntimeError(f"crown base selection too small: {selected}")
-    mesh = bpy.data.meshes.new(CROWN_BASE + "Mesh")
-    mesh.from_pydata(verts, [], faces)
-    mesh.update()
-    obj = bpy.data.objects.new(CROWN_BASE, mesh)
-    bpy.context.scene.collection.objects.link(obj)
-    obj.parent = root
-    for p in mesh.polygons:
-        p.use_smooth = True
-    return obj, selected
-
-
-def add_panel(name, root, hc, hs, sign, x0, x1, y0, y1, z_peak, z_drop, width0, width1, mat):
-    """Create one thin tapered crown panel following the head arc; used only above the crown."""
-    sections = 7
-    verts = []
-    faces = []
+    sample_radius = hs.x * 0.085
     for i in range(sections):
         t = i / (sections - 1)
         ease = t * t * (3.0 - 2.0 * t)
-        x = hc.x + hs.x * (x0 * (1.0 - ease) + x1 * ease)
-        y = hc.y + sign * hs.y * (y0 * (1.0 - ease) + y1 * ease)
-        z = hc.z + hs.z * (z_peak - z_drop * (t ** 1.45))
-        # Slight arch above the root shell; biggest near middle for layered-hair silhouette.
-        z += hs.z * 0.018 * math.sin(math.pi * t)
+        cx = hc.x + hs.x * (x0 * (1.0 - ease) + x1 * ease)
+        cy = hc.y + sign * hs.y * (y0 * (1.0 - ease) + y1 * ease)
         w = hs.x * (width0 * (1.0 - t) + width1 * t)
-        verts.append((x - w, y, z))
-        verts.append((x + w, y, z))
+
+        # Width direction is horizontal on the crown. Each edge independently samples the accepted
+        # hair surface, then receives only a tiny offset, so the strand hugs rather than floats.
+        lx, rx = cx - w, cx + w
+        lz = surface_z(samples, lx, cy, sample_radius)
+        rz = surface_z(samples, rx, cy, sample_radius)
+        micro = hs.z * (0.006 + 0.004 * math.sin(math.pi * t))
+        verts.append((lx, cy, lz + micro))
+        verts.append((rx, cy, rz + micro))
+
     for i in range(sections - 1):
         a = i * 2
         faces.append((a, a + 1, a + 3, a + 2))
+
     mesh = bpy.data.meshes.new(name + "Mesh")
     mesh.from_pydata(verts, [], faces)
     mesh.update()
@@ -205,8 +184,9 @@ def add_panel(name, root, hc, hs, sign, x0, x1, y0, y1, z_peak, z_drop, width0, 
     obj.data.materials.append(mat)
     for p in mesh.polygons:
         p.use_smooth = True
+
     sol = obj.modifiers.new("Crown strand thickness", "SOLIDIFY")
-    sol.thickness = hs.x * 0.010
+    sol.thickness = hs.x * 0.006
     sol.offset = 0.0
     bpy.context.view_layer.objects.active = obj
     obj.select_set(True)
@@ -234,30 +214,29 @@ def main():
 
     _, _, hc, hs = bounds(world_points(head))
     sign = face_sign(hc)
+    samples = crown_surface_points(hair, hc, hs, sign)
 
-    # Remove only the r2 smooth scalp cap. Accepted donor hair remains untouched.
+    # The old r2 scalp cap is the only existing object removed. The authored donor hair is untouched.
     if old:
         bpy.data.objects.remove(old, do_unlink=True)
 
-    base_mat = make_material("HairPremiumV185CrownRootR3", (0.12, 0.19, 0.48), 0.44)
-    strand_mat = make_material("HairPremiumV185CrownStrandR3", (0.22, 0.34, 0.78), 0.40)
-    base, selected = create_crown_base(head, root, hc, hs, sign)
-    base.data.materials.append(base_mat)
+    mat_a = make_material("HairPremiumV185CrownStrandR3A", (0.20, 0.31, 0.72), 0.40)
+    mat_b = make_material("HairPremiumV185CrownStrandR3B", (0.15, 0.24, 0.61), 0.42)
 
-    # Five short overlapping crown panels: enough to break the bald/helmet read, but deliberately
-    # stop before the existing bangs. Their asymmetry avoids a radial flower/LEGO pattern.
+    # Short asymmetric strips fan from the upper rear crown toward the already-authored fringe.
+    # They end high on the forehead, so bangs, eye coverage and ponytail silhouette remain unchanged.
     specs = [
-        (-0.16, -0.29, -0.08, 0.16, 0.525, 0.105, 0.095, 0.030),
-        (-0.07, -0.15, -0.10, 0.19, 0.535, 0.112, 0.100, 0.032),
-        ( 0.00,  0.04, -0.11, 0.20, 0.542, 0.118, 0.105, 0.030),
-        ( 0.09,  0.19, -0.09, 0.18, 0.532, 0.108, 0.096, 0.030),
-        ( 0.18,  0.31, -0.07, 0.15, 0.520, 0.100, 0.086, 0.026),
+        (-0.22, -0.34, -0.11, 0.15, 0.050, 0.012, mat_b),
+        (-0.13, -0.22, -0.13, 0.18, 0.055, 0.013, mat_a),
+        (-0.05, -0.09, -0.14, 0.20, 0.058, 0.014, mat_b),
+        ( 0.03,  0.06, -0.15, 0.21, 0.060, 0.014, mat_a),
+        ( 0.11,  0.18, -0.13, 0.19, 0.055, 0.013, mat_b),
+        ( 0.19,  0.30, -0.10, 0.15, 0.048, 0.011, mat_a),
     ]
     created = []
     for idx, spec in enumerate(specs, 1):
-        created.append(add_panel(f"{CROWN_PREFIX}{idx:02d}", root, hc, hs, sign, *spec, strand_mat))
+        created.append(add_conformal_panel(f"{CROWN_PREFIX}{idx:02d}", root, samples, hc, hs, sign, *spec))
 
-    # Hard lock: face + accepted main hair must be exactly unchanged.
     now_face = {o.name: signature(o) for o in bpy.data.objects if protected_face(o)}
     if set(now_face) != set(locked_face):
         raise RuntimeError("FACE LOCK: protected object set changed")
@@ -270,7 +249,7 @@ def main():
     hero = bpy.data.objects.get("BLENDER_HEROINE")
     if hero:
         hero["hair_revision"] = "v18.5-r3"
-        hero["hair_refinement"] = "crown-only-kappa-fix"
+        hero["hair_refinement"] = "crown-only-conformal-strands"
         hero["face_locked_for_hair_v185_r3"] = True
         hero["main_hair_locked_for_hair_v185_r3"] = True
 
@@ -284,8 +263,10 @@ def main():
         "scope": "crown-only-kappa-fix",
         "face_unchanged": True,
         "main_hair_unchanged": True,
+        "bangs_unchanged": True,
+        "ponytail_unchanged": True,
         "old_smooth_scalp_cap_removed": old is not None,
-        "crown_base_polygons_selected": selected,
+        "crown_surface_samples": len(samples),
         "crown_strands": [o.name for o in created],
         "protected_face_meshes": len(locked_face),
         "output_bytes": out.stat().st_size,
