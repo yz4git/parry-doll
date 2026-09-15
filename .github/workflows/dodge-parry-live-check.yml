@@ -1,0 +1,32 @@
+name: Live dodge and parry playcheck
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/dodge-parry-live.trigger'
+permissions:
+  contents: read
+jobs:
+  playcheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Playwright
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Mixed dodge and parry live playcheck
+        env:
+          TEST_URL: https://yz4git.github.io/parry-doll/
+          TEST_SECONDS: '60'
+        run: node tests/dodge-parry-live.mjs | tee dodge-parry-result.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dodge-parry-live-check
+          path: |
+            dodge-parry-result.json
+            dodge-parry-final.png
+          retention-days: 7
