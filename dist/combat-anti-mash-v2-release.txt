@@ -1,0 +1,4 @@
+PARRY DOLL combat anti-mash v2
+revision=hard-parry-required-gate
+commit=cedef5bb747cabfed4b1b04830f2bcdbd24931df
+published=2026-09-15T22:37:00+09:00
