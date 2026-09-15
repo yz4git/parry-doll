@@ -1,0 +1,132 @@
+{
+  "version": 1,
+  "revision": "v17.2",
+  "name": "PARRY DOLL fresh David Onizaki donor heroine portrait integration",
+  "build_policy": "Fresh empty-scene build only. Never import the previous shipping GLB. Generate body/hair/outfit/runtime hierarchy from source, fit the pinned David Onizaki CC-BY head, use an unpainted warm skin material so donor texture eyes cannot duplicate the runtime eyes, then build all visible eyes/lips against the fitted donor surface.",
+  "donor": {
+    "author": "David Onizaki",
+    "license": "CC-ATTRIBUTION / CC BY as recorded by the pinned carrier repository",
+    "source": "https://sketchfab.com/3d-models/genshin-style-anime-female-base-mesh-for-blender-c2d6727e8c9742feb9a4a3bccac6e0e0",
+    "carrier_repo": "https://github.com/TjhaiME/Godot-Active-Rigid-Ragdoll",
+    "carrier_commit": "5328516c87d56c90e409dfd09b1c7694e37696fb"
+  },
+  "fit": {
+    "width_factor": 0.942,
+    "height_factor": 0.965,
+    "depth_factor_from_uniform": 0.992,
+    "center_x_offset": 0.0,
+    "center_y_offset": -0.0015,
+    "center_z_offset": -0.0065
+  },
+  "sculpt": {
+    "jaw_start_from_bottom": 0.41,
+    "jaw_narrow_at_bottom": 0.092,
+    "chin_start_from_bottom": 0.19,
+    "chin_extra_narrow": 0.052,
+    "cheek_soften": 0.009,
+    "forehead_compress_start": 0.68,
+    "forehead_compress": 0.038,
+    "bridge_center_h": 0.57,
+    "bridge_radius_h": 0.115,
+    "bridge_forward": 0.0050,
+    "nose_tip_center_h": 0.445,
+    "nose_tip_radius_h": 0.092,
+    "nose_tip_forward": 0.0102,
+    "nose_center_radius_x": 0.22,
+    "philtrum_center_h": 0.335,
+    "philtrum_radius_h": 0.055,
+    "philtrum_recess": 0.0015,
+    "upper_lip_center_h": 0.302,
+    "upper_lip_radius_h": 0.046,
+    "upper_lip_forward": 0.0034,
+    "lower_lip_center_h": 0.266,
+    "lower_lip_radius_h": 0.045,
+    "lower_lip_forward": 0.0030,
+    "chin_center_h": 0.115,
+    "chin_radius_h": 0.082,
+    "chin_forward": 0.0040
+  },
+  "surface": {
+    "subdivision_levels": 1,
+    "base_color": [0.375, 0.245, 0.225, 1.0],
+    "roughness": 0.62,
+    "specular": 0.31,
+    "normal_strength": 0.18,
+    "subsurface": 0.035
+  },
+  "portrait_cleanup_tokens": [
+    "EyeScleraGlobe", "IrisOuter", "IrisInner", "IrisRays", "Pupil", "EyeLight",
+    "UpperLash", "OuterLash", "LowerLid", "UpperSkinRim", "LowerSkinRim",
+    "ProfileLash", "ProfileUpperLid", "ProfileLowerLid", "WrappedCanthusLash",
+    "ProfileLashFan", "UpperLidFold", "EyeWetline", "InnerCanthus", "BL_EYELID",
+    "ProfileEyeFrame", "DonorEye", "DonorIris", "DonorPupil", "DonorUpperLash",
+    "DonorOuterLash", "DonorLowerLid", "DonorLidFold", "DonorWetline", "DonorCanthus",
+    "UpperLip", "LowerLip", "MouthSeam", "NostrilTint", "DonorUpperLip", "DonorLowerLip",
+    "DonorMouthSeam", "DonorNostril"
+  ],
+  "eyes": {
+    "center_x": 0.0460,
+    "center_y": 0.0170,
+    "aperture_rx": 0.0278,
+    "aperture_ry": 0.0107,
+    "tilt": 0.0018,
+    "surface_sample_rx": 0.035,
+    "surface_sample_ry": 0.020,
+    "surface_percentile": 0.80,
+    "globe_radius": 0.0164,
+    "globe_backset": 0.0128,
+    "sclera_patch_front": 0.0023,
+    "sclera_patch_rx": 0.0266,
+    "sclera_patch_ry": 0.0095,
+    "iris_forward": 0.0035,
+    "iris_outer_rx": 0.0118,
+    "iris_outer_ry": 0.0091,
+    "iris_inner_rx": 0.0088,
+    "iris_inner_ry": 0.0068,
+    "pupil_rx": 0.0028,
+    "pupil_ry": 0.0035,
+    "lid_front_offset": 0.0031,
+    "lash_front_offset": 0.0041,
+    "blink_front_offset": 0.0028
+  },
+  "lips": {
+    "center_y": -0.0860,
+    "surface_sample_rx": 0.037,
+    "surface_sample_ry": 0.019,
+    "surface_percentile": 0.88,
+    "front_offset": 0.0015,
+    "half_width": 0.0290,
+    "upper_height": 0.0051,
+    "lower_height": 0.0068
+  },
+  "hair": {
+    "fringe_drop": 0.024,
+    "fringe_width_scale": 1.055,
+    "tokens": ["KeyArtBangV119", "KeyArtBangHiV119", "FringeSurfaceV90", "FringeFineV90"],
+    "brow_drop": 0.0040
+  },
+  "neck": {
+    "raise": 0.006,
+    "width_scale": 0.94
+  },
+  "beauty_mark": {
+    "x": 0.061,
+    "y": -0.002,
+    "radius": 0.00145,
+    "front_offset": 0.0022
+  },
+  "audit": {
+    "min_head_vertices": 7000,
+    "min_head_polygons": 7000,
+    "min_new_eye_parts": 18,
+    "max_old_eye_parts": 0,
+    "min_new_lip_parts": 4,
+    "required_runtime_nodes": [
+      "BLENDER_HEROINE", "BL_PELVIS", "BL_TORSO", "BL_HEAD", "BL_HEAD_ASSET",
+      "BL_FACE_ASSET", "BL_HAIR_ASSET", "BL_EYE_L", "BL_EYE_R", "BL_MOUTH",
+      "BL_UPPER_ARM_L", "BL_FOREARM_L", "BL_HAND_L", "BL_UPPER_ARM_R", "BL_FOREARM_R",
+      "BL_HAND_R", "BL_THIGH_L", "BL_SHIN_L", "BL_FOOT_L", "BL_THIGH_R", "BL_SHIN_R",
+      "BL_FOOT_R", "BL_SWORD"
+    ]
+  }
+}
