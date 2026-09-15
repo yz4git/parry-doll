@@ -1,0 +1,149 @@
+name: Scalp-corrected anime hair v18.5 r2
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/hair-adventurer-v185-r2.trigger'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: blender-hair-adventurer-v185-r2
+  cancel-in-progress: false
+
+jobs:
+  candidate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Restore accepted v18.0 face-locked model
+        run: |
+          set -euxo pipefail
+          SAFE_COMMIT=e16a4173c82cf2e097d855620a6d3af137d9e532
+          git show "$SAFE_COMMIT:dist/assets/models/heroine-blender.glb" > /tmp/heroine-v185-base.glb
+          test -s /tmp/heroine-v185-base.glb
+
+      - name: Download pinned CC0 Anime Female Adventurer v1.2
+        run: |
+          set -euxo pipefail
+          python3 -m pip install --quiet selenium
+          mkdir -p /tmp/adventurer-download /tmp/adventurer
+          python3 tools/download-itch-free-upload.py \
+            --purchase-url https://dawn-to-dusk-games.itch.io/3d-anime-female-adventurer/purchase \
+            --expected-label 'Model, Textures and Unity Custom Package Version 1.2' \
+            --download-dir /tmp/adventurer-download \
+            --timeout 240
+          archive="$(find /tmp/adventurer-download -maxdepth 1 -type f ! -name '*.crdownload' -print -quit)"
+          test -n "$archive"
+          echo '32d41f629ef5d84c32c6fc88b48bd629c71ccf439255091ea1717d0bd9ec7359  '"$archive" | sha256sum -c -
+          7z x -y "$archive" -o/tmp/adventurer >/tmp/adventurer-7z.log
+          hair="$(find /tmp/adventurer -type f -path '*/MeshPieces/Hair.fbx' -print -quit)"
+          texture="$(find /tmp/adventurer -type f -path '*/Textures/Character/Hair_Base.png' -print -quit)"
+          test -s "$hair"
+          test -s "$texture"
+          echo "DONOR_HAIR=$hair" >> "$GITHUB_ENV"
+          echo "DONOR_TEXTURE=$texture" >> "$GITHUB_ENV"
+
+      - name: Install Blender 4.3.2
+        run: |
+          set -euxo pipefail
+          curl -L --fail --retry 4 --retry-delay 2 -o /tmp/blender.tar.xz https://download.blender.org/release/Blender4.3/blender-4.3.2-linux-x64.tar.xz
+          tar -xf /tmp/blender.tar.xz -C /tmp
+          BLENDER=/tmp/blender-4.3.2-linux-x64/blender
+          test -x "$BLENDER"
+          echo "BLENDER=$BLENDER" >> "$GITHUB_ENV"
+
+      - name: Validate v18.5 r2 tools
+        run: |
+          set -euxo pipefail
+          python3 -m py_compile \
+            tools/build-hair-adventurer-v185.py \
+            tools/refine-hair-adventurer-v185-r2.py \
+            tools/audit-hair-adventurer-v185-r2.py \
+            tools/render-hair-preview-v185.py
+
+      - name: Build authored textured v18.5 hair
+        run: |
+          set -euxo pipefail
+          "$BLENDER" --background --python-exit-code 1 --python tools/build-hair-adventurer-v185.py -- \
+            --input /tmp/heroine-v185-base.glb \
+            --hair "$DONOR_HAIR" \
+            --texture "$DONOR_TEXTURE" \
+            --output /tmp/heroine-v185-stage1.glb \
+            --report /tmp/hair-adventurer-v185-stage1.json
+          test -s /tmp/heroine-v185-stage1.glb
+
+      - name: Lift bangs and add copied scalp cap
+        run: |
+          set -euxo pipefail
+          "$BLENDER" --background --python-exit-code 1 --python tools/refine-hair-adventurer-v185-r2.py -- \
+            --input /tmp/heroine-v185-stage1.glb \
+            --output /tmp/heroine-v185-r2-candidate.glb \
+            --report /tmp/hair-adventurer-v185-r2-build.json \
+            --lift 0.085
+          test -s /tmp/heroine-v185-r2-candidate.glb
+          python3 -m json.tool /tmp/hair-adventurer-v185-r2-build.json
+
+      - name: Audit immutable face and hair integrity
+        run: |
+          set -euxo pipefail
+          "$BLENDER" --background --python-exit-code 1 --python tools/audit-hair-adventurer-v185-r2.py -- \
+            --before /tmp/heroine-v185-base.glb \
+            --after /tmp/heroine-v185-r2-candidate.glb \
+            --report /tmp/hair-adventurer-v185-r2-audit.json
+          grep -Fq '"face_unchanged": true' /tmp/hair-adventurer-v185-r2-audit.json
+          grep -Fq '"previous_hair_removed": true' /tmp/hair-adventurer-v185-r2-audit.json
+          python3 -m json.tool /tmp/hair-adventurer-v185-r2-audit.json
+
+      - name: Render four-view review
+        run: |
+          set -euxo pipefail
+          mkdir -p /tmp/hair-v185-r2-preview
+          "$BLENDER" --background --python-exit-code 1 --python tools/render-hair-preview-v185.py -- --input /tmp/heroine-v185-r2-candidate.glb --output /tmp/hair-v185-r2-preview/front.png --angle 0
+          "$BLENDER" --background --python-exit-code 1 --python tools/render-hair-preview-v185.py -- --input /tmp/heroine-v185-r2-candidate.glb --output /tmp/hair-v185-r2-preview/three-quarter.png --angle 32
+          "$BLENDER" --background --python-exit-code 1 --python tools/render-hair-preview-v185.py -- --input /tmp/heroine-v185-r2-candidate.glb --output /tmp/hair-v185-r2-preview/profile.png --angle 78
+          "$BLENDER" --background --python-exit-code 1 --python tools/render-hair-preview-v185.py -- --input /tmp/heroine-v185-r2-candidate.glb --output /tmp/hair-v185-r2-preview/rear-three-quarter.png --angle 145
+
+      - name: Assemble candidate artifact
+        run: |
+          set -euxo pipefail
+          mkdir -p /tmp/hair-v185-r2-candidate
+          cp /tmp/heroine-v185-r2-candidate.glb /tmp/hair-v185-r2-candidate/heroine-blender-v185-r2-candidate.glb
+          cp /tmp/hair-adventurer-v185-stage1.json /tmp/hair-v185-r2-candidate/
+          cp /tmp/hair-adventurer-v185-r2-build.json /tmp/hair-v185-r2-candidate/
+          cp /tmp/hair-adventurer-v185-r2-audit.json /tmp/hair-v185-r2-candidate/
+          cp /tmp/hair-v185-r2-preview/*.png /tmp/hair-v185-r2-candidate/
+
+      - name: Upload visual-review candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: hair-adventurer-v185-r2-candidate
+          path: /tmp/hair-v185-r2-candidate/*
+          retention-days: 7
+
+      - name: Commit only after explicit candidate acceptance
+        run: |
+          set -euxo pipefail
+          if ! grep -Fq 'accept=true' .github/hair-adventurer-v185-r2.trigger; then
+            echo 'Candidate-only run. Shipping model remains accepted v18.0.'
+            exit 0
+          fi
+          cp /tmp/heroine-v185-r2-candidate.glb dist/assets/models/heroine-blender.glb
+          cp /tmp/hair-adventurer-v185-r2-build.json dist/hair-adventurer-v185-r2-build.json
+          cp /tmp/hair-adventurer-v185-r2-audit.json dist/hair-adventurer-v185-r2-audit.json
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add dist/assets/models/heroine-blender.glb dist/hair-adventurer-v185-r2-build.json dist/hair-adventurer-v185-r2-audit.json
+          git diff --cached --quiet && { echo 'No accepted v18.5 r2 generated change'; exit 1; }
+          git commit -m 'feat: implement scalp-corrected anime hair v18.5 r2'
+          git pull --rebase origin main
+          git push origin main
