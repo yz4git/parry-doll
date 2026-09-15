@@ -6,7 +6,6 @@ private endpoints. The caller supplies the exact expected filename so we never c
 from __future__ import annotations
 
 import argparse
-import os
 import time
 from pathlib import Path
 
@@ -29,8 +28,22 @@ def newest_matching(root: Path, expected: str):
     exact = root / expected
     if exact.exists() and exact.is_file():
         return exact
-    matches = [p for p in root.iterdir() if p.is_file() and expected.lower() in p.name.lower()]
+    stem = Path(expected).stem.lower()
+    suffix = Path(expected).suffix.lower()
+    matches = [
+        p for p in root.iterdir()
+        if p.is_file() and stem in p.stem.lower() and (not suffix or p.suffix.lower() == suffix)
+    ]
     return max(matches, key=lambda p: p.stat().st_mtime) if matches else None
+
+
+def xpath_literal(text: str) -> str:
+    if "'" not in text:
+        return f"'{text}'"
+    if '"' not in text:
+        return f'"{text}"'
+    parts = text.split("'")
+    return "concat(" + ", \"'\", ".join(f"'{p}'" for p in parts) + ")"
 
 
 def main():
@@ -57,38 +70,69 @@ def main():
         driver.get(a.purchase_url)
         no_thanks = wait.until(EC.element_to_be_clickable((
             By.XPATH,
-            "//*[contains(normalize-space(.), 'No thanks, just take me to the downloads')]"
+            "//*[self::a or self::button][contains(normalize-space(.), 'No thanks, just take me to the downloads')]"
         )))
         driver.execute_script('arguments[0].click();', no_thanks)
 
-        # itch.io reveals the upload rows after the public free-download choice. Locate the row that
-        # explicitly names the requested file, then click a Download control within/adjacent to it.
-        file_text = wait.until(EC.presence_of_element_located((
+        literal = xpath_literal(a.expected_file)
+        exact_nodes = wait.until(lambda d: d.find_elements(
             By.XPATH,
-            f"//*[contains(normalize-space(.), {a.expected_file!r})]"
-        )))
+            f"//*[normalize-space(text())={literal}]"
+        ))
+        if not exact_nodes:
+            raise RuntimeError(f'itch.io did not expose exact filename {a.expected_file!r}')
+
         candidates = []
-        for xpath in (
-            ".//ancestor::*[self::div or self::li][.//*[contains(normalize-space(.), 'Download')]][1]//*[self::a or self::button][contains(normalize-space(.), 'Download')]",
-            "./following::*[self::a or self::button][contains(normalize-space(.), 'Download')][1]",
-            "./ancestor::*[self::div or self::li][1]//*[self::a or self::button][1]",
-        ):
-            try:
-                candidates.extend(file_text.find_elements(By.XPATH, xpath))
-            except Exception:
-                pass
-        if not candidates:
-            # Fallback: choose the first Download button whose nearest row contains the expected name.
-            for el in driver.find_elements(By.XPATH, "//*[self::a or self::button][contains(normalize-space(.), 'Download')]"):
+        for file_text in exact_nodes:
+            # Current itch layouts wrap each file in an upload row/card. Search outward until a row
+            # containing a link/button is found, then prefer actual download/file hrefs.
+            for ancestor_xpath in (
+                "./ancestor::*[contains(concat(' ', normalize-space(@class), ' '), ' upload ')][1]",
+                "./ancestor::*[self::div or self::li or self::tr][.//a or .//button][1]",
+            ):
                 try:
-                    text = el.find_element(By.XPATH, './ancestor::*[self::div or self::li][1]').text
+                    row = file_text.find_element(By.XPATH, ancestor_xpath)
                 except Exception:
-                    text = ''
-                if a.expected_file.lower() in text.lower():
-                    candidates.append(el)
+                    continue
+                links = row.find_elements(By.XPATH, ".//*[self::a or self::button]")
+                ranked = []
+                for el in links:
+                    href = (el.get_attribute('href') or '').lower()
+                    text = (el.text or el.get_attribute('aria-label') or el.get_attribute('title') or '').lower()
+                    score = 0
+                    if 'download' in href or '/file/' in href: score += 5
+                    if 'download' in text: score += 4
+                    if el.tag_name.lower() == 'a' and href: score += 1
+                    ranked.append((score, el, href, text))
+                ranked.sort(key=lambda item: item[0], reverse=True)
+                candidates.extend([item[1] for item in ranked if item[0] > 0])
+                if candidates:
                     break
+            if candidates:
+                break
+
         if not candidates:
-            raise RuntimeError(f'itch.io exposed {a.expected_file!r}, but no matching Download control was found')
+            # Diagnostic fallback: exact file labels sometimes live inside a sibling of the button.
+            file_text = exact_nodes[0]
+            nearby = file_text.find_elements(
+                By.XPATH,
+                "./following::*[self::a or self::button][@href or @data-upload_id or contains(normalize-space(.), 'Download')][position() <= 8]"
+            )
+            candidates.extend(nearby)
+
+        if not candidates:
+            snippets = []
+            for node in exact_nodes[:3]:
+                try:
+                    snippets.append(node.find_element(By.XPATH, './ancestor::*[self::div or self::li or self::tr][1]').get_attribute('outerHTML')[:1500])
+                except Exception:
+                    pass
+            raise RuntimeError(
+                f'itch.io exposed {a.expected_file!r}, but no matching download control was found; '
+                f'nearby_html={snippets!r}'
+            )
+
+        driver.execute_script('arguments[0].scrollIntoView({block:"center"});', candidates[0])
         driver.execute_script('arguments[0].click();', candidates[0])
 
         deadline = time.time() + a.timeout
@@ -105,7 +149,7 @@ def main():
                     stable = 0
                 last_size = size
                 if stable >= 2:
-                    print('ITCH_FREE_DOWNLOAD', {'file': str(found), 'bytes': size})
+                    print('ITCH_FREE_DOWNLOAD', {'file': str(found), 'bytes': size, 'page': driver.current_url})
                     return
             time.sleep(1)
         raise RuntimeError(f'timed out downloading {a.expected_file!r}; files={sorted(p.name for p in out.iterdir())}')
