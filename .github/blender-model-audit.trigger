@@ -1,1 +1,1 @@
-2026-09-15 v17.0-eye-texture-visible-surface 88feff6725ac7976043e698dd825705d4a4b2125 exact-v17.0-rigid-iris-depth-webgl-hires-audit
+2026-09-15 v17.0-final-visible-eyes e80d921d9eb21173a6cadb2f17b604bc5d0f19d2 exact-v17.0-faceuv-eyes-depth-only-webgl-hires-audit
