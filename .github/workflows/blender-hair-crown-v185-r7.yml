@@ -1,0 +1,99 @@
+name: Crown-only hair fix v18.5 r7
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/hair-crown-v185-r7.trigger'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: blender-hair-crown-v185-r7
+  cancel-in-progress: false
+
+jobs:
+  candidate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Preserve accepted v18.5 r2 model
+        run: |
+          set -euxo pipefail
+          cp dist/assets/models/heroine-blender.glb /tmp/heroine-v185-r2.glb
+          test -s /tmp/heroine-v185-r2.glb
+
+      - name: Install Blender 4.3.2
+        run: |
+          set -euxo pipefail
+          curl -L --fail --retry 4 --retry-delay 2 -o /tmp/blender.tar.xz https://download.blender.org/release/Blender4.3/blender-4.3.2-linux-x64.tar.xz
+          tar -xf /tmp/blender.tar.xz -C /tmp
+          BLENDER=/tmp/blender-4.3.2-linux-x64/blender
+          test -x "$BLENDER"
+          echo "BLENDER=$BLENDER" >> "$GITHUB_ENV"
+
+      - name: Validate crown-only tool
+        run: python3 -m py_compile tools/fix-hair-crown-v185-r7.py tools/render-hair-preview-v185.py
+
+      - name: Restore donor crown only
+        run: |
+          set -euxo pipefail
+          "$BLENDER" --background --python-exit-code 1 --python tools/fix-hair-crown-v185-r7.py -- \
+            --input /tmp/heroine-v185-r2.glb \
+            --output /tmp/heroine-v185-r7-candidate.glb \
+            --report /tmp/hair-crown-v185-r7-report.json
+          test -s /tmp/heroine-v185-r7-candidate.glb
+          grep -Fq '"face_unchanged": true' /tmp/hair-crown-v185-r7-report.json
+          grep -Fq '"scalp_cap_removed": true' /tmp/hair-crown-v185-r7-report.json
+          grep -Fq '"lower_bangs_outside_crown_untouched": true' /tmp/hair-crown-v185-r7-report.json
+          grep -Fq '"ponytail_outside_crown_untouched": true' /tmp/hair-crown-v185-r7-report.json
+          python3 -m json.tool /tmp/hair-crown-v185-r7-report.json
+
+      - name: Render four-view review
+        run: |
+          set -euxo pipefail
+          mkdir -p /tmp/hair-v185-r7-preview
+          "$BLENDER" --background --python-exit-code 1 --python tools/render-hair-preview-v185.py -- --input /tmp/heroine-v185-r7-candidate.glb --output /tmp/hair-v185-r7-preview/front.png --angle 0
+          "$BLENDER" --background --python-exit-code 1 --python tools/render-hair-preview-v185.py -- --input /tmp/heroine-v185-r7-candidate.glb --output /tmp/hair-v185-r7-preview/three-quarter.png --angle 32
+          "$BLENDER" --background --python-exit-code 1 --python tools/render-hair-preview-v185.py -- --input /tmp/heroine-v185-r7-candidate.glb --output /tmp/hair-v185-r7-preview/profile.png --angle 78
+          "$BLENDER" --background --python-exit-code 1 --python tools/render-hair-preview-v185.py -- --input /tmp/heroine-v185-r7-candidate.glb --output /tmp/hair-v185-r7-preview/rear-three-quarter.png --angle 145
+
+      - name: Assemble review artifact
+        run: |
+          set -euxo pipefail
+          mkdir -p /tmp/hair-v185-r7-candidate
+          cp /tmp/heroine-v185-r7-candidate.glb /tmp/hair-v185-r7-candidate/heroine-blender-v185-r7-candidate.glb
+          cp /tmp/hair-crown-v185-r7-report.json /tmp/hair-v185-r7-candidate/
+          cp /tmp/hair-v185-r7-preview/*.png /tmp/hair-v185-r7-candidate/
+
+      - name: Upload crown review
+        uses: actions/upload-artifact@v4
+        with:
+          name: hair-crown-v185-r7-candidate
+          path: /tmp/hair-v185-r7-candidate/*
+          retention-days: 7
+
+      - name: Commit only after review acceptance
+        run: |
+          set -euxo pipefail
+          if ! grep -Fq 'accept=true' .github/hair-crown-v185-r7.trigger; then
+            echo 'Candidate review only; published model unchanged.'
+            exit 0
+          fi
+          cp /tmp/heroine-v185-r7-candidate.glb dist/assets/models/heroine-blender.glb
+          cp /tmp/hair-crown-v185-r7-report.json dist/hair-crown-v185-r7-report.json
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add dist/assets/models/heroine-blender.glb dist/hair-crown-v185-r7-report.json
+          git diff --cached --quiet && { echo 'No crown-only model change'; exit 1; }
+          git commit -m 'fix: correct only the heroine crown hair v18.5 r7'
+          git pull --rebase origin main
+          git push origin main
