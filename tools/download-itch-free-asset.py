@@ -37,13 +37,59 @@ def newest_matching(root: Path, expected: str):
     return max(matches, key=lambda p: p.stat().st_mtime) if matches else None
 
 
-def xpath_literal(text: str) -> str:
-    if "'" not in text:
-        return f"'{text}'"
-    if '"' not in text:
-        return f'"{text}"'
-    parts = text.split("'")
-    return "concat(" + ", \"'\", ".join(f"'{p}'" for p in parts) + ")"
+CLICK_EXACT_UPLOAD_JS = r"""
+const expected = arguments[0].trim();
+function ownText(el) {
+  return Array.from(el.childNodes)
+    .filter(n => n.nodeType === Node.TEXT_NODE)
+    .map(n => n.textContent)
+    .join(' ')
+    .trim();
+}
+const exact = Array.from(document.querySelectorAll('body *')).filter(el => ownText(el) === expected);
+if (!exact.length) return {ok:false, reason:'exact-label-not-found', url:location.href};
+for (const label of exact) {
+  let row = label.closest('.upload, .upload_row, .file, li, tr');
+  if (!row) row = label.parentElement;
+  for (let depth = 0; depth < 6 && row; depth++, row = row.parentElement) {
+    const controls = Array.from(row.querySelectorAll('a,button'));
+    if (!controls.length) continue;
+    const ranked = controls.map(el => {
+      const href = (el.getAttribute('href') || '').toLowerCase();
+      const text = ((el.innerText || '') + ' ' + (el.getAttribute('aria-label') || '') + ' ' + (el.getAttribute('title') || '')).toLowerCase();
+      const uploadId = el.getAttribute('data-upload_id') || el.getAttribute('data-upload-id') || '';
+      let score = 0;
+      if (href.includes('/file/') || href.includes('download')) score += 8;
+      if (text.includes('download')) score += 6;
+      if (uploadId) score += 5;
+      if (el.tagName === 'A' && href) score += 1;
+      return {el, score, href, text, uploadId};
+    }).sort((a,b) => b.score - a.score);
+    if (ranked.length && ranked[0].score > 0) {
+      const pick = ranked[0];
+      pick.el.scrollIntoView({block:'center'});
+      pick.el.click();
+      return {
+        ok:true,
+        label:expected,
+        score:pick.score,
+        href:pick.href,
+        text:pick.text,
+        uploadId:pick.uploadId,
+        rowClass:row.className || '',
+        rowHtml:(row.outerHTML || '').slice(0,1800),
+        url:location.href
+      };
+    }
+  }
+}
+return {
+  ok:false,
+  reason:'no-download-control-near-exact-label',
+  url:location.href,
+  labels:exact.slice(0,3).map(el => (el.parentElement?.outerHTML || el.outerHTML || '').slice(0,1500))
+};
+"""
 
 
 def main():
@@ -74,66 +120,18 @@ def main():
         )))
         driver.execute_script('arguments[0].click();', no_thanks)
 
-        literal = xpath_literal(a.expected_file)
-        exact_nodes = wait.until(lambda d: d.find_elements(
-            By.XPATH,
-            f"//*[normalize-space(text())={literal}]"
+        # Wait until the exact filename has appeared, but do not retain a WebElement: itch.io can
+        # re-render upload rows while the page settles, which makes stored Selenium elements stale.
+        wait.until(lambda d: d.execute_script(
+            "return Array.from(document.querySelectorAll('body *')).some(el => "
+            "Array.from(el.childNodes).filter(n=>n.nodeType===3).map(n=>n.textContent).join(' ').trim() === arguments[0]);",
+            a.expected_file,
         ))
-        if not exact_nodes:
-            raise RuntimeError(f'itch.io did not expose exact filename {a.expected_file!r}')
-
-        candidates = []
-        for file_text in exact_nodes:
-            # Current itch layouts wrap each file in an upload row/card. Search outward until a row
-            # containing a link/button is found, then prefer actual download/file hrefs.
-            for ancestor_xpath in (
-                "./ancestor::*[contains(concat(' ', normalize-space(@class), ' '), ' upload ')][1]",
-                "./ancestor::*[self::div or self::li or self::tr][.//a or .//button][1]",
-            ):
-                try:
-                    row = file_text.find_element(By.XPATH, ancestor_xpath)
-                except Exception:
-                    continue
-                links = row.find_elements(By.XPATH, ".//*[self::a or self::button]")
-                ranked = []
-                for el in links:
-                    href = (el.get_attribute('href') or '').lower()
-                    text = (el.text or el.get_attribute('aria-label') or el.get_attribute('title') or '').lower()
-                    score = 0
-                    if 'download' in href or '/file/' in href: score += 5
-                    if 'download' in text: score += 4
-                    if el.tag_name.lower() == 'a' and href: score += 1
-                    ranked.append((score, el, href, text))
-                ranked.sort(key=lambda item: item[0], reverse=True)
-                candidates.extend([item[1] for item in ranked if item[0] > 0])
-                if candidates:
-                    break
-            if candidates:
-                break
-
-        if not candidates:
-            # Diagnostic fallback: exact file labels sometimes live inside a sibling of the button.
-            file_text = exact_nodes[0]
-            nearby = file_text.find_elements(
-                By.XPATH,
-                "./following::*[self::a or self::button][@href or @data-upload_id or contains(normalize-space(.), 'Download')][position() <= 8]"
-            )
-            candidates.extend(nearby)
-
-        if not candidates:
-            snippets = []
-            for node in exact_nodes[:3]:
-                try:
-                    snippets.append(node.find_element(By.XPATH, './ancestor::*[self::div or self::li or self::tr][1]').get_attribute('outerHTML')[:1500])
-                except Exception:
-                    pass
-            raise RuntimeError(
-                f'itch.io exposed {a.expected_file!r}, but no matching download control was found; '
-                f'nearby_html={snippets!r}'
-            )
-
-        driver.execute_script('arguments[0].scrollIntoView({block:"center"});', candidates[0])
-        driver.execute_script('arguments[0].click();', candidates[0])
+        time.sleep(1.0)
+        clicked = driver.execute_script(CLICK_EXACT_UPLOAD_JS, a.expected_file)
+        print('ITCH_FREE_CLICK', clicked)
+        if not clicked or not clicked.get('ok'):
+            raise RuntimeError(f'could not click exact itch upload row: {clicked!r}')
 
         deadline = time.time() + a.timeout
         last_size = -1
