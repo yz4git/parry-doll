@@ -1,0 +1,45 @@
+{
+  "revision": "v18.5-r2",
+  "face_unchanged": true,
+  "protected_head_face_meshes": 60,
+  "head_unique_world_points": 8779,
+  "vulnerable_lash_canthus_helpers_checked": [
+    "InnerCanthusV128_-1",
+    "InnerCanthusV128_1",
+    "OuterLashV119_-1",
+    "OuterLashV119_1",
+    "ProfileLashFanV138_A_-1",
+    "ProfileLashFanV138_A_1",
+    "ProfileLashFanV138_B_-1",
+    "ProfileLashFanV138_B_1",
+    "ProfileLashV133_-1",
+    "ProfileLashV133_1",
+    "UpperLashV119_-1",
+    "UpperLashV119_1",
+    "WrappedCanthusLashV143_-1",
+    "WrappedCanthusLashV143_1"
+  ],
+  "previous_hair_removed": true,
+  "hair": {
+    "HairPremiumV185_Adventurer": {
+      "triangles": 2329,
+      "vertices": 1474,
+      "uv_layers": 1,
+      "materials": [
+        "HairPremiumV185Texture"
+      ],
+      "parent": "BL_HAIR_ASSET"
+    },
+    "HairPremiumV185_ScalpCap": {
+      "triangles": 2260,
+      "vertices": 1246,
+      "uv_layers": 0,
+      "materials": [
+        "HairPremiumV185ScalpRoot"
+      ],
+      "parent": "BL_HAIR_ASSET"
+    }
+  },
+  "combined_hair_triangles": 4589,
+  "audit_space": "canonical world points rounded to 5 decimals"
+}
