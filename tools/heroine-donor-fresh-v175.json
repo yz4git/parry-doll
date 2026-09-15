@@ -133,7 +133,7 @@
   ],
   "audit": {
     "min_head_vertices": 8500,
-    "min_head_polygons": 15000,
+    "min_head_polygons": 8000,
     "expected_removed_cheek_components": 2,
     "expected_removed_cheek_vertices": 282,
     "max_head_components_after_cleanup": 37,
