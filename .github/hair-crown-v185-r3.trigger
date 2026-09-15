@@ -1,9 +1,8 @@
-run=2026-09-15T17:55:00+09:00
+run=2026-09-15T18:05:00+09:00
 scope=crown-only-kappa-fix
 face=locked
-main_hair=locked
-scalp_cap=preserved
+scalp_cap=unchanged
 bangs=unchanged
 ponytail=unchanged
-method=layered-conformal-crown-overlay
+method=local-crown-sculpt-plus-original-texture-tint
 accept=false
