@@ -1,0 +1,8 @@
+revision=combat-anti-mash-v1
+source_commit=0e8837d92c98fb91b83ba8e55e1f3bd7c0517c8a
+attack_overlap=blocked
+normal_third_hit_knockdown=removed
+committed_enemy_armor=enabled
+attack_counter_hit_damage=1.35x
+three_attack_overextension=enabled
+published=2026-09-15T22:23:00+09:00
