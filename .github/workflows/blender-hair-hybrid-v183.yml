@@ -1,0 +1,168 @@
+name: Hybrid premium anime hair v18.3
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/hair-hybrid-v183.trigger'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: blender-hair-hybrid-v183
+  cancel-in-progress: false
+
+jobs:
+  candidate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Restore accepted v18.0 face-locked source model
+        run: |
+          set -euxo pipefail
+          SAFE_COMMIT=e16a4173c82cf2e097d855620a6d3af137d9e532
+          git cat-file -e "$SAFE_COMMIT:dist/assets/models/heroine-blender.glb"
+          git show "$SAFE_COMMIT:dist/assets/models/heroine-blender.glb" > /tmp/heroine-v183-base.glb
+          test -s /tmp/heroine-v183-base.glb
+          sha256sum /tmp/heroine-v183-base.glb
+
+      - name: Download public CC0 Blender-chan donor
+        run: |
+          set -euxo pipefail
+          python3 -m pip install --quiet selenium
+          google-chrome --version
+          mkdir -p /tmp/blenderchan
+          python3 tools/download-itch-free-asset.py \
+            --purchase-url https://amarilloarts.itch.io/blender-chan/purchase \
+            --expected-file 'BlenderChan - Free.blend' \
+            --download-dir /tmp/blenderchan \
+            --timeout 180
+          donor="$(find /tmp/blenderchan -maxdepth 1 -type f -iname '*BlenderChan*Free*.blend' -print -quit)"
+          test -n "$donor"
+          test -s "$donor"
+          cp "$donor" /tmp/blenderchan.blend
+          test "$(stat -c%s /tmp/blenderchan.blend)" -gt 20000000
+
+      - name: Install Blender 4.3.2
+        run: |
+          set -euxo pipefail
+          curl -L --fail --retry 4 --retry-delay 2 \
+            -o /tmp/blender.tar.xz \
+            https://download.blender.org/release/Blender4.3/blender-4.3.2-linux-x64.tar.xz
+          tar -xf /tmp/blender.tar.xz -C /tmp
+          BLENDER=/tmp/blender-4.3.2-linux-x64/blender
+          test -x "$BLENDER"
+          "$BLENDER" --version
+          echo "BLENDER=$BLENDER" >> "$GITHUB_ENV"
+
+      - name: Validate v18.3 authoring tools
+        run: |
+          set -euxo pipefail
+          python3 -m py_compile \
+            tools/extract-blenderchan-hair-v182.py \
+            tools/build-hair-hybrid-v183.py \
+            tools/audit-hair-hybrid-v183.py \
+            tools/render-hair-preview-v183.py
+          grep -Fq 'HairDonorV180_00' tools/build-hair-hybrid-v183.py
+          grep -Fq 'FACE LOCK' tools/build-hair-hybrid-v183.py
+          grep -Fq 'HairPremiumV183_Tail' tools/audit-hair-hybrid-v183.py
+
+      - name: Bake Blender-chan authored hair geometry
+        run: |
+          set -euxo pipefail
+          "$BLENDER" --background --python-exit-code 1 --python tools/extract-blenderchan-hair-v182.py -- \
+            --input /tmp/blenderchan.blend \
+            --output /tmp/blenderchan-hair-v183.glb \
+            --report /tmp/blenderchan-hair-v183-extract.json
+          test -s /tmp/blenderchan-hair-v183.glb
+          python3 -m json.tool /tmp/blenderchan-hair-v183-extract.json >/dev/null
+
+      - name: Build center-part high-ponytail hybrid
+        run: |
+          set -euxo pipefail
+          "$BLENDER" --background --python-exit-code 1 --python tools/build-hair-hybrid-v183.py -- \
+            --input /tmp/heroine-v183-base.glb \
+            --donor /tmp/blenderchan-hair-v183.glb \
+            --output /tmp/heroine-v183-candidate.glb \
+            --report /tmp/hair-hybrid-v183-build.json
+          test -s /tmp/heroine-v183-candidate.glb
+          python3 -m json.tool /tmp/hair-hybrid-v183-build.json
+
+      - name: Audit immutable face and hair budget
+        run: |
+          set -euxo pipefail
+          "$BLENDER" --background --python-exit-code 1 --python tools/audit-hair-hybrid-v183.py -- \
+            --before /tmp/heroine-v183-base.glb \
+            --after /tmp/heroine-v183-candidate.glb \
+            --report /tmp/hair-hybrid-v183-audit.json
+          test -s /tmp/hair-hybrid-v183-audit.json
+          grep -Fq '"face_unchanged": true' /tmp/hair-hybrid-v183-audit.json
+          grep -Fq '"previous_hair_removed": true' /tmp/hair-hybrid-v183-audit.json
+          python3 -m json.tool /tmp/hair-hybrid-v183-audit.json
+
+      - name: Render front side and rear hair review
+        run: |
+          set -euxo pipefail
+          mkdir -p /tmp/hair-v183-preview
+          "$BLENDER" --background --python-exit-code 1 --python tools/render-hair-preview-v183.py -- \
+            --input /tmp/heroine-v183-candidate.glb --output /tmp/hair-v183-preview/front.png --angle 0
+          "$BLENDER" --background --python-exit-code 1 --python tools/render-hair-preview-v183.py -- \
+            --input /tmp/heroine-v183-candidate.glb --output /tmp/hair-v183-preview/three-quarter.png --angle 32
+          "$BLENDER" --background --python-exit-code 1 --python tools/render-hair-preview-v183.py -- \
+            --input /tmp/heroine-v183-candidate.glb --output /tmp/hair-v183-preview/profile.png --angle 78
+          "$BLENDER" --background --python-exit-code 1 --python tools/render-hair-preview-v183.py -- \
+            --input /tmp/heroine-v183-candidate.glb --output /tmp/hair-v183-preview/rear-three-quarter.png --angle 145
+          test -s /tmp/hair-v183-preview/front.png
+          test -s /tmp/hair-v183-preview/three-quarter.png
+          test -s /tmp/hair-v183-preview/profile.png
+          test -s /tmp/hair-v183-preview/rear-three-quarter.png
+
+      - name: Assemble candidate artifact
+        run: |
+          set -euxo pipefail
+          mkdir -p /tmp/hair-v183-candidate
+          cp /tmp/heroine-v183-candidate.glb /tmp/hair-v183-candidate/heroine-blender-v183-candidate.glb
+          cp /tmp/blenderchan-hair-v183-extract.json /tmp/hair-v183-candidate/
+          cp /tmp/hair-hybrid-v183-build.json /tmp/hair-v183-candidate/
+          cp /tmp/hair-hybrid-v183-audit.json /tmp/hair-v183-candidate/
+          cp /tmp/hair-v183-preview/*.png /tmp/hair-v183-candidate/
+          ls -lh /tmp/hair-v183-candidate
+
+      - name: Upload visual-review candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: hair-hybrid-v183-candidate
+          path: /tmp/hair-v183-candidate/*
+          retention-days: 7
+
+      - name: Commit only when candidate is explicitly accepted
+        run: |
+          set -euxo pipefail
+          if ! grep -Fq 'accept=true' .github/hair-hybrid-v183.trigger; then
+            echo 'Candidate-only run. Shipping model remains accepted v18.0.'
+            exit 0
+          fi
+          cp /tmp/heroine-v183-candidate.glb dist/assets/models/heroine-blender.glb
+          cp /tmp/hair-hybrid-v183-build.json dist/hair-hybrid-v183-build.json
+          cp /tmp/hair-hybrid-v183-audit.json dist/hair-hybrid-v183-audit.json
+          cp /tmp/blenderchan-hair-v183-extract.json dist/hair-hybrid-v183-extract.json
+          git diff --check
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add \
+            dist/assets/models/heroine-blender.glb \
+            dist/hair-hybrid-v183-build.json \
+            dist/hair-hybrid-v183-audit.json \
+            dist/hair-hybrid-v183-extract.json
+          git diff --cached --quiet && { echo 'No accepted v18.3 generated change'; exit 1; }
+          git commit -m 'feat: implement hybrid anime high-ponytail hair v18.3'
+          git pull --rebase origin main
+          git push origin main
