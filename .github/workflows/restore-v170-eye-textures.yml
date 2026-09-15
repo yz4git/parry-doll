@@ -1,4 +1,4 @@
-name: Restore v17.0 shape + eye textures + iris depth fix
+name: Restore v17.0 + visible eye texture + iris depth fix
 
 on:
   push:
@@ -34,10 +34,13 @@ jobs:
             tools/add-eye-textures-v170.py \
             tools/audit-v170-eye-textures.py \
             tools/lift-v170-iris-stack.py \
-            tools/audit-v170-iris-lift.py
+            tools/audit-v170-iris-lift.py \
+            tools/paint-v170-faceuv-eyes.py \
+            tools/audit-v170-faceuv-eyes.py
           grep -Fq 'geometry_changed": False' tools/add-eye-textures-v170.py
           grep -Fq 'only the Z coordinate' tools/lift-v170-iris-stack.py
           grep -Fq 'non_eye_geometry_unchanged' tools/audit-v170-iris-lift.py
+          grep -Fq 'faceUV-only' tools/paint-v170-faceuv-eyes.py
 
       - name: Restore exact v17.0 shipping model
         run: |
@@ -55,7 +58,7 @@ jobs:
           mkdir -p dist/assets/models
           cp /tmp/heroine-v170-original.glb dist/assets/models/heroine-blender.glb
 
-      - name: Add eye textures without changing geometry
+      - name: Add eye material textures without changing geometry
         run: |
           set -euxo pipefail
           python3 tools/add-eye-textures-v170.py \
@@ -71,7 +74,7 @@ jobs:
             --original /tmp/heroine-v170-original.glb \
             --patched dist/assets/models/heroine-blender.glb
 
-      - name: Lift only the existing iris detail stack out of the sclera
+      - name: Correct only the buried existing iris stack depth
         run: |
           set -euxo pipefail
           python3 tools/lift-v170-iris-stack.py \
@@ -80,23 +83,42 @@ jobs:
             --manifest /tmp/v170-iris-depth-manifest.json
           cat /tmp/v170-iris-depth-manifest.json
 
-      - name: Prove only iris depth changed from v17.0
+      - name: Prove only permitted iris depth changed from v17.0
         run: |
           set -euxo pipefail
           python3 tools/audit-v170-iris-lift.py \
             --original /tmp/heroine-v170-original.glb \
             --patched dist/assets/models/heroine-blender.glb
 
-      - name: Commit v17.0 with textured visible iris only
+      - name: Paint visible eyes into donor faceUV without changing shape
+        run: |
+          set -euxo pipefail
+          python3 tools/paint-v170-faceuv-eyes.py \
+            --input dist/assets/models/heroine-blender.glb \
+            --output dist/assets/models/heroine-blender.glb \
+            --manifest /tmp/v170-faceuv-eye-manifest.json
+          cat /tmp/v170-faceuv-eye-manifest.json
+
+      - name: Final geometry and visible-eye audits
+        run: |
+          set -euxo pipefail
+          python3 tools/audit-v170-iris-lift.py \
+            --original /tmp/heroine-v170-original.glb \
+            --patched dist/assets/models/heroine-blender.glb
+          python3 tools/audit-v170-faceuv-eyes.py \
+            --original /tmp/heroine-v170-original.glb \
+            --patched dist/assets/models/heroine-blender.glb
+
+      - name: Commit v17.0 with visible eye texture and depth-only iris fix
         run: |
           set -euxo pipefail
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add dist/assets/models/heroine-blender.glb
           if git diff --cached --quiet; then
-            echo 'Expected v17.0 eye-texture/depth model change was not produced'
+            echo 'Expected v17.0 visible-eye model change was not produced'
             exit 1
           fi
-          git commit -m 'feat: restore v17.0 with textured visible iris'
+          git commit -m 'feat: v17.0 visible eyes with iris depth fix'
           git pull --rebase origin main
           git push origin main
