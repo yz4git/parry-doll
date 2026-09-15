@@ -1,7 +1,7 @@
 import { chromium } from 'playwright';
 
 const url = process.env.TEST_URL || 'https://yz4git.github.io/parry-doll/';
-const seconds = Number(process.env.MASH_SECONDS || 70);
+const seconds = Number(process.env.MASH_SECONDS || 80);
 const interval = Number(process.env.MASH_INTERVAL_MS || 110);
 const browser = await chromium.launch({headless:true});
 const context = await browser.newContext({
@@ -16,6 +16,9 @@ await page.goto(`${url}?mashcheck=${Date.now()}`, {waitUntil:'networkidle', time
 await page.locator('#start').click();
 await page.waitForFunction(() => window.parryDoll && window.parryDoll.snapshot().mode === 'play', null, {timeout:10000});
 
+// Reproduce the real exploit condition: stay on top of the boss and do nothing but mash ATTACK.
+// Holding forward is not a defensive action and removes false negatives caused by spacing drift.
+await page.keyboard.down('KeyW');
 const started = Date.now();
 let nextSample = 0;
 while ((Date.now()-started) < seconds*1000) {
@@ -29,15 +32,16 @@ while ((Date.now()-started) < seconds*1000) {
     if(s.mode==='won'||s.mode==='lost') break;
   }
 }
+await page.keyboard.up('KeyW');
 const final=await page.evaluate(()=>window.parryDoll.snapshot());
-const result={url,seconds,interval,final,events};
+const result={url,seconds,interval,scenario:'hold-forward-plus-attack-only',final,events};
 console.log(JSON.stringify(result,null,2));
 await page.screenshot({path:'attack-mash-final.png', fullPage:true});
 await browser.close();
 
-// This reproducer is intentionally strict: attack-only play must never win or advance deep into the run.
-if(final.mode==='won' || final.level>=2){
-  console.error(`ANTI_MASH_FAIL: attack-only reached mode=${final.mode} level=${final.level}`);
+// Strong invariant: no-parry attack mashing must not even clear the first boss.
+if(final.mode==='won' || final.level>=1){
+  console.error(`ANTI_MASH_FAIL: attack-only pressure reached mode=${final.mode} level=${final.level}`);
   process.exit(2);
 }
 if(final.parries!==0){
