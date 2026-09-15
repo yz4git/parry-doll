@@ -1,0 +1,38 @@
+name: Combat anti-mash v2
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/combat-anti-mash-v2.trigger'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply anti-mash v2
+        run: python3 tools/anti-mash-combat-v2.py
+      - name: Validate JavaScript syntax
+        run: node --check dist/game.js
+      - name: Validate hard anti-mash invariants
+        run: |
+          grep -Fq 'normalFloor=Math.ceil(boss.spec.hp*.35)' dist/game.js
+          grep -Fq "boss.posture=Math.min(45" dist/game.js
+          grep -Fq "GUARD — 弾いて崩せ" dist/game.js
+          grep -Fq 'perfect?38:30' dist/game.js
+      - name: Commit combat fix
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add dist/game.js
+          git diff --cached --quiet && { echo 'No v2 change'; exit 1; }
+          git commit -m 'fix: require parry to break attack-mash victory path'
+          git pull --rebase origin main
+          git push origin main
