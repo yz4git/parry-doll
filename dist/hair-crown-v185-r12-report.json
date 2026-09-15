@@ -1,0 +1,60 @@
+{
+  "revision": "v18.5-r12",
+  "scope": "seven-crown-lock-materials-only",
+  "geometry_unchanged": true,
+  "face_unchanged": true,
+  "main_hair_unchanged": true,
+  "bangs_unchanged": true,
+  "side_hair_unchanged": true,
+  "ponytail_unchanged": true,
+  "scalp_gap_material_unchanged": true,
+  "crown_lock_count": 7,
+  "crown_lock_names": [
+    "HairPremiumV185_CrownLockR11_01",
+    "HairPremiumV185_CrownLockR11_02",
+    "HairPremiumV185_CrownLockR11_03",
+    "HairPremiumV185_CrownLockR11_04",
+    "HairPremiumV185_CrownLockR11_05",
+    "HairPremiumV185_CrownLockR11_06",
+    "HairPremiumV185_CrownLockR11_07"
+  ],
+  "prior_lock_materials": {
+    "HairPremiumV185_CrownLockR11_01": [
+      "HairPremiumV185CrownLockR11A"
+    ],
+    "HairPremiumV185_CrownLockR11_02": [
+      "HairPremiumV185CrownLockR11B"
+    ],
+    "HairPremiumV185_CrownLockR11_03": [
+      "HairPremiumV185CrownLockR11C"
+    ],
+    "HairPremiumV185_CrownLockR11_04": [
+      "HairPremiumV185CrownLockR11A"
+    ],
+    "HairPremiumV185_CrownLockR11_05": [
+      "HairPremiumV185CrownLockR11B"
+    ],
+    "HairPremiumV185_CrownLockR11_06": [
+      "HairPremiumV185CrownLockR11C"
+    ],
+    "HairPremiumV185_CrownLockR11_07": [
+      "HairPremiumV185CrownLockR11A"
+    ]
+  },
+  "matched_material": "HairPremiumV185CrownMatchR12",
+  "donor_material": "HairPremiumV185Texture",
+  "donor_texture": "Hair_Base",
+  "donor_sample_count": 76480,
+  "donor_median_rgb": [
+    0.33725491166114807,
+    0.41568630933761597,
+    0.6392157077789307
+  ],
+  "matched_tone_rgb": [
+    0.2849079740700058,
+    0.35116566177992703,
+    0.54
+  ],
+  "matched_roughness": 0.4000000059604645,
+  "output_bytes": 3168048
+}
