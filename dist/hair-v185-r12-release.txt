@@ -1,0 +1,7 @@
+Parry Doll hair release
+revision=v18.5-r12
+change=added crown lock color matched to donor hair
+geometry=unchanged
+face=unchanged
+accepted=true
+source_commit=223ba600c83f0df8652142d2eae871c01f0daff3
