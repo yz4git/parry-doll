@@ -48,14 +48,17 @@ jobs:
           size="$(stat -c%s /tmp/proxy_1.5.blend)"
           echo "donor_bytes=$size"
           test "$size" -gt 10000000
-          sha256sum /tmp/proxy_1.5.blend
+          test "$(sha256sum /tmp/proxy_1.5.blend | cut -d' ' -f1)" = "ac0dcdb2979dab7311e6d95ce6b1b20b118ef80d4de1f69aa9e88f733111b5ea"
 
       - name: Validate hair-only authoring scripts
         run: |
           set -euxo pipefail
-          python3 -m py_compile tools/build-hair-donor-v180.py tools/audit-hair-donor-v180.py
-          grep -Fq 'FACE LOCK' tools/build-hair-donor-v180.py
-          grep -Fq 'HeadShellV140' tools/audit-hair-donor-v180.py
+          python3 -m py_compile \
+            tools/build-hair-donor-v180.py \
+            tools/build-hair-donor-v180-safe.py \
+            tools/audit-hair-donor-v180-safe.py
+          grep -Fq 'ToeCap' tools/build-hair-donor-v180-safe.py
+          grep -Fq 'canonical world points' tools/audit-hair-donor-v180-safe.py
           grep -Fq 'High Ponytail' docs/HAIR_DONOR_V180.md
 
       - name: Build hair-only v18.0 GLB
@@ -64,19 +67,21 @@ jobs:
           test -s dist/assets/models/heroine-blender.glb
           cp dist/assets/models/heroine-blender.glb /tmp/heroine-before-hair-v180.glb
           sha256sum /tmp/heroine-before-hair-v180.glb
-          "$BLENDER" --background --python-exit-code 1 --python tools/build-hair-donor-v180.py -- \
+          "$BLENDER" --background --python-exit-code 1 --python tools/build-hair-donor-v180-safe.py -- \
             --input dist/assets/models/heroine-blender.glb \
             --output dist/assets/models/heroine-blender.glb \
             --donor /tmp/proxy_1.5.blend \
             --report dist/hair-donor-v180-build.json
           test -s dist/assets/models/heroine-blender.glb
           test -s dist/hair-donor-v180-build.json
+          ! grep -Fq 'ToeCapL' dist/hair-donor-v180-build.json
+          ! grep -Fq 'ToeCapR' dist/hair-donor-v180-build.json
           sha256sum dist/assets/models/heroine-blender.glb
 
       - name: Audit that face is unchanged after export
         run: |
           set -euxo pipefail
-          "$BLENDER" --background --python-exit-code 1 --python tools/audit-hair-donor-v180.py -- \
+          "$BLENDER" --background --python-exit-code 1 --python tools/audit-hair-donor-v180-safe.py -- \
             --before /tmp/heroine-before-hair-v180.glb \
             --after dist/assets/models/heroine-blender.glb \
             --report dist/hair-donor-v180-audit.json
