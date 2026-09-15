@@ -1,0 +1,89 @@
+name: Layered crown locks v18.5 r11
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/hair-crown-v185-r11.trigger'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: blender-hair-crown-v185-r11
+  cancel-in-progress: false
+
+jobs:
+  candidate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Preserve accepted v18.5 r2 model
+        run: |
+          set -euxo pipefail
+          cp dist/assets/models/heroine-blender.glb /tmp/heroine-v185-r2.glb
+          test -s /tmp/heroine-v185-r2.glb
+      - name: Install Blender 4.3.2
+        run: |
+          set -euxo pipefail
+          curl -L --fail --retry 4 --retry-delay 2 -o /tmp/blender.tar.xz https://download.blender.org/release/Blender4.3/blender-4.3.2-linux-x64.tar.xz
+          tar -xf /tmp/blender.tar.xz -C /tmp
+          echo "BLENDER=/tmp/blender-4.3.2-linux-x64/blender" >> "$GITHUB_ENV"
+      - name: Validate tools
+        run: python3 -m py_compile tools/fix-hair-crown-v185-r9.py tools/fix-hair-crown-v185-r11.py tools/render-hair-preview-v185.py
+      - name: Build layered crown candidate
+        run: |
+          set -euxo pipefail
+          "$BLENDER" --background --python-exit-code 1 --python tools/fix-hair-crown-v185-r11.py -- \
+            --input /tmp/heroine-v185-r2.glb \
+            --output /tmp/heroine-v185-r11.glb \
+            --report /tmp/hair-crown-v185-r11-report.json
+          test -s /tmp/heroine-v185-r11.glb
+          grep -Fq '"face_unchanged": true' /tmp/hair-crown-v185-r11-report.json
+          grep -Fq '"main_hair_unchanged": true' /tmp/hair-crown-v185-r11-report.json
+          grep -Fq '"bangs_unchanged": true' /tmp/hair-crown-v185-r11-report.json
+          grep -Fq '"ponytail_unchanged": true' /tmp/hair-crown-v185-r11-report.json
+          grep -Fq '"visible_crown_lock_count": 7' /tmp/hair-crown-v185-r11-report.json
+          grep -Fq '"all_cap_faces_covered_once": true' /tmp/hair-crown-v185-r11-report.json
+          python3 -m json.tool /tmp/hair-crown-v185-r11-report.json
+      - name: Render four-view review
+        run: |
+          set -euxo pipefail
+          mkdir -p /tmp/hair-v185-r11-preview
+          "$BLENDER" --background --python-exit-code 1 --python tools/render-hair-preview-v185.py -- --input /tmp/heroine-v185-r11.glb --output /tmp/hair-v185-r11-preview/front.png --angle 0
+          "$BLENDER" --background --python-exit-code 1 --python tools/render-hair-preview-v185.py -- --input /tmp/heroine-v185-r11.glb --output /tmp/hair-v185-r11-preview/three-quarter.png --angle 32
+          "$BLENDER" --background --python-exit-code 1 --python tools/render-hair-preview-v185.py -- --input /tmp/heroine-v185-r11.glb --output /tmp/hair-v185-r11-preview/profile.png --angle 78
+          "$BLENDER" --background --python-exit-code 1 --python tools/render-hair-preview-v185.py -- --input /tmp/heroine-v185-r11.glb --output /tmp/hair-v185-r11-preview/rear-three-quarter.png --angle 145
+      - name: Assemble review artifact
+        run: |
+          set -euxo pipefail
+          mkdir -p /tmp/hair-v185-r11-candidate
+          cp /tmp/heroine-v185-r11.glb /tmp/hair-v185-r11-candidate/
+          cp /tmp/hair-crown-v185-r11-report.json /tmp/hair-v185-r11-candidate/
+          cp /tmp/hair-v185-r11-preview/*.png /tmp/hair-v185-r11-candidate/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hair-crown-v185-r11-candidate
+          path: /tmp/hair-v185-r11-candidate/*
+          retention-days: 7
+      - name: Commit only after acceptance
+        run: |
+          set -euxo pipefail
+          if ! grep -Fq 'accept=true' .github/hair-crown-v185-r11.trigger; then
+            echo 'Candidate review only; published model unchanged.'
+            exit 0
+          fi
+          cp /tmp/heroine-v185-r11.glb dist/assets/models/heroine-blender.glb
+          cp /tmp/hair-crown-v185-r11-report.json dist/hair-crown-v185-r11-report.json
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add dist/assets/models/heroine-blender.glb dist/hair-crown-v185-r11-report.json
+          git diff --cached --quiet && { echo 'No crown-only model change'; exit 1; }
+          git commit -m 'fix: replace kappa crown with layered hair locks v18.5 r11'
+          git pull --rebase origin main
+          git push origin main
