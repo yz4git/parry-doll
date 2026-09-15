@@ -1,0 +1,4 @@
+parry-doll phase text non-blocking v1
+phase title cards no longer stun/freeze player or boss
+brief impact retained: hitstop 0.035/0.055s, slow 0.07/0.10s
+commit=5f51a0b3b871a178a52cc4883325b3513d75bfff
