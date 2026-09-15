@@ -1,0 +1,15 @@
+{
+  "revision": "v18.1",
+  "protected_head_objects_checked": 52,
+  "head_unique_world_points": 8779,
+  "face_unchanged": true,
+  "old_v180_hair_removed": true,
+  "hair": {
+    "vertices": 87736,
+    "polygons": 95000,
+    "triangles": 95000,
+    "parent": "BL_HAIR_ASSET"
+  },
+  "minimum_premium_triangles": 30000,
+  "audit_space": "canonical world points rounded to 5 decimals"
+}
