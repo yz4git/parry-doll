@@ -1,1 +1,1 @@
-2026-09-15 v17.1 8fd14268cc24822841426bb15cbe47addc089c74 fresh-david-onizaki-portrait-eye-profile-fringe-webgl-audit
+2026-09-15 v17.2 a3b6ea088524de108ee25cc20c7fd314362034e2 fresh-david-onizaki-clean-portrait-front-profile-webgl-audit
