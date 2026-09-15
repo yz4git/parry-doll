@@ -1,4 +1,4 @@
-"""Render a neutral front / three-quarter preview of the shipping GLB for hair review."""
+"""Render neutral hair review views without requiring a GPU/EGL context."""
 from __future__ import annotations
 
 import argparse
@@ -57,7 +57,6 @@ def main():
         raise RuntimeError("preview requires HeadShellV140 and HairPremiumV181")
 
     lo, hi, center, size = world_bounds(head)
-    # Frame head + ponytail/long silhouette while keeping the face large enough to judge roots/bangs.
     hpts = [hair.matrix_world @ v.co for v in hair.data.vertices]
     hlo = Vector((min(p.x for p in hpts), min(p.y for p in hpts), min(p.z for p in hpts)))
     hhi = Vector((max(p.x for p in hpts), max(p.y for p in hpts), max(p.z for p in hpts)))
@@ -67,9 +66,13 @@ def main():
     extent = max(total_hi.x - total_lo.x, total_hi.z - total_lo.z)
 
     scene = bpy.context.scene
-    scene.render.engine = "BLENDER_EEVEE_NEXT"
-    scene.render.resolution_x = 900
-    scene.render.resolution_y = 900
+    # Cycles CPU works on the stock GitHub Actions runner without libEGL, unlike Eevee Next.
+    scene.render.engine = "CYCLES"
+    scene.cycles.device = "CPU"
+    scene.cycles.samples = 12
+    scene.cycles.use_denoising = False
+    scene.render.resolution_x = 720
+    scene.render.resolution_y = 720
     scene.render.resolution_percentage = 100
     scene.render.image_settings.file_format = "PNG"
     scene.render.film_transparent = False
@@ -81,7 +84,6 @@ def main():
     scene.camera = cam
     angle = math.radians(a.angle)
     distance = max(0.75, extent * 3.35)
-    # Front is -Y. Positive angle shows the character's left temple and ponytail depth.
     cam.location = Vector((math.sin(angle) * distance, -math.cos(angle) * distance, target.z + extent * 0.03))
     cam_data.lens = 68
     cam_data.sensor_width = 36
