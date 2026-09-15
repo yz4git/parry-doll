@@ -1,1 +1,1 @@
-2026-09-15 inspect exact-v17.0 eye-textured current GLB
+2026-09-15 inspect e80d921 v17.0 faceUV-visible-eye GLB
