@@ -1,0 +1,9 @@
+run=2026-09-15T20:05:00+09:00
+scope=seven-crown-lock-exact-donor-uv-material
+geometry=locked
+face=locked
+main_hair=locked
+bangs=unchanged
+side_hair=unchanged
+ponytail=unchanged
+accept=false
