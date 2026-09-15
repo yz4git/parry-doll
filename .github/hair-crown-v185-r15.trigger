@@ -6,4 +6,4 @@ main_hair=locked
 bangs=unchanged
 side_hair=unchanged
 ponytail=unchanged
-accept=false
+accept=true
