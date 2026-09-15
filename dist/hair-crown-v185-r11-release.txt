@@ -1,0 +1,4 @@
+release=v18.5-r11
+model_commit=541f8abf306328da04282ab43015dcf9461be8a9
+published_at=2026-09-15T18:53:00+09:00
+scope=crown-only
