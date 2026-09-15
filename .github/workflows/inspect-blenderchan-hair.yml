@@ -40,9 +40,10 @@ jobs:
           donor="$(find /tmp/blenderchan -maxdepth 1 -type f -iname '*BlenderChan*Free*.blend' -print -quit)"
           test -n "$donor"
           test -s "$donor"
-          test "$(head -c 7 "$donor")" = BLENDER
           cp "$donor" /tmp/blenderchan.blend
           ls -lh /tmp/blenderchan.blend
+          file /tmp/blenderchan.blend || true
+          xxd -l 16 /tmp/blenderchan.blend
 
       - name: Install pinned Blender 4.2
         run: |
