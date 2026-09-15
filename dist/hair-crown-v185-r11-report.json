@@ -1,0 +1,33 @@
+{
+  "revision": "v18.5-r11",
+  "scope": "crown-cap-only-layered-locks",
+  "face_unchanged": true,
+  "main_hair_unchanged": true,
+  "bangs_unchanged": true,
+  "side_hair_unchanged": true,
+  "ponytail_unchanged": true,
+  "cap_topology_unchanged": true,
+  "visible_crown_lock_count": 7,
+  "visible_crown_locks": [
+    "HairPremiumV185_CrownLockR11_01",
+    "HairPremiumV185_CrownLockR11_02",
+    "HairPremiumV185_CrownLockR11_03",
+    "HairPremiumV185_CrownLockR11_04",
+    "HairPremiumV185_CrownLockR11_05",
+    "HairPremiumV185_CrownLockR11_06",
+    "HairPremiumV185_CrownLockR11_07"
+  ],
+  "crown_lock_face_counts": [
+    302,
+    248,
+    292,
+    335,
+    349,
+    301,
+    433
+  ],
+  "all_cap_faces_covered_once": true,
+  "gap_fill_recess_max": 0.0008348974061389777,
+  "protected_face_meshes": 60,
+  "output_bytes": 3162032
+}
