@@ -1,0 +1,11 @@
+{
+  "revision": "v18.0-safe",
+  "protected_head_objects_checked": 60,
+  "head_unique_world_points": 8779,
+  "max_protected_unique_point_count_delta": 0,
+  "donor_objects": [
+    "HairDonorV180_00"
+  ],
+  "face_unchanged": true,
+  "audit_space": "canonical world points rounded to 5 decimals"
+}
