@@ -1,0 +1,4 @@
+release=dodge-system-v1-testhook
+model_commit=196b0536726674867f6efb90958e08d8bbed6306
+published_at=2026-09-15T23:20:00+09:00
+scope=query-only-dodgecheck-diagnostics
