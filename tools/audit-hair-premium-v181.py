@@ -1,7 +1,8 @@
 """Post-export audit for the v18.1 high-detail hair replacement.
 
-The whole non-hair BL_HEAD subtree is immutable.  Hair is excluded solely by its dedicated
-BL_HAIR_ASSET hierarchy, avoiding name-based false positives.
+The whole non-hair BL_HEAD subtree is immutable. Hair is excluded solely by its dedicated
+BL_HAIR_ASSET hierarchy, avoiding name-based false positives. The premium pass must retain at least
+30k authored triangles so another toy-like proxy cannot pass as a visual upgrade.
 """
 from __future__ import annotations
 
@@ -105,8 +106,8 @@ def main():
         raise RuntimeError("HAIR: HairPremiumV181 missing after export")
     if hair["parent"] != "BL_HAIR_ASSET":
         raise RuntimeError(f"HAIR: unexpected parent {hair['parent']}")
-    if hair["triangles"] < 10000:
-        raise RuntimeError(f"HAIR: detail gate failed ({hair['triangles']} triangles)")
+    if hair["triangles"] < 30000:
+        raise RuntimeError(f"HAIR: premium detail gate failed ({hair['triangles']} triangles)")
     if hair["triangles"] > 120000:
         raise RuntimeError(f"HAIR: mobile budget exceeded ({hair['triangles']} triangles)")
     if old_donor:
@@ -119,6 +120,7 @@ def main():
         "face_unchanged": True,
         "old_v180_hair_removed": True,
         "hair": hair,
+        "minimum_premium_triangles": 30000,
         "audit_space": "canonical world points rounded to 5 decimals",
     }
     rp = Path(a.report).resolve()
