@@ -1,8 +1,9 @@
 """Robust entry point for v18.4 modular hair.
 
-Blender may rename appended datablocks when the shipping scene already contains a historical object with
-the same display name.  Keep canonical dictionary keys from the requested donor names instead of using
-post-append object.name for identity.  Geometry and face-lock behavior are delegated unchanged to v18.4.
+Blender's library-load API mutates the destination request list from names into loaded datablocks. Keep
+canonical donor names in an immutable tuple and pass a separate list to dst.objects, so later identity
+mapping remains stable even when the shipping scene contains historical objects with similar names.
+Geometry and face-lock behavior are delegated unchanged to v18.4.
 """
 from __future__ import annotations
 
@@ -20,17 +21,18 @@ spec.loader.exec_module(mod)
 
 
 def append_overscore_stable(path):
-    wanted = ["Curtain Bangs", "High Ponytail"]
+    canonical = ("Curtain Bangs", "High Ponytail")
+    request = list(canonical)
     with bpy.data.libraries.load(str(Path(path).resolve()), link=False) as (src, dst):
-        missing = [name for name in wanted if name not in src.objects]
+        missing = [name for name in canonical if name not in src.objects]
         if missing:
             raise RuntimeError("OverScore exact hair objects missing: " + ", ".join(missing))
-        dst.objects = wanted
+        dst.objects = request
     loaded = [o for o in dst.objects if o]
-    if len(loaded) != len(wanted):
-        raise RuntimeError(f"OverScore append count mismatch: wanted={wanted!r}, loaded={[o.name for o in loaded]!r}")
+    if len(loaded) != len(canonical):
+        raise RuntimeError(f"OverScore append count mismatch: wanted={canonical!r}, loaded={[o.name for o in loaded]!r}")
     result = {}
-    for expected, obj in zip(wanted, loaded):
+    for expected, obj in zip(canonical, loaded):
         if obj.type != "MESH":
             raise RuntimeError(f"OverScore {expected} loaded as {obj.type}, not MESH")
         if not obj.users_collection:
