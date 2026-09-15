@@ -1,0 +1,8 @@
+Parry Doll combat safety release
+revision=combat-safety-v1
+one_shot_failure=false
+max_player_hit=28
+player_hit_iframe=0.48
+frame_recovery=true
+effect_caps=true
+source_commit=39c2bcad2ca8d4d452a19b7a129a6e28a20e3d90
