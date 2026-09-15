@@ -33,10 +33,11 @@ jobs:
           python3 -m py_compile \
             tools/add-eye-textures-v170.py \
             tools/add-eyeball-surface-texture-v170.py \
+            tools/add-eyeball-surface-texture-v170-r3.py \
             tools/audit-v170-eye-textures.py \
-            tools/audit-v170-eyeball-surface.py
+            tools/audit-v170-eyeball-surface-r3.py
           grep -Fq 'geometry_changed": False' tools/add-eye-textures-v170.py
-          grep -Fq 'No POSITION/NORMAL/index/accessor byte' tools/add-eyeball-surface-texture-v170.py
+          grep -Fq 'glTF +Z' tools/add-eyeball-surface-texture-v170-r3.py
 
       - name: Restore exact v17.0 shipping model
         run: |
@@ -70,10 +71,10 @@ jobs:
             --original /tmp/heroine-v170-original.glb \
             --patched dist/assets/models/heroine-blender.glb
 
-      - name: Paint iris and pupil onto visible eyeball surface
+      - name: Paint iris and pupil onto the visible v17.0 eyeball surface
         run: |
           set -euxo pipefail
-          python3 tools/add-eyeball-surface-texture-v170.py \
+          python3 tools/add-eyeball-surface-texture-v170-r3.py \
             --input dist/assets/models/heroine-blender.glb \
             --output dist/assets/models/heroine-blender.glb \
             --manifest /tmp/v170-eyeball-surface-manifest.json
@@ -82,7 +83,7 @@ jobs:
       - name: Prove final model still has exact v17.0 geometry
         run: |
           set -euxo pipefail
-          python3 tools/audit-v170-eyeball-surface.py \
+          python3 tools/audit-v170-eyeball-surface-r3.py \
             --original /tmp/heroine-v170-original.glb \
             --patched dist/assets/models/heroine-blender.glb
 
