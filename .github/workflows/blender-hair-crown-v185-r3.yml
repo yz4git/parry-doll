@@ -53,7 +53,8 @@ jobs:
           test -s /tmp/heroine-v185-r3-candidate.glb
           grep -Fq '"face_unchanged": true' /tmp/hair-crown-v185-r3-report.json
           grep -Fq '"main_hair_unchanged": true' /tmp/hair-crown-v185-r3-report.json
-          grep -Fq '"old_smooth_scalp_cap_removed": true' /tmp/hair-crown-v185-r3-report.json
+          grep -Fq '"scalp_cap_unchanged": true' /tmp/hair-crown-v185-r3-report.json
+          grep -Fq '"old_smooth_scalp_cap_preserved": true' /tmp/hair-crown-v185-r3-report.json
           python3 -m json.tool /tmp/hair-crown-v185-r3-report.json
 
       - name: Render four-view review
