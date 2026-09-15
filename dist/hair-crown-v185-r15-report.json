@@ -1,0 +1,85 @@
+{
+  "revision": "v18.5-r15",
+  "scope": "seven-crown-lock-donor-blue-texcoord0",
+  "geometry_unchanged": true,
+  "face_unchanged": true,
+  "main_hair_unchanged": true,
+  "bangs_unchanged": true,
+  "side_hair_unchanged": true,
+  "ponytail_unchanged": true,
+  "scalp_gap_material_unchanged": true,
+  "crown_lock_count": 7,
+  "exact_shared_material": "HairPremiumV185Texture",
+  "donor_texture": "Hair_Base",
+  "donor_uv_layer": "UVMap",
+  "eligible_blue_triangles": 2041,
+  "rejected_nonblue_triangles": 288,
+  "before_lock_uv_layers": {
+    "HairPremiumV185_CrownLockR11_01": [
+      "UVMap"
+    ],
+    "HairPremiumV185_CrownLockR11_02": [
+      "UVMap"
+    ],
+    "HairPremiumV185_CrownLockR11_03": [
+      "UVMap"
+    ],
+    "HairPremiumV185_CrownLockR11_04": [
+      "UVMap"
+    ],
+    "HairPremiumV185_CrownLockR11_05": [
+      "UVMap"
+    ],
+    "HairPremiumV185_CrownLockR11_06": [
+      "UVMap"
+    ],
+    "HairPremiumV185_CrownLockR11_07": [
+      "UVMap"
+    ]
+  },
+  "per_lock_transfer": {
+    "HairPremiumV185_CrownLockR11_01": {
+      "uv0": "CrownR15UV0",
+      "uv_loops": 906,
+      "nearest_blue_donor_max_distance": 0.02706591971218586,
+      "nearest_blue_donor_mean_distance": 0.009547997189514051
+    },
+    "HairPremiumV185_CrownLockR11_02": {
+      "uv0": "CrownR15UV0",
+      "uv_loops": 744,
+      "nearest_blue_donor_max_distance": 0.036100663244724274,
+      "nearest_blue_donor_mean_distance": 0.009128095234700595
+    },
+    "HairPremiumV185_CrownLockR11_03": {
+      "uv0": "CrownR15UV0",
+      "uv_loops": 876,
+      "nearest_blue_donor_max_distance": 0.041689906269311905,
+      "nearest_blue_donor_mean_distance": 0.010373249255924531
+    },
+    "HairPremiumV185_CrownLockR11_04": {
+      "uv0": "CrownR15UV0",
+      "uv_loops": 1005,
+      "nearest_blue_donor_max_distance": 0.04457709938287735,
+      "nearest_blue_donor_mean_distance": 0.011332008607606798
+    },
+    "HairPremiumV185_CrownLockR11_05": {
+      "uv0": "CrownR15UV0",
+      "uv_loops": 1047,
+      "nearest_blue_donor_max_distance": 0.043933309614658356,
+      "nearest_blue_donor_mean_distance": 0.008807403769742927
+    },
+    "HairPremiumV185_CrownLockR11_06": {
+      "uv0": "CrownR15UV0",
+      "uv_loops": 903,
+      "nearest_blue_donor_max_distance": 0.04358791932463646,
+      "nearest_blue_donor_mean_distance": 0.008857380823415088
+    },
+    "HairPremiumV185_CrownLockR11_07": {
+      "uv0": "CrownR15UV0",
+      "uv_loops": 1299,
+      "nearest_blue_donor_max_distance": 0.03696038946509361,
+      "nearest_blue_donor_mean_distance": 0.011788135192889251
+    }
+  },
+  "output_bytes": 3139468
+}
