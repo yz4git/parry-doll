@@ -1,0 +1,26 @@
+name: Diagnose face artifacts v17.3
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/diagnose-face-artifacts-v173.trigger'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Blender
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender python3-numpy
+          blender --version
+      - name: Diagnose exported face hierarchy and materials
+        run: |
+          blender --background --python-exit-code 1 --python tools/diagnose-face-artifacts-v173.py
