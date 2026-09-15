@@ -20,7 +20,7 @@ jobs:
       - name: Mixed dodge and parry live playcheck
         env:
           TEST_URL: https://yz4git.github.io/parry-doll/
-          TEST_SECONDS: '30'
+          TEST_TIMEOUT_MS: '180000'
         run: |
           set -o pipefail
           node tests/dodge-parry-live.mjs | tee dodge-parry-result.json
@@ -30,5 +30,7 @@ jobs:
           name: dodge-parry-live-check
           path: |
             dodge-parry-result.json
+            parry-telegraph.png
+            dodge-telegraph.png
             dodge-parry-final.png
           retention-days: 7
