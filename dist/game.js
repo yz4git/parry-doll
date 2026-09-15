@@ -260,7 +260,7 @@ function playerAttack(){
  const distance=len(v),u=norm(v),stop=.9+boss.spec.scale*.5;
  const speed=Math.min(finisher?9:move.lunge,Math.max(0,(distance-stop)/.13));
  player.vel.x=u.x*speed;player.vel.z=u.z*speed;
- if(overextended){attackBuffer=0;announce('攻 め す ぎ — 弾 け',.7)}
+ if(overextended){attackBuffer=0;player.cool+=.22;announce('攻 め す ぎ — 弾 け',.8)}
  if(counter)player.counter=0;
  sound(220+combo*80,.12,'triangle',.04);
  return true;
@@ -274,18 +274,19 @@ function resolveSwing(){
  const point=boss.nodes[move.combo===1?2:1].p;
  // Normal combo hits can stagger, but only counters/finishers may launch the boss into a full knockdown.
  const force=mul(norm(v),finisher?55:move.counter?36:Math.min(move.force,23));force.y=finisher?20:move.counter?12:move.combo===2?7:3;
- const rawDamage=finisher?65:move.damage+(move.counter?14:0),damage=Math.max(1,Math.round(rawDamage*(committedBoss?.55:1)));
+ const rawDamage=finisher?65:move.damage+(move.counter?14:0),baseDamage=Math.max(1,Math.round(rawDamage*(committedBoss?.55:1))),normalFloor=Math.ceil(boss.spec.hp*.35),damage=finisher||move.counter?baseDamage:Math.max(0,Math.min(baseDamage,boss.hp-normalFloor));
+ if(damage<=0&&!finisher&&!move.counter){boss.stun=0;boss.down=0;boss.posture=Math.min(boss.posture,45);announce('GUARD — 弾いて崩せ',.55);ring(point,'#b9c7d1');player.cool=Math.max(player.cool,.42);return;}
  if(hurt(boss,damage,force,point)){
   // Once the enemy has committed to a telegraphed attack, blind mashing cannot stun-cancel it.
   if(committedBoss){boss.stun=0;boss.down=0}
-  boss.posture+=finisher?0:move.counter?19:committedBoss?3:move.combo===2?15:8;
+  if(finisher)boss.posture=0;else if(move.counter)boss.posture+=24;else boss.posture=Math.min(45,boss.posture+(committedBoss?1:move.combo===2?4:2));
   if(finisher){boss.broken=0;boss.posture=0;if(boss.hp>0)announce('決 着 の 一 撃',1.2);ring(point,'#ffd287');hitstop=.15;shake=.5;sound(65,.5,'sawtooth',.1)}
   else if(move.counter){if(boss.hp>0)announce('弾 き 返 し',.7);ring(point,'#baffee');hitstop=.085;shake=.3;}
  }
 }
 function playerParry(){if(player.parryCool>0||player.down>0||player.hp<=0)return false;player.parry=.56;player.parryCool=.62;player.swing=null;player.attack=0;player.cool=Math.min(player.cool,.1);player.attackChain=0;player.attackChainTimer=0;player.comboWindow=0;ring(player.nodes[1].p,'#8de7e0');sound(680,.1,'sine',.025);return true}
 function enemyImpact(move=null){if(boss.hp<=0||boss.stun>0||player.hp<=0)return;const v=sub(player.pos,boss.pos),distance=len(v);if(move?!attackContains(move,boss.pos,boss.aim,player.pos):distance>2.5+boss.spec.scale*.8)return;
- if(player.parry>0){const perfect=player.parry>.22;parries++;if(perfect)perfects++;boss.posture+=perfect?32:24;const followup=move&&boss.hitIndex<move.hits.length;boss.stun=followup?.055:.5;boss.wind=0;if(!followup){boss.strike=0;boss.pattern=null;boss.ai=move?move.recover:.9;}player.invuln=.28;player.counter=1.25;player.parryCool=.1;player.cool=0;const point=boss.nodes[2].p;boss.impulse(point,add(mul(norm(v),-15),V(0,6,0)));burst(player.nodes[1].p,'#ffde8e',45,10);ring(player.nodes[1].p,'#ffdf91');announce(perfect?'PERFECT PARRY':'PARRY',.65);shake=.28;hitstop=.075;impact(player.nodes[1].p,'parry',1.6);player.parry=0;
+ if(player.parry>0){const perfect=player.parry>.22;parries++;if(perfect)perfects++;boss.posture+=perfect?38:30;const followup=move&&boss.hitIndex<move.hits.length;boss.stun=followup?.055:.5;boss.wind=0;if(!followup){boss.strike=0;boss.pattern=null;boss.ai=move?move.recover:.9;}player.invuln=.28;player.counter=1.25;player.parryCool=.1;player.cool=0;const point=boss.nodes[2].p;boss.impulse(point,add(mul(norm(v),-15),V(0,6,0)));burst(player.nodes[1].p,'#ffde8e',45,10);ring(player.nodes[1].p,'#ffdf91');announce(perfect?'PERFECT PARRY':'PARRY',.65);shake=.28;hitstop=.075;impact(player.nodes[1].p,'parry',1.6);player.parry=0;
  }else{const force=add(mul(norm(v),move?move.force:boss.spec.scale>2?29:18),V(0,boss.spec.scale>2?11:5,0)),counterHit=player.attack>0,damageScale=counterHit?1.35:1;if(counterHit)announce('COUNTER HIT — 攻撃を止めて弾け',.75);hurt(player,Math.round(boss.spec.damage*(move?move.damage:1)*damageScale),force,player.nodes[boss.sequence%2?2:1].p)}}
 function updateHUD(){$('bossName').textContent=boss.spec.name;$('phase').textContent=boss.enraged?'覚醒':`0${level+1} / 04`;$('bossHP').style.width=100*boss.hp/boss.spec.hp+'%';$('posture').style.width=clamp(boss.posture,0,100)+'%';$('playerHP').style.width=player.hp+'%';$('stats').textContent=player.counter>0?'反撃チャンス！':`PARRY ${parries} · PERFECT ${perfects}`;$('round').textContent=boss.spec.sub;}
 function step(dt){time+=dt;for(const d of [player,boss]){for(const k of ['invuln','stun','down','attack','parry','cool','parryCool','comboWindow','attackChainTimer','counter','broken','dash'])d[k]=Math.max(0,d[k]-dt)}if(player.attackChainTimer===0)player.attackChain=0;if(mode==='play'){
