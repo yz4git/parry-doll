@@ -1,8 +1,8 @@
 'use strict';
-// Dodge system v1: gold attacks are PARRY responses, cyan attacks are DODGE-only responses.
+// Dodge system v1.1: gold attacks are PARRY responses, cyan attacks are DODGE-only responses.
 (()=>{
  if(window.__parryDodgeSystemV1Loaded)return;window.__parryDodgeSystemV1Loaded=true;
- const CYAN='#67ddff',CYAN_DIM='#3ca8c8';
+ const CYAN='#67ddff';
  let dodgeQueued=false,dodgeTimer=0,dodgeIFrame=0,dodgeCool=0,dodges=0,perfectDodges=0,dodgeSide=1;
 
  const EXTRA_DODGE_MOVES=[
@@ -28,6 +28,17 @@
   for(const m of ENEMY_MOVES[i])if(!m.response)m.response='parry';
   for(const m of EXTRA_DODGE_MOVES[i])if(!ENEMY_MOVES[i].some(x=>x.name===m.name))ENEMY_MOVES[i].push(m);
  }
+
+ // Do not leave the new mechanic to random selection. Every third enemy attack is a
+ // cyan DODGE-only attack, alternating between the boss's two dodge signatures.
+ const dodgeStartEnemyAttackBase=startEnemyAttack;
+ startEnemyAttack=function(move){
+  const extras=EXTRA_DODGE_MOVES[level]||[];
+  if(extras.length&&boss&&boss.sequence%3===2){
+   move=extras[Math.floor(boss.sequence/3)%extras.length];
+  }
+  return dodgeStartEnemyAttackBase(move);
+ };
 
  const style=document.createElement('style');
  style.textContent=`
@@ -67,17 +78,20 @@
    dir=mul(tangent,dodgeSide);dodgeSide*=-1;
   }
   player.swing=null;player.attack=0;player.parry=0;player.cool=Math.min(player.cool,.10);player.attackChain=0;player.attackChainTimer=0;player.comboWindow=0;
-  attackBuffer=0;parryBuffer=0;player.vel.x=dir.x*8.8;player.vel.z=dir.z*8.8;player.dash=.34;
-  dodgeTimer=.34;dodgeIFrame=.24;dodgeCool=.58;
+  attackBuffer=0;parryBuffer=0;player.vel.x=dir.x*8.8;player.vel.z=dir.z*8.8;player.dash=.38;
+  // Long enough to cover a late visual read plus the first active hit, but still much
+  // shorter than the cooldown so repeated mashing is not a permanent invulnerability.
+  dodgeTimer=.38;dodgeIFrame=.34;dodgeCool=.62;
   ring(player.nodes[0].p,CYAN);sound(920,.09,'triangle',.028);return true;
  }
 
  const dodgeEnemyImpactBase=enemyImpact;
  enemyImpact=function(move=null){
   if(move?.response==='dodge'){
-   const threatened=attackContains(move,boss.pos,boss.aim,player.pos);
-   if(threatened&&dodgeIFrame>0){
-    dodges++;const perfect=dodgeIFrame>.115;if(perfect)perfectDodges++;
+   // enemyImpact is called only at a scheduled hit. If the dodge window is active,
+   // leaving the hit geometry is itself a valid evade and still counts as DODGE.
+   if(dodgeIFrame>0){
+    dodges++;const perfect=dodgeIFrame>.16;if(perfect)perfectDodges++;
     player.invuln=Math.max(player.invuln,.06);ring(player.nodes[0].p,CYAN);burst(player.nodes[0].p,CYAN,18,5);sound(perfect?1420:1050,.11,'triangle',.035);announce(perfect?'PERFECT DODGE':'DODGE',.46);shake=Math.max(shake,.08);return;
    }
    // Cyan attacks are explicitly unparryable. PARRY cannot substitute for DODGE.
@@ -116,6 +130,6 @@
 
  if(window.parryDoll?.snapshot){
   const snapshotBase=window.parryDoll.snapshot;
-  window.parryDoll.snapshot=()=>{const s=snapshotBase(),m=mode==='play'&&boss&&(boss.wind>0||boss.strike>0)?enemyMove():null;return {...s,dodges,perfectDodges,dodgeTimer:+dodgeTimer.toFixed(3),dodgeCool:+dodgeCool.toFixed(3),response:m?.response||'',enemyMove:m?.name||'',enemyWind:+(boss?.wind||0).toFixed(3),enemyStrike:+(boss?.strike||0).toFixed(3)};};
+  window.parryDoll.snapshot=()=>{const s=snapshotBase(),m=mode==='play'&&boss&&(boss.wind>0||boss.strike>0)?enemyMove():null;return {...s,dodges,perfectDodges,dodgeTimer:+dodgeTimer.toFixed(3),dodgeCool:+dodgeCool.toFixed(3),parryActive:+(player?.parry||0).toFixed(3),response:m?.response||'',enemyMove:m?.name||'',enemyKind:m?.kind||'',enemyShape:m?.shape||'',enemyHitIndex:boss?.hitIndex||0,enemyWind:+(boss?.wind||0).toFixed(3),enemyStrike:+(boss?.strike||0).toFixed(3)};};
  }
 })();
