@@ -20,8 +20,10 @@ jobs:
       - name: Mixed dodge and parry live playcheck
         env:
           TEST_URL: https://yz4git.github.io/parry-doll/
-          TEST_SECONDS: '60'
-        run: node tests/dodge-parry-live.mjs | tee dodge-parry-result.json
+          TEST_SECONDS: '75'
+        run: |
+          set -o pipefail
+          node tests/dodge-parry-live.mjs | tee dodge-parry-result.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
