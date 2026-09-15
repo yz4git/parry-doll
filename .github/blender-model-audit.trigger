@@ -1,1 +1,1 @@
-2026-09-15 v17.0-donor-surface-eyes 38dee9c7fbb51cb4665e8c54ff58b7de84a7dc32 exact-v17.0-eye-textures-iris-projected-to-donor-surface-webgl-hires-audit
+2026-09-15 v17.0-rigid-visible-eyes a605a19bf8f7ef1b2faa17c7ca30ac6c53c754be exact-v17.0-shape-plus-eye-textures-rigid-iris-depth-webgl-hires-audit
