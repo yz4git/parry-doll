@@ -1,1 +1,1 @@
-2026-09-15 r2 restore exact v17.0 geometry and paint visible eyeball texture only
+2026-09-15 r3 exact v17.0 geometry, visible eyeball texture at corrected glTF +Z forward UV
