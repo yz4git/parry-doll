@@ -1,0 +1,44 @@
+name: Restore safe hair base
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/restore-safe-hair-base.trigger'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  restore:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Restore last accepted face-locked GLB
+        run: |
+          set -euxo pipefail
+          SAFE_COMMIT=e16a4173c82cf2e097d855620a6d3af137d9e532
+          git cat-file -e "$SAFE_COMMIT:dist/assets/models/heroine-blender.glb"
+          git show "$SAFE_COMMIT:dist/assets/models/heroine-blender.glb" > /tmp/heroine-safe.glb
+          test -s /tmp/heroine-safe.glb
+          cp /tmp/heroine-safe.glb dist/assets/models/heroine-blender.glb
+          rm -f dist/hair-premium-v181-build.json dist/hair-premium-v181-audit.json
+          git diff --check
+
+      - name: Commit safe base
+        run: |
+          set -euxo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A dist/assets/models/heroine-blender.glb dist/hair-premium-v181-build.json dist/hair-premium-v181-audit.json || true
+          git diff --cached --quiet && { echo 'Safe base already active'; exit 0; }
+          git commit -m 'revert: restore accepted face-locked hair base'
+          git pull --rebase origin main
+          git push origin main
