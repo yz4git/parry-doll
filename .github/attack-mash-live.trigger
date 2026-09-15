@@ -1,2 +1,2 @@
-run=2026-09-15T22:31:00+09:00
-scenario=hold-forward-plus-attack-only
+run=2026-09-15T22:39:00+09:00
+scenario=iphone-touch-attack-mash-plus-forward
