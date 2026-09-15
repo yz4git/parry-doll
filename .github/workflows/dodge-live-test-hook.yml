@@ -1,0 +1,31 @@
+name: Add dodge live-test hook
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/dodge-live-test-hook.trigger'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add query-scoped live-test hook
+        run: python3 tools/add-dodge-live-test-hook.py
+      - name: Validate JavaScript
+        run: node --check dist/dodge-system-v1.js
+      - name: Validate hook scope and catalog
+        run: |
+          grep -q "new URLSearchParams(location.search).has('dodgecheck')" dist/dodge-system-v1.js
+          grep -q "window.parryDodgeTest" dist/dodge-system-v1.js
+          grep -q "placeAtCombatRange" dist/dodge-system-v1.js
+          grep -q "forceAttack" dist/dodge-system-v1.js
+      - name: Commit test hook
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add dist/dodge-system-v1.js
+          git commit -m 'test: expose query-scoped dodge combat diagnostics'
+          git push
