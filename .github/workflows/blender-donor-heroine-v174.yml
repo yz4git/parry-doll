@@ -1,0 +1,133 @@
+name: Fresh David Onizaki heroine v17.4
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/blender-donor-heroine-v174.trigger'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fresh-david-onizaki-heroine-v174
+  cancel-in-progress: false
+
+jobs:
+  build-fresh-donor-heroine-v174:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout current main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Blender and Godot 3 runtime
+        run: |
+          set -euxo pipefail
+          sudo apt-get update
+          sudo apt-get install -y blender python3-numpy curl unzip
+          blender --version
+          if apt-cache show godot3-server >/dev/null 2>&1; then
+            sudo apt-get install -y godot3-server
+            echo "GODOT3=godot3-server" >> "$GITHUB_ENV"
+          else
+            curl -L --fail --retry 3 -o /tmp/godot3.zip https://github.com/godotengine/godot/releases/download/3.5.3-stable/Godot_v3.5.3-stable_linux_server.64.zip
+            unzip -q /tmp/godot3.zip -d /tmp/godot3
+            chmod +x /tmp/godot3/Godot_v3.5.3-stable_linux_server.64
+            echo "GODOT3=/tmp/godot3/Godot_v3.5.3-stable_linux_server.64" >> "$GITHUB_ENV"
+          fi
+
+      - name: Validate empty-scene source policy
+        run: |
+          set -euxo pipefail
+          python3 -m py_compile tools/build-donor-heroine-v171.py tools/build-donor-heroine-v173.py tools/build-donor-heroine-v174.py tools/audit-donor-heroine-v174.py
+          python3 -m json.tool tools/heroine-donor-fresh-v174.json >/dev/null
+          ! grep -Fq 'bpy.ops.import_scene.gltf' tools/build-donor-heroine-v174.py
+          ! grep -Fq 'bpy.ops.wm.open_mainfile' tools/build-donor-heroine-v174.py
+          grep -Fq "bpy.ops.object.select_all(action='SELECT');bpy.ops.object.delete" tools/make-blender-heroine.py
+          grep -Fq 'blink_render_geometry' tools/build-donor-heroine-v174.py
+          grep -Fq 'obj = bpy.data.objects.new(name, None)' tools/build-donor-heroine-v174.py
+
+      - name: Clone pinned David Onizaki carrier
+        run: |
+          set -euxo pipefail
+          git clone https://github.com/TjhaiME/Godot-Active-Rigid-Ragdoll.git /tmp/donor
+          cd /tmp/donor
+          git checkout 5328516c87d56c90e409dfd09b1c7694e37696fb
+          test "$(git rev-parse HEAD)" = "5328516c87d56c90e409dfd09b1c7694e37696fb"
+          grep -F "head : CC-ATTRIBUTION : David Onizaki" LicenseInfo.txt
+          test -s addons/rigidRagdoll/Assets/Shaders/faceUV.png
+          test -s addons/rigidRagdoll/Assets/Shaders/faceNormal.png
+
+      - name: Extract donor head topology
+        env:
+          HEAD_OBJ_OUTPUT: /tmp/david-onizaki-head-v174.obj
+          HEAD_INCLUDE_BROWS: '0'
+        run: |
+          set -euxo pipefail
+          "$GODOT3" --path /tmp/donor --script "$GITHUB_WORKSPACE/tools/export-godot-anime-head.gd"
+          test -s /tmp/david-onizaki-head-v174.obj
+          grep -q '^v ' /tmp/david-onizaki-head-v174.obj
+          grep -q '^vt ' /tmp/david-onizaki-head-v174.obj
+          grep -q '^f ' /tmp/david-onizaki-head-v174.obj
+          echo "vertices=$(grep -c '^v ' /tmp/david-onizaki-head-v174.obj)"
+          echo "faces=$(grep -c '^f ' /tmp/david-onizaki-head-v174.obj)"
+
+      - name: Delete previous GLB and build v17.4 from empty scene
+        run: |
+          set -euxo pipefail
+          mkdir -p dist/assets/models
+          if test -s dist/assets/models/heroine-blender.glb; then
+            cp dist/assets/models/heroine-blender.glb /tmp/heroine-before-v174.glb
+            sha256sum /tmp/heroine-before-v174.glb
+          fi
+          rm -f dist/assets/models/heroine-blender.glb dist/assets/models/heroine-blender.blend
+          test ! -e dist/assets/models/heroine-blender.glb
+          blender --background --python-exit-code 1 --python tools/build-donor-heroine-v174.py -- \
+            --output dist/assets/models/heroine-blender.glb \
+            --donor-obj /tmp/david-onizaki-head-v174.obj \
+            --donor-uv /tmp/donor/addons/rigidRagdoll/Assets/Shaders/faceUV.png \
+            --donor-normal /tmp/donor/addons/rigidRagdoll/Assets/Shaders/faceNormal.png \
+            --config tools/heroine-donor-fresh-v174.json
+
+      - name: Re-import only newly generated v17.4 GLB
+        run: |
+          set -euxo pipefail
+          test -s dist/assets/models/heroine-blender.glb
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('dist/assets/models/heroine-blender.glb'); data=p.read_bytes()
+          assert data[:4] == b'glTF', data[:4]
+          assert len(data) > 500000, len(data)
+          print('fresh v17.4 GLB bytes', len(data))
+          PY
+          blender --background --python-exit-code 1 --python tools/audit-donor-heroine-v174.py -- \
+            --input dist/assets/models/heroine-blender.glb \
+            --config tools/heroine-donor-fresh-v174.json
+
+      - name: Verify v17.4 is a new binary
+        run: |
+          set -euxo pipefail
+          if test -s /tmp/heroine-before-v174.glb; then
+            old="$(sha256sum /tmp/heroine-before-v174.glb | cut -d' ' -f1)"
+            new="$(sha256sum dist/assets/models/heroine-blender.glb | cut -d' ' -f1)"
+            echo "previous=$old"
+            echo "fresh-v174=$new"
+            test "$old" != "$new"
+          fi
+          test ! -e dist/assets/models/heroine-blender.blend
+
+      - name: Commit fresh game model v17.4
+        run: |
+          set -euxo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add dist/assets/models/heroine-blender.glb
+          git diff --cached --quiet && { echo 'No generated v17.4 model change'; exit 1; }
+          git commit -m "feat: integrate fresh David Onizaki portrait v17.4"
+          git pull --rebase origin main
+          git push origin main
