@@ -1,0 +1,5 @@
+Parry Doll hair donor v18.0
+source=OverScore Proxy 1.5 High Ponytail
+license=CC0
+face=locked-and-audited
+model_commit=bcd4aed1506eeb85b32611be8dea3a751bad0508
