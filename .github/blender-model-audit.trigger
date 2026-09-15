@@ -1,1 +1,1 @@
-2026-09-15 v17.4 b56b73a7ff692c17fffd8df3b6f703f4bbdfd86c fresh-david-onizaki-remove-blink-overlay-webgl-hires-audit
+2026-09-15 v17.5 c6df5bb1f11ae2da11f8613b829f8c69639fe0a3 fresh-david-onizaki-cheek-islands-removed-webgl-hires-audit
