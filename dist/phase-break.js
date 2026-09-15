@@ -86,11 +86,13 @@
   const el=$('pbBanner');if(!el)return;el.querySelector('small').textContent=sub;el.querySelector('b').textContent=text;el.classList.add('show');pb.transitionT=Math.max(pb.transitionT,duration);
  }
  function doPhaseBreak(next){
-  pb.phase=next;tuneBoss();boss.wind=0;boss.strike=0;boss.pattern=null;boss.stun=Math.max(boss.stun,next===3?1.22:1.02);boss.ai=Math.max(boss.ai,.85);
+  // Non-blocking phase transition: the banner is presentation only. Preserve the current
+  // enemy move, player input, velocities, AI timer and simulation speed while it is shown.
+  pb.phase=next;tuneBoss();
   const p=boss.nodes.find(n=>n.name==='chest')?.p||boss.nodes[1]?.p||boss.pos;
   ring(V(boss.pos.x,.05,boss.pos.z),PHASE_COLORS[next-1]);ring(V(boss.pos.x,.05,boss.pos.z),'#fff0bd');burst(p,PHASE_COLORS[next-1],next===3?38:26,next===3?8:6);
-  impact(p,'break',next===3?2.1:1.65);shake=Math.max(shake,next===3?.36:.26);hitstop=Math.max(hitstop,next===3?.09:.06);feel.flash=Math.max(feel.flash,next===3?.15:.09);feel.slow=Math.max(feel.slow,next===3?.24:.14);
-  $('pbDanger')?.classList.remove('show');if($('attackHud'))$('attackHud').textContent='';showBanner(phaseName(next),next===3?'FINAL PHASE':'PHASE BREAK',next===3?1.35:1.05);combatSound('break');updatePhaseUI();
+  shake=Math.max(shake,next===3?.22:.16);feel.flash=Math.max(feel.flash,next===3?.12:.07);feel.pulse=Math.max(feel.pulse,.12);
+  showBanner(phaseName(next),next===3?'FINAL PHASE':'PHASE BREAK',next===3?1.35:1.05);combatSound('break');updatePhaseUI();
  }
 
  function classify(move){
