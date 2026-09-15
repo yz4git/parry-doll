@@ -1,4 +1,4 @@
-name: Restore v17.0 shape + eye textures only
+name: Restore v17.0 shape + eye textures + iris depth fix
 
 on:
   push:
@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  restore-and-texture:
+  restore-texture-and-lift-iris:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -27,17 +27,17 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Validate eye-texture-only tools
+      - name: Validate v17.0 eye tools
         run: |
           set -euxo pipefail
           python3 -m py_compile \
             tools/add-eye-textures-v170.py \
-            tools/add-eyeball-surface-texture-v170.py \
-            tools/add-eyeball-surface-texture-v170-r3.py \
             tools/audit-v170-eye-textures.py \
-            tools/audit-v170-eyeball-surface-r3.py
+            tools/lift-v170-iris-stack.py \
+            tools/audit-v170-iris-lift.py
           grep -Fq 'geometry_changed": False' tools/add-eye-textures-v170.py
-          grep -Fq 'glTF +Z' tools/add-eyeball-surface-texture-v170-r3.py
+          grep -Fq 'only the Z coordinate' tools/lift-v170-iris-stack.py
+          grep -Fq 'non_eye_geometry_unchanged' tools/audit-v170-iris-lift.py
 
       - name: Restore exact v17.0 shipping model
         run: |
@@ -50,12 +50,12 @@ jobs:
           p=Path('/tmp/heroine-v170-original.glb')
           d=p.read_bytes()
           assert d[:4] == b'glTF', d[:4]
-          print('restored v17.0 bytes', len(d))
+          print('restored exact v17.0 bytes', len(d))
           PY
           mkdir -p dist/assets/models
           cp /tmp/heroine-v170-original.glb dist/assets/models/heroine-blender.glb
 
-      - name: Add eye material textures without changing geometry
+      - name: Add eye textures without changing geometry
         run: |
           set -euxo pipefail
           python3 tools/add-eye-textures-v170.py \
@@ -64,39 +64,39 @@ jobs:
             --manifest /tmp/v170-eye-texture-manifest.json
           cat /tmp/v170-eye-texture-manifest.json
 
-      - name: Prove first texture pass keeps exact v17.0 shape
+      - name: Prove texture pass keeps exact v17.0 geometry
         run: |
           set -euxo pipefail
           python3 tools/audit-v170-eye-textures.py \
             --original /tmp/heroine-v170-original.glb \
             --patched dist/assets/models/heroine-blender.glb
 
-      - name: Paint iris and pupil onto the visible v17.0 eyeball surface
+      - name: Lift only the existing iris detail stack out of the sclera
         run: |
           set -euxo pipefail
-          python3 tools/add-eyeball-surface-texture-v170-r3.py \
+          python3 tools/lift-v170-iris-stack.py \
             --input dist/assets/models/heroine-blender.glb \
             --output dist/assets/models/heroine-blender.glb \
-            --manifest /tmp/v170-eyeball-surface-manifest.json
-          cat /tmp/v170-eyeball-surface-manifest.json
+            --manifest /tmp/v170-iris-depth-manifest.json
+          cat /tmp/v170-iris-depth-manifest.json
 
-      - name: Prove final model still has exact v17.0 geometry
+      - name: Prove only iris depth changed from v17.0
         run: |
           set -euxo pipefail
-          python3 tools/audit-v170-eyeball-surface-r3.py \
+          python3 tools/audit-v170-iris-lift.py \
             --original /tmp/heroine-v170-original.glb \
             --patched dist/assets/models/heroine-blender.glb
 
-      - name: Commit restored v17.0 model with eyeball texture only
+      - name: Commit v17.0 with textured visible iris only
         run: |
           set -euxo pipefail
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add dist/assets/models/heroine-blender.glb
           if git diff --cached --quiet; then
-            echo 'Expected v17.0 eyeball-texture model change was not produced'
+            echo 'Expected v17.0 eye-texture/depth model change was not produced'
             exit 1
           fi
-          git commit -m 'feat: restore v17.0 shape with visible eyeball texture only'
+          git commit -m 'feat: restore v17.0 with textured visible iris'
           git pull --rebase origin main
           git push origin main
