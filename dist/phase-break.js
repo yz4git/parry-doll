@@ -91,7 +91,7 @@
   pb.phase=next;tuneBoss();
   const p=boss.nodes.find(n=>n.name==='chest')?.p||boss.nodes[1]?.p||boss.pos;
   ring(V(boss.pos.x,.05,boss.pos.z),PHASE_COLORS[next-1]);ring(V(boss.pos.x,.05,boss.pos.z),'#fff0bd');burst(p,PHASE_COLORS[next-1],next===3?38:26,next===3?8:6);
-  shake=Math.max(shake,next===3?.22:.16);feel.flash=Math.max(feel.flash,next===3?.12:.07);feel.pulse=Math.max(feel.pulse,.12);
+  shake=Math.max(shake,next===3?.22:.16);hitstop=Math.max(hitstop,next===3?.055:.035);feel.slow=Math.max(feel.slow,next===3?.10:.07);feel.flash=Math.max(feel.flash,next===3?.12:.07);feel.pulse=Math.max(feel.pulse,.12);
   showBanner(phaseName(next),next===3?'FINAL PHASE':'PHASE BREAK',next===3?1.35:1.05);combatSound('break');updatePhaseUI();
  }
 
