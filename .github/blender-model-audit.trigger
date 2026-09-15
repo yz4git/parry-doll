@@ -1,1 +1,1 @@
-2026-09-15 v17.0-final-visible-eyes e80d921d9eb21173a6cadb2f17b604bc5d0f19d2 exact-v17.0-faceuv-eyes-depth-only-webgl-hires-audit
+2026-09-15 v17.0-donor-surface-eyes 38dee9c7fbb51cb4665e8c54ff58b7de84a7dc32 exact-v17.0-eye-textures-iris-projected-to-donor-surface-webgl-hires-audit
