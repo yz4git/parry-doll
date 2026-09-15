@@ -1,4 +1,4 @@
-name: Crown-only hair fix v18.5 r3
+name: Crown-only hair fix v18.5 r4
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: blender-hair-crown-v185-r3
+  group: blender-hair-crown-v185-r4
   cancel-in-progress: false
 
 jobs:
@@ -41,44 +41,43 @@ jobs:
           echo "BLENDER=$BLENDER" >> "$GITHUB_ENV"
 
       - name: Validate crown-only tool
-        run: python3 -m py_compile tools/fix-hair-crown-v185-r3.py tools/render-hair-preview-v185.py
+        run: python3 -m py_compile tools/fix-hair-crown-v185-r4.py tools/render-hair-preview-v185.py
 
-      - name: Fix crown only
+      - name: Sculpt crown only
         run: |
           set -euxo pipefail
-          "$BLENDER" --background --python-exit-code 1 --python tools/fix-hair-crown-v185-r3.py -- \
+          "$BLENDER" --background --python-exit-code 1 --python tools/fix-hair-crown-v185-r4.py -- \
             --input /tmp/heroine-v185-r2.glb \
-            --output /tmp/heroine-v185-r3-candidate.glb \
-            --report /tmp/hair-crown-v185-r3-report.json
-          test -s /tmp/heroine-v185-r3-candidate.glb
-          grep -Fq '"face_unchanged": true' /tmp/hair-crown-v185-r3-report.json
-          grep -Fq '"main_hair_unchanged": true' /tmp/hair-crown-v185-r3-report.json
-          grep -Fq '"scalp_cap_unchanged": true' /tmp/hair-crown-v185-r3-report.json
-          grep -Fq '"old_smooth_scalp_cap_preserved": true' /tmp/hair-crown-v185-r3-report.json
-          python3 -m json.tool /tmp/hair-crown-v185-r3-report.json
+            --output /tmp/heroine-v185-r4-candidate.glb \
+            --report /tmp/hair-crown-v185-r4-report.json
+          test -s /tmp/heroine-v185-r4-candidate.glb
+          grep -Fq '"face_unchanged": true' /tmp/hair-crown-v185-r4-report.json
+          grep -Fq '"scalp_cap_unchanged": true' /tmp/hair-crown-v185-r4-report.json
+          grep -Fq '"bangs_and_ponytail_outside_crown_untouched": true' /tmp/hair-crown-v185-r4-report.json
+          python3 -m json.tool /tmp/hair-crown-v185-r4-report.json
 
       - name: Render four-view review
         run: |
           set -euxo pipefail
-          mkdir -p /tmp/hair-v185-r3-preview
-          "$BLENDER" --background --python-exit-code 1 --python tools/render-hair-preview-v185.py -- --input /tmp/heroine-v185-r3-candidate.glb --output /tmp/hair-v185-r3-preview/front.png --angle 0
-          "$BLENDER" --background --python-exit-code 1 --python tools/render-hair-preview-v185.py -- --input /tmp/heroine-v185-r3-candidate.glb --output /tmp/hair-v185-r3-preview/three-quarter.png --angle 32
-          "$BLENDER" --background --python-exit-code 1 --python tools/render-hair-preview-v185.py -- --input /tmp/heroine-v185-r3-candidate.glb --output /tmp/hair-v185-r3-preview/profile.png --angle 78
-          "$BLENDER" --background --python-exit-code 1 --python tools/render-hair-preview-v185.py -- --input /tmp/heroine-v185-r3-candidate.glb --output /tmp/hair-v185-r3-preview/rear-three-quarter.png --angle 145
+          mkdir -p /tmp/hair-v185-r4-preview
+          "$BLENDER" --background --python-exit-code 1 --python tools/render-hair-preview-v185.py -- --input /tmp/heroine-v185-r4-candidate.glb --output /tmp/hair-v185-r4-preview/front.png --angle 0
+          "$BLENDER" --background --python-exit-code 1 --python tools/render-hair-preview-v185.py -- --input /tmp/heroine-v185-r4-candidate.glb --output /tmp/hair-v185-r4-preview/three-quarter.png --angle 32
+          "$BLENDER" --background --python-exit-code 1 --python tools/render-hair-preview-v185.py -- --input /tmp/heroine-v185-r4-candidate.glb --output /tmp/hair-v185-r4-preview/profile.png --angle 78
+          "$BLENDER" --background --python-exit-code 1 --python tools/render-hair-preview-v185.py -- --input /tmp/heroine-v185-r4-candidate.glb --output /tmp/hair-v185-r4-preview/rear-three-quarter.png --angle 145
 
       - name: Assemble review artifact
         run: |
           set -euxo pipefail
-          mkdir -p /tmp/hair-v185-r3-candidate
-          cp /tmp/heroine-v185-r3-candidate.glb /tmp/hair-v185-r3-candidate/heroine-blender-v185-r3-candidate.glb
-          cp /tmp/hair-crown-v185-r3-report.json /tmp/hair-v185-r3-candidate/
-          cp /tmp/hair-v185-r3-preview/*.png /tmp/hair-v185-r3-candidate/
+          mkdir -p /tmp/hair-v185-r4-candidate
+          cp /tmp/heroine-v185-r4-candidate.glb /tmp/hair-v185-r4-candidate/heroine-blender-v185-r4-candidate.glb
+          cp /tmp/hair-crown-v185-r4-report.json /tmp/hair-v185-r4-candidate/
+          cp /tmp/hair-v185-r4-preview/*.png /tmp/hair-v185-r4-candidate/
 
       - name: Upload crown review
         uses: actions/upload-artifact@v4
         with:
-          name: hair-crown-v185-r3-candidate
-          path: /tmp/hair-v185-r3-candidate/*
+          name: hair-crown-v185-r4-candidate
+          path: /tmp/hair-v185-r4-candidate/*
           retention-days: 7
 
       - name: Commit only after review acceptance
@@ -88,12 +87,12 @@ jobs:
             echo 'Candidate review only; published model unchanged.'
             exit 0
           fi
-          cp /tmp/heroine-v185-r3-candidate.glb dist/assets/models/heroine-blender.glb
-          cp /tmp/hair-crown-v185-r3-report.json dist/hair-crown-v185-r3-report.json
+          cp /tmp/heroine-v185-r4-candidate.glb dist/assets/models/heroine-blender.glb
+          cp /tmp/hair-crown-v185-r4-report.json dist/hair-crown-v185-r4-report.json
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add dist/assets/models/heroine-blender.glb dist/hair-crown-v185-r3-report.json
+          git add dist/assets/models/heroine-blender.glb dist/hair-crown-v185-r4-report.json
           git diff --cached --quiet && { echo 'No crown-only model change'; exit 1; }
-          git commit -m 'fix: replace kappa crown with layered hair roots'
+          git commit -m 'fix: refine only the heroine crown hair'
           git pull --rebase origin main
           git push origin main
