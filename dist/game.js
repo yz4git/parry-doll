@@ -101,7 +101,7 @@ function updateEnemy(dt){
   if(boss.strike===0){boss.ai=move.recover*(boss.enraged?.85:1);boss.pattern=null;boss.vel=mul(boss.vel,.2)}
   return;
  }
- boss.face=facing;const move=ENEMY_MOVES[level][boss.sequence%4],startRange=['leap','rush'].includes(move.kind)?6.5:move.range*.82;
+ boss.face=facing;const move=ENEMY_MOVES[level][boss.sequence%ENEMY_MOVES[level].length],startRange=['leap','rush'].includes(move.kind)?6.5:move.range*.82;
  boss.ai=Math.max(0,boss.ai-dt);
  if(distance>startRange){const u=norm(v);boss.vel.x=u.x*boss.spec.speed;boss.vel.z=u.z*boss.spec.speed}
  else{boss.vel.x*=.8;boss.vel.z*=.8;if(boss.ai===0)startEnemyAttack(move)}

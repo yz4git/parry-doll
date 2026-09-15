@@ -4,7 +4,7 @@ let p5ParryGlow=0,p5BreakPrompt=0,p5FinishBeat=0;
 const p5Style=document.createElement('style');
 p5Style.textContent=`
 #attackHud{position:absolute;top:31px;left:8%;width:84%;height:20px;display:flex;align-items:center;justify-content:center;gap:7px;pointer-events:none;font-size:clamp(10px,1.6vw,13px);font-weight:750;letter-spacing:1.8px;color:#d9b984;text-shadow:0 2px 8px #000;background:linear-gradient(90deg,transparent,#0b1118b8 18%,#0b1118b8 82%,transparent);opacity:0;transform:translateY(-2px);transition:opacity .12s,transform .12s,color .12s}
-#attackHud.show{opacity:1;transform:none}#attackHud.ready{color:#ffd98e}#attackHud.finish{color:#ffe7aa;font-size:clamp(13px,2vw,17px);letter-spacing:3.5px}
+#attackHud.show{opacity:1;transform:none}#attackHud.ready{color:#ffd98e}#attackHud.dodge{color:#8eeaff;text-shadow:0 0 12px #28bde8,0 2px 8px #000}#attackHud.finish{color:#ffe7aa;font-size:clamp(13px,2vw,17px);letter-spacing:3.5px}
 #attackHud .gem{font-size:9px;opacity:.65}#attackHud.ready .gem{opacity:1}
 #cue{top:19%!important;font-size:clamp(12px,1.9vw,15px)!important;letter-spacing:3px!important}
 @media(max-height:500px){#attackHud{top:30px}#cue{top:18%!important}}
@@ -39,8 +39,8 @@ function p5SyncAttackHud(){
  if(p5FinishBeat>0){p5AttackName.textContent='FINISH';p5AttackHud.className='show finish';return}
  if(p5BreakPrompt>0){p5AttackName.textContent='斬 れ';p5AttackHud.className='show finish';return}
  if(boss.wind>0||boss.strike>0){
-  const move=enemyMove(),ready=boss.wind>0&&boss.wind<Math.max(.06,.48-move.hits[0]);
-  p5AttackName.textContent=move.name;p5AttackHud.className='show'+(ready?' ready':'');
+  const move=enemyMove(),ready=boss.wind>0&&boss.wind<Math.max(.06,.48-move.hits[0]),dodge=move.response==='dodge';
+  p5AttackName.textContent=(dodge?'≫ DODGE · ':'◇ PARRY · ')+move.name;p5AttackHud.className='show'+(dodge?' dodge':ready?' ready':'');
   return;
  }
  p5AttackHud.className='';p5AttackName.textContent='';
@@ -94,8 +94,10 @@ step=function(dt){
  p5StepBase(dt);p5MaintainSpacing();
  // Core cue keeps only timing instructions; attack names live in the HUD above.
  if(mode==='play'){
-  if(boss.wind>0&&boss.wind<Math.max(.06,.48-enemyMove().hits[0]))$('cue').textContent='弾 け';
-  else if(boss.strike>0&&boss.hitIndex<enemyMove().hits.length)$('cue').textContent='続 け て 弾 け';
+  const responseMove=enemyMove(),dodgeOnly=responseMove?.response==='dodge';
+  if(dodgeOnly&&(boss.wind>0||boss.strike>0))$('cue').textContent='≫ 避 け ろ ≫';
+  else if(boss.wind>0&&boss.wind<Math.max(.06,.48-responseMove.hits[0]))$('cue').textContent='◇ 弾 け ◇';
+  else if(boss.strike>0&&boss.hitIndex<responseMove.hits.length)$('cue').textContent='◇ 続 け て 弾 け ◇';
   else $('cue').textContent='';
  }
  p5SyncAttackHud();
