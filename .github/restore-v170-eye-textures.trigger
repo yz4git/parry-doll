@@ -1,1 +1,1 @@
-2026-09-15 r3 exact v17.0 geometry, visible eyeball texture at corrected glTF +Z forward UV
+2026-09-15 r4 exact v17.0 + eye textures + existing iris stack depth correction only
