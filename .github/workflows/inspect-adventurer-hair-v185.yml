@@ -1,0 +1,83 @@
+name: Inspect anime adventurer hair v18.5
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/hair-adventurer-v185.trigger'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download CC0 Anime Female Adventurer v1.2
+        run: |
+          set -euxo pipefail
+          python3 -m pip install --quiet selenium
+          mkdir -p /tmp/adventurer-download
+          python3 tools/download-itch-free-upload.py \
+            --purchase-url https://dawn-to-dusk-games.itch.io/3d-anime-female-adventurer/purchase \
+            --expected-label 'Model, Textures and Unity Custom Package Version 1.2' \
+            --download-dir /tmp/adventurer-download \
+            --timeout 240
+          archive="$(find /tmp/adventurer-download -maxdepth 1 -type f ! -name '*.crdownload' -print -quit)"
+          test -n "$archive"
+          test -s "$archive"
+          echo "ARCHIVE=$archive" >> "$GITHUB_ENV"
+          file "$archive"
+          sha256sum "$archive"
+
+      - name: Extract and list donor files
+        run: |
+          set -euxo pipefail
+          mkdir -p /tmp/adventurer
+          7z x -y "$ARCHIVE" -o/tmp/adventurer >/tmp/adventurer-7z.log
+          find /tmp/adventurer -type f -printf '%s\t%p\n' | sort -nr > /tmp/adventurer-files.txt
+          head -120 /tmp/adventurer-files.txt
+          model="$(find /tmp/adventurer -type f \( -iname '*.fbx' -o -iname '*.glb' -o -iname '*.gltf' \) \
+            ! -iname '*idle*' ! -iname '*run*' ! -iname '*attack*' ! -iname '*defeat*' ! -iname '*blink* \
+            -printf '%s\t%p\n' | sort -nr | head -1 | cut -f2-)"
+          test -n "$model"
+          test -s "$model"
+          echo "MODEL=$model" >> "$GITHUB_ENV"
+          printf 'Selected model: %s\n' "$model"
+
+      - name: Install Blender 4.3.2
+        run: |
+          set -euxo pipefail
+          curl -L --fail --retry 4 --retry-delay 2 -o /tmp/blender.tar.xz https://download.blender.org/release/Blender4.3/blender-4.3.2-linux-x64.tar.xz
+          tar -xf /tmp/blender.tar.xz -C /tmp
+          BLENDER=/tmp/blender-4.3.2-linux-x64/blender
+          test -x "$BLENDER"
+          echo "BLENDER=$BLENDER" >> "$GITHUB_ENV"
+
+      - name: Inspect exported game hair meshes
+        run: |
+          set -euxo pipefail
+          python3 -m py_compile tools/inspect-character-hair-donor.py
+          "$BLENDER" --background --python-exit-code 1 --python tools/inspect-character-hair-donor.py -- \
+            --input "$MODEL" --output /tmp/adventurer-hair-inspect.json
+          python3 -m json.tool /tmp/adventurer-hair-inspect.json | head -260
+
+      - name: Package inspection
+        run: |
+          set -euxo pipefail
+          mkdir -p /tmp/adventurer-inspection
+          cp /tmp/adventurer-hair-inspect.json /tmp/adventurer-inspection/
+          cp /tmp/adventurer-files.txt /tmp/adventurer-inspection/
+          printf '%s\n' "$MODEL" > /tmp/adventurer-inspection/selected-model.txt
+
+      - name: Upload inspection
+        uses: actions/upload-artifact@v4
+        with:
+          name: adventurer-hair-v185-inspection
+          path: /tmp/adventurer-inspection/*
+          retention-days: 7
