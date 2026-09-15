@@ -1,0 +1,82 @@
+name: Inspect Blender-chan hair source
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/blenderchan-hair-inspect.trigger'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: inspect-blenderchan-hair
+  cancel-in-progress: true
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Selenium
+        run: |
+          set -euxo pipefail
+          python3 -m pip install --quiet selenium
+          (google-chrome --version || chromium --version || chromium-browser --version)
+
+      - name: Download public CC0 Blender-chan file
+        run: |
+          set -euxo pipefail
+          mkdir -p /tmp/blenderchan
+          python3 tools/download-itch-free-asset.py \
+            --purchase-url https://amarilloarts.itch.io/blender-chan/purchase \
+            --expected-file 'BlenderChan - Free.blend' \
+            --download-dir /tmp/blenderchan \
+            --timeout 180
+          donor="$(find /tmp/blenderchan -maxdepth 1 -type f -iname '*BlenderChan*Free*.blend' -print -quit)"
+          test -n "$donor"
+          test -s "$donor"
+          test "$(head -c 7 "$donor")" = BLENDER
+          cp "$donor" /tmp/blenderchan.blend
+          ls -lh /tmp/blenderchan.blend
+
+      - name: Install pinned Blender 4.2
+        run: |
+          set -euxo pipefail
+          curl -L --fail --retry 4 --retry-delay 2 \
+            -o /tmp/blender.tar.xz \
+            https://download.blender.org/release/Blender4.2/blender-4.2.0-linux-x64.tar.xz
+          tar -xf /tmp/blender.tar.xz -C /tmp
+          BLENDER=/tmp/blender-4.2.0-linux-x64/blender
+          "$BLENDER" --version
+          echo "BLENDER=$BLENDER" >> "$GITHUB_ENV"
+
+      - name: Inspect hair objects and Geometry Nodes
+        run: |
+          set -euxo pipefail
+          python3 -m py_compile tools/inspect-blender-hair-source.py
+          "$BLENDER" --background --python-exit-code 1 --python tools/inspect-blender-hair-source.py -- \
+            --input /tmp/blenderchan.blend \
+            --output /tmp/blenderchan-hair-inspect.json
+          python3 -m json.tool /tmp/blenderchan-hair-inspect.json
+          python3 - <<'PY'
+          import json
+          p='/tmp/blenderchan-hair-inspect.json'
+          d=json.load(open(p,encoding='utf-8'))
+          print('candidate_count', len(d['hair_candidates']))
+          for c in d['hair_candidates']:
+              print('HAIR_CANDIDATE', c['name'], c['type'], c.get('materials'), c.get('modifiers'), c.get('evaluated'))
+          if not d['hair_candidates']:
+              raise SystemExit('no hair candidates found')
+          PY
+
+      - name: Upload inspection report
+        uses: actions/upload-artifact@v4
+        with:
+          name: blenderchan-hair-inspect
+          path: /tmp/blenderchan-hair-inspect.json
+          retention-days: 7
