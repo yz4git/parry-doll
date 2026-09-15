@@ -38,7 +38,7 @@ jobs:
             tools/paint-v170-faceuv-eyes.py \
             tools/audit-v170-faceuv-eyes.py
           grep -Fq 'geometry_changed": False' tools/add-eye-textures-v170.py
-          grep -Fq 'only the Z coordinate' tools/lift-v170-iris-stack.py
+          grep -Fq 'eye-detail Z' tools/lift-v170-iris-stack.py
           grep -Fq 'non_eye_geometry_unchanged' tools/audit-v170-iris-lift.py
           grep -Fq 'faceUV-only' tools/paint-v170-faceuv-eyes.py
 
