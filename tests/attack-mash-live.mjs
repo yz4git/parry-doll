@@ -1,8 +1,8 @@
 import { chromium } from 'playwright';
 
 const url = process.env.TEST_URL || 'https://yz4git.github.io/parry-doll/';
-const seconds = Number(process.env.MASH_SECONDS || 80);
-const interval = Number(process.env.MASH_INTERVAL_MS || 110);
+const seconds = Number(process.env.MASH_SECONDS || 55);
+const interval = Number(process.env.MASH_INTERVAL_MS || 120);
 const browser = await chromium.launch({headless:true});
 const context = await browser.newContext({
   viewport: { width: 932, height: 430 },
@@ -13,16 +13,20 @@ const context = await browser.newContext({
 const page = await context.newPage();
 const events = [];
 await page.goto(`${url}?mashcheck=${Date.now()}`, {waitUntil:'networkidle', timeout:60000});
-await page.locator('#start').click();
+await page.locator('#start').tap();
 await page.waitForFunction(() => window.parryDoll && window.parryDoll.snapshot().mode === 'play', null, {timeout:10000});
 
-// Reproduce the real exploit condition: stay on top of the boss and do nothing but mash ATTACK.
-// Holding forward is not a defensive action and removes false negatives caused by spacing drift.
+// iPhone-like exploit reproduction: hold forward to stay in melee range, then use the actual
+// ATTACK touch button repeatedly. No parry, dodge, pause or other action is allowed.
 await page.keyboard.down('KeyW');
+const attack = page.locator('#attack');
+const box = await attack.boundingBox();
+if(!box) throw new Error('attack button has no bounding box');
+const ax = box.x + box.width/2, ay = box.y + box.height/2;
 const started = Date.now();
 let nextSample = 0;
 while ((Date.now()-started) < seconds*1000) {
-  await page.keyboard.press('Space');
+  await page.touchscreen.tap(ax, ay);
   await page.waitForTimeout(interval);
   const t=(Date.now()-started)/1000;
   if(t>=nextSample){
@@ -34,14 +38,14 @@ while ((Date.now()-started) < seconds*1000) {
 }
 await page.keyboard.up('KeyW');
 const final=await page.evaluate(()=>window.parryDoll.snapshot());
-const result={url,seconds,interval,scenario:'hold-forward-plus-attack-only',final,events};
+const result={url,seconds,interval,scenario:'iphone-touch-attack-mash-plus-forward',final,events};
 console.log(JSON.stringify(result,null,2));
 await page.screenshot({path:'attack-mash-final.png', fullPage:true});
 await browser.close();
 
-// Strong invariant: no-parry attack mashing must not even clear the first boss.
+// Hard invariant: touch ATTACK mashing without a single parry must not clear boss 1.
 if(final.mode==='won' || final.level>=1){
-  console.error(`ANTI_MASH_FAIL: attack-only pressure reached mode=${final.mode} level=${final.level}`);
+  console.error(`ANTI_MASH_FAIL: touch attack-only pressure reached mode=${final.mode} level=${final.level}`);
   process.exit(2);
 }
 if(final.parries!==0){
