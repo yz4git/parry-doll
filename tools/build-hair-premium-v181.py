@@ -1,7 +1,8 @@
 """Hair-only high-detail donor pass for Parry Doll v18.1.
 
-Source target: BlendSwap Dynamic Hairstyle Model (1/10), CC0, curve-authored anime/manga hair.
-The shipping face is treated as immutable.  Only descendants of BL_HAIR_ASSET are removed/replaced.
+Source target: OpenGameArt Toon/Low Poly Dread Ponytail by tiko479, CC0, Blender-authored.
+The donor is intentionally much denser than the rejected v18.0 proxy hair.  The shipping face is
+immutable; only descendants of BL_HAIR_ASSET are removed/replaced.
 """
 from __future__ import annotations
 
@@ -63,15 +64,6 @@ def points_world(obj):
     return [mw @ v.co for v in obj.data.vertices]
 
 
-def all_points(objects):
-    pts = []
-    for o in objects:
-        pts.extend(points_world(o))
-    if not pts:
-        raise RuntimeError("donor has no mesh points")
-    return pts
-
-
 def bounds(pts):
     lo = Vector((min(p.x for p in pts), min(p.y for p in pts), min(p.z for p in pts)))
     hi = Vector((max(p.x for p in pts), max(p.y for p in pts), max(p.z for p in pts)))
@@ -112,9 +104,7 @@ def append_source_objects(path):
     if not candidates:
         raise RuntimeError("donor blend contains no mesh/curve objects")
 
-    # Prefer explicitly hair-like objects if the author named them.  Otherwise the BlendSwap file is
-    # documented as a single hairstyle, so keep all visible mesh/curve geometry except obvious helpers.
-    hair_named = [o for o in candidates if any(t in o.name.lower() for t in ("hair", "strand", "lock", "style"))]
+    hair_named = [o for o in candidates if any(t in o.name.lower() for t in ("hair", "dread", "pony", "strand", "lock", "style"))]
     if hair_named:
         chosen = hair_named
     else:
@@ -136,8 +126,6 @@ def freeze_and_convert(objects):
     for obj in list(objects):
         if obj.animation_data:
             obj.animation_data_clear()
-        # We care about the authored still silhouette.  Remove simulation so the game receives stable
-        # geometry and so the user's priority remains appearance rather than hair motion.
         for mod in list(obj.modifiers):
             if mod.type in {"SOFT_BODY", "CLOTH", "COLLISION", "DYNAMIC_PAINT"}:
                 obj.modifiers.remove(mod)
@@ -156,7 +144,6 @@ def freeze_and_convert(objects):
             bpy.ops.object.convert(target="MESH")
             obj = bpy.context.view_layer.objects.active
         if obj.type == "MESH":
-            # Apply non-simulation authoring modifiers before fit.
             bpy.ops.object.select_all(action="DESELECT")
             obj.select_set(True)
             bpy.context.view_layer.objects.active = obj
@@ -199,7 +186,6 @@ def orient_back(obj):
         return False
     low_y = sum(p.y for p in low) / len(low)
     high_y = sum(p.y for p in high) / len(high)
-    # Parry Doll faces -Y; long hair/ponytail mass should trail toward +Y.
     if low_y < high_y - size.y * 0.04:
         rot = Matrix.Translation(center) @ Matrix.Rotation(math.pi, 4, "Z") @ Matrix.Translation(-center)
         obj.matrix_world = rot @ obj.matrix_world
@@ -214,17 +200,13 @@ def fit_to_head(obj, head):
     dp = points_world(obj)
     dlo, dhi, dcenter, dsize = bounds(dp)
 
-    # Fit from the upper hairstyle mass rather than the widest loose strands.  This avoids shrinking a
-    # detailed long hairstyle into a toy-like cap merely because the tips fan outward.
     crown_cut = dhi.z - dsize.z * 0.42
     crown = [p for p in dp if p.z >= crown_cut]
     if len(crown) < 20:
         crown = dp
-    cminx, cmaxx = min(p.x for p in crown), max(p.x for p in crown)
-    crown_width = max(1e-7, cmaxx - cminx)
+    crown_width = max(1e-7, max(p.x for p in crown) - min(p.x for p in crown))
     target_width = hsize.x * 1.14
-    scale = target_width / crown_width
-    scale = max(0.0001, min(scale, 1000.0))
+    scale = max(0.0001, min(target_width / crown_width, 1000.0))
     obj.matrix_world = Matrix.Scale(scale, 4) @ obj.matrix_world
     bpy.context.view_layer.update()
 
@@ -256,8 +238,7 @@ def fit_to_head(obj, head):
 
 def optimize_density(obj):
     before = tri_count(obj)
-    target_max = 90000
-    target_min = 18000
+    target_max = 95000
     if before > target_max:
         ratio = target_max / before
         dec = obj.modifiers.new("HairPremiumV181_GameBudget", "DECIMATE")
@@ -270,24 +251,13 @@ def optimize_density(obj):
         except Exception as exc:
             print("HAIR_V181 decimate failed", repr(exc))
     after = tri_count(obj)
-    if after < target_min:
-        # One subdivision pass is allowed only for a genuinely sparse donor.  It improves curvature
-        # without changing the silhouette into blocky LEGO-like chunks.
-        sub = obj.modifiers.new("HairPremiumV181_Detail", "SUBSURF")
-        sub.subdivision_type = "CATMULL_CLARK"
-        sub.levels = 1
-        sub.render_levels = 1
-        bpy.context.view_layer.objects.active = obj
-        try:
-            bpy.ops.object.modifier_apply(modifier=sub.name)
-        except Exception as exc:
-            print("HAIR_V181 subdivision failed", repr(exc))
-    final = tri_count(obj)
-    if final < 10000:
-        raise RuntimeError(f"high-detail hair quality gate failed: only {final} tris")
-    if final > 120000:
-        raise RuntimeError(f"hair exceeds mobile quality budget: {final} tris")
-    return before, final
+    # Never inflate a sparse donor to pretend it is high-detail.  This pass is accepted only if the
+    # actual donor still contains substantial authored geometry after conversion.
+    if after < 30000:
+        raise RuntimeError(f"high-detail hair quality gate failed: only {after} tris")
+    if after > 120000:
+        raise RuntimeError(f"hair exceeds mobile quality budget: {after} tris")
+    return before, after
 
 
 def hair_material():
@@ -373,16 +343,16 @@ def main():
     root = bpy.data.objects.get("BLENDER_HEROINE")
     if root:
         root["hair_revision"] = "v18.1"
-        root["hair_source"] = "BlendSwap 22778 Dynamic Hairstyle Model 1/10 CC0"
+        root["hair_source"] = "OpenGameArt Toon Low Poly Dread Ponytail / tiko479 / CC0"
         root["face_locked_for_hair_v181"] = True
         root["hair_static_visual_priority"] = True
 
     export(out)
     report = {
         "revision": "v18.1",
-        "source": "Dynamic Hairstyle Model (1 / 10)",
-        "source_author": "alix97 / Xane Graphics",
-        "source_url": "https://blendswap.com/blend/22778",
+        "source": "Toon/Low Poly Dread Ponytail",
+        "source_author": "tiko479",
+        "source_url": "https://opengameart.org/content/toonlow-poly-dread-ponytail",
         "license": "CC0",
         "source_objects": source_names,
         "removed_previous_hair": old_names,
