@@ -4,8 +4,8 @@ Hard constraints:
 - face/head geometry is immutable;
 - accepted Adventurer main hair mesh/transform/material is immutable;
 - bangs and ponytail are not moved;
-- remove only the old smooth scalp-cap and add short crown strands that conform to the
-  existing hair surface so they cannot float above the head.
+- preserve the r2 scalp cap so no scalp is exposed;
+- add only short crown strands that conform to the existing crown surface.
 """
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ from mathutils import Vector
 
 HEAD = "HeadShellV140"
 MAIN_HAIR = "HairPremiumV185_Adventurer"
-OLD_CAP = "HairPremiumV185_ScalpCap"
+SCALP_CAP = "HairPremiumV185_ScalpCap"
 ROOT = "BL_HAIR_ASSET"
 CROWN_PREFIX = "HairPremiumV185_CrownStrandR3_"
 
@@ -122,22 +122,22 @@ def make_material(name, color, roughness=0.40):
         bsdf.inputs["Metallic"].default_value = 0.0
         spec = bsdf.inputs.get("Specular IOR Level") or bsdf.inputs.get("Specular")
         if spec is not None:
-            spec.default_value = 0.27
+            spec.default_value = 0.26
     return mat
 
 
-def crown_surface_points(hair, hc, hs, sign):
+def crown_surface_points(hair, cap, hc, hs, sign):
     pts = []
-    for p in world_points(hair):
-        xr = abs((p.x - hc.x) / max(hs.x, 1e-8))
-        yr = abs((p.y - hc.y) / max(hs.y, 1e-8))
-        zr = (p.z - hc.z) / max(hs.z, 1e-8)
-        front = ((p.y - hc.y) * sign) / max(hs.y, 1e-8)
-        # Keep only the head crown, excluding long ponytail mass behind the skull.
-        if xr < 0.62 and yr < 0.62 and zr > 0.18 and front > -0.32:
-            pts.append(p.copy())
-    if len(pts) < 120:
-        raise RuntimeError(f"insufficient crown surface samples: {len(pts)}")
+    for source in (hair, cap):
+        for p in world_points(source):
+            xr = abs((p.x - hc.x) / max(hs.x, 1e-8))
+            yr = abs((p.y - hc.y) / max(hs.y, 1e-8))
+            zr = (p.z - hc.z) / max(hs.z, 1e-8)
+            front = ((p.y - hc.y) * sign) / max(hs.y, 1e-8)
+            if xr < 0.60 and yr < 0.60 and zr > 0.16 and front > -0.30:
+                pts.append(p.copy())
+    if len(pts) < 200:
+        raise RuntimeError(f"insufficient crown samples: {len(pts)}")
     return pts
 
 
@@ -151,23 +151,20 @@ def surface_z(samples, x, y, radius):
 
 
 def add_conformal_panel(name, root, samples, hc, hs, sign, x0, x1, y0, y1, width0, width1, mat):
-    sections = 9
+    sections = 10
     verts = []
     faces = []
-    sample_radius = hs.x * 0.085
+    sample_radius = hs.x * 0.075
     for i in range(sections):
         t = i / (sections - 1)
         ease = t * t * (3.0 - 2.0 * t)
         cx = hc.x + hs.x * (x0 * (1.0 - ease) + x1 * ease)
         cy = hc.y + sign * hs.y * (y0 * (1.0 - ease) + y1 * ease)
         w = hs.x * (width0 * (1.0 - t) + width1 * t)
-
-        # Width direction is horizontal on the crown. Each edge independently samples the accepted
-        # hair surface, then receives only a tiny offset, so the strand hugs rather than floats.
         lx, rx = cx - w, cx + w
         lz = surface_z(samples, lx, cy, sample_radius)
         rz = surface_z(samples, rx, cy, sample_radius)
-        micro = hs.z * (0.006 + 0.004 * math.sin(math.pi * t))
+        micro = hs.z * (0.004 + 0.003 * math.sin(math.pi * t))
         verts.append((lx, cy, lz + micro))
         verts.append((rx, cy, rz + micro))
 
@@ -186,7 +183,7 @@ def add_conformal_panel(name, root, samples, hc, hs, sign, x0, x1, y0, y1, width
         p.use_smooth = True
 
     sol = obj.modifiers.new("Crown strand thickness", "SOLIDIFY")
-    sol.thickness = hs.x * 0.006
+    sol.thickness = hs.x * 0.0045
     sol.offset = 0.0
     bpy.context.view_layer.objects.active = obj
     obj.select_set(True)
@@ -202,36 +199,34 @@ def main():
 
     head = bpy.data.objects.get(HEAD)
     hair = bpy.data.objects.get(MAIN_HAIR)
+    cap = bpy.data.objects.get(SCALP_CAP)
     root = bpy.data.objects.get(ROOT)
-    old = bpy.data.objects.get(OLD_CAP)
-    if not head or head.type != "MESH" or not hair or hair.type != "MESH" or not root:
-        raise RuntimeError("accepted v18.5 r2 objects missing")
+    if not head or head.type != "MESH" or not hair or hair.type != "MESH" or not cap or cap.type != "MESH" or not root:
+        raise RuntimeError("accepted v18.5 r2 crown objects missing")
 
     locked_face = {o.name: signature(o) for o in bpy.data.objects if protected_face(o)}
     if len(locked_face) < 50 or HEAD not in locked_face:
         raise RuntimeError(f"face lock set suspicious: {len(locked_face)}")
     main_hair_sig = signature(hair)
+    cap_sig = signature(cap)
 
     _, _, hc, hs = bounds(world_points(head))
     sign = face_sign(hc)
-    samples = crown_surface_points(hair, hc, hs, sign)
+    samples = crown_surface_points(hair, cap, hc, hs, sign)
 
-    # The old r2 scalp cap is the only existing object removed. The authored donor hair is untouched.
-    if old:
-        bpy.data.objects.remove(old, do_unlink=True)
+    mat_a = make_material("HairPremiumV185CrownStrandR3A", (0.24, 0.37, 0.82), 0.39)
+    mat_b = make_material("HairPremiumV185CrownStrandR3B", (0.17, 0.27, 0.66), 0.42)
 
-    mat_a = make_material("HairPremiumV185CrownStrandR3A", (0.20, 0.31, 0.72), 0.40)
-    mat_b = make_material("HairPremiumV185CrownStrandR3B", (0.15, 0.24, 0.61), 0.42)
-
-    # Short asymmetric strips fan from the upper rear crown toward the already-authored fringe.
-    # They end high on the forehead, so bangs, eye coverage and ponytail silhouette remain unchanged.
+    # Wider overlapping strips sit directly on the existing cap. Together they hide the smooth
+    # single-dome read while keeping the cap underneath as guaranteed scalp coverage.
     specs = [
-        (-0.22, -0.34, -0.11, 0.15, 0.050, 0.012, mat_b),
-        (-0.13, -0.22, -0.13, 0.18, 0.055, 0.013, mat_a),
-        (-0.05, -0.09, -0.14, 0.20, 0.058, 0.014, mat_b),
-        ( 0.03,  0.06, -0.15, 0.21, 0.060, 0.014, mat_a),
-        ( 0.11,  0.18, -0.13, 0.19, 0.055, 0.013, mat_b),
-        ( 0.19,  0.30, -0.10, 0.15, 0.048, 0.011, mat_a),
+        (-0.24, -0.36, -0.12, 0.17, 0.082, 0.024, mat_b),
+        (-0.16, -0.25, -0.14, 0.20, 0.086, 0.026, mat_a),
+        (-0.08, -0.13, -0.15, 0.22, 0.090, 0.026, mat_b),
+        ( 0.00,  0.01, -0.16, 0.23, 0.092, 0.027, mat_a),
+        ( 0.08,  0.14, -0.15, 0.22, 0.088, 0.026, mat_b),
+        ( 0.16,  0.25, -0.13, 0.20, 0.084, 0.024, mat_a),
+        ( 0.24,  0.35, -0.11, 0.16, 0.078, 0.022, mat_b),
     ]
     created = []
     for idx, spec in enumerate(specs, 1):
@@ -245,11 +240,13 @@ def main():
         raise RuntimeError("FACE LOCK: changed: " + ", ".join(changed[:20]))
     if signature(hair) != main_hair_sig:
         raise RuntimeError("HAIR LOCK: accepted Adventurer hair changed")
+    if signature(cap) != cap_sig:
+        raise RuntimeError("CAP LOCK: accepted scalp cap changed")
 
     hero = bpy.data.objects.get("BLENDER_HEROINE")
     if hero:
         hero["hair_revision"] = "v18.5-r3"
-        hero["hair_refinement"] = "crown-only-conformal-strands"
+        hero["hair_refinement"] = "crown-only-layered-cap-overlay"
         hero["face_locked_for_hair_v185_r3"] = True
         hero["main_hair_locked_for_hair_v185_r3"] = True
 
@@ -263,9 +260,10 @@ def main():
         "scope": "crown-only-kappa-fix",
         "face_unchanged": True,
         "main_hair_unchanged": True,
+        "scalp_cap_unchanged": True,
         "bangs_unchanged": True,
         "ponytail_unchanged": True,
-        "old_smooth_scalp_cap_removed": old is not None,
+        "old_smooth_scalp_cap_preserved": True,
         "crown_surface_samples": len(samples),
         "crown_strands": [o.name for o in created],
         "protected_face_meshes": len(locked_face),
