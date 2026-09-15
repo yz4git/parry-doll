@@ -1,0 +1,20 @@
+name: Inspect current model binary
+on:
+  push:
+    branches: [main]
+    paths: ['.github/model-binary-inspect.trigger']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - run: test -s dist/assets/models/heroine-blender.glb && sha256sum dist/assets/models/heroine-blender.glb
+      - uses: actions/upload-artifact@v4
+        with:
+          name: current-heroine-glb
+          path: dist/assets/models/heroine-blender.glb
+          retention-days: 1
