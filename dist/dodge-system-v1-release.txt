@@ -1,0 +1,5 @@
+release=dodge-system-v1
+model_commit=718b9843d1bb138254a9156cfb21d590986f377c
+published_at=2026-09-15T23:01:00+09:00
+scope=dodge-button-plus-two-dodge-only-attacks-per-boss
+visual=gold-parry-cyan-dodge
