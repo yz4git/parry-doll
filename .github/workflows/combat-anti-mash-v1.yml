@@ -1,0 +1,45 @@
+name: Combat anti-mash v1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/combat-anti-mash-v1.trigger'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: combat-anti-mash-v1
+  cancel-in-progress: false
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply anti-mash combat patch
+        run: python3 tools/apply-combat-anti-mash-v1.py
+      - name: Validate JavaScript syntax
+        run: node --check dist/game.js
+      - name: Validate anti-mash invariants
+        run: |
+          grep -Fq 'player.cool=player.attack+' dist/game.js
+          grep -Fq 'Math.min(move.force,23)' dist/game.js
+          grep -Fq 'committedBoss?.55:1' dist/game.js
+          grep -Fq "COUNTER HIT — 攻撃を止めて弾け" dist/game.js
+          grep -Fq 'player.attackChainTimer=0' dist/game.js
+      - name: Commit combat fix
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add dist/game.js
+          git diff --cached --quiet && { echo 'No combat change'; exit 1; }
+          git commit -m 'fix: stop attack mashing from trivializing combat'
+          git pull --rebase origin main
+          git push origin main
