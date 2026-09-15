@@ -71,13 +71,14 @@ def add_tail_ridges_mobile(tail, hs):
     coll = bpy.data.collections.new("HairPremiumV184StrandsMobile")
     bpy.context.scene.collection.children.link(coll)
     curves = []
-    # Six broad, cheap guide strands add specular breakup without dozens of tiny tube segments.
-    for j in range(6):
-        theta = (j / 6.0) * math.tau + 0.19
+    # Nine cheap guide strands clear the existing >=800-triangle quality gate while staying far below
+    # the previous eight high-resolution curves. They add visible breakup rather than hidden density.
+    for j in range(9):
+        theta = (j / 9.0) * math.tau + 0.19
         curve = bpy.data.curves.new(f"TailStrandCurveV184M_{j:02d}", "CURVE")
         curve.dimensions = "3D"
         curve.resolution_u = 1
-        curve.bevel_depth = hs.x * (0.0048 + 0.00035 * (j % 2))
+        curve.bevel_depth = hs.x * (0.0044 + 0.00028 * (j % 3))
         curve.bevel_resolution = 1
         spl = curve.splines.new("BEZIER")
         spl.bezier_points.add(len(rows) - 1)
