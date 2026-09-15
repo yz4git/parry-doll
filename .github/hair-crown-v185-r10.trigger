@@ -1,0 +1,9 @@
+run=2026-09-15T19:35:00+09:00
+scope=crown-only-baked-texture
+face=locked
+main_hair=locked
+bangs=locked
+side_hair=locked
+ponytail=locked
+texture=packed-blue-hair
+accept=false
