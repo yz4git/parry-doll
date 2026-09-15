@@ -1,0 +1,79 @@
+name: Crown lock color match v18.5 r12
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/hair-crown-v185-r12.trigger'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: blender-hair-crown-v185-r12
+  cancel-in-progress: false
+
+jobs:
+  candidate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Preserve accepted r11 model
+        run: |
+          cp dist/assets/models/heroine-blender.glb /tmp/heroine-v185-r11.glb
+          test -s /tmp/heroine-v185-r11.glb
+      - name: Install Blender 4.3.2
+        run: |
+          curl -L --fail --retry 4 --retry-delay 2 -o /tmp/blender.tar.xz https://download.blender.org/release/Blender4.3/blender-4.3.2-linux-x64.tar.xz
+          tar -xf /tmp/blender.tar.xz -C /tmp
+          echo "BLENDER=/tmp/blender-4.3.2-linux-x64/blender" >> "$GITHUB_ENV"
+      - name: Validate tools
+        run: python3 -m py_compile tools/match-hair-crown-color-v185-r12.py tools/render-hair-preview-v185.py
+      - name: Match crown lock color only
+        run: |
+          "$BLENDER" --background --python-exit-code 1 --python tools/match-hair-crown-color-v185-r12.py -- \
+            --input /tmp/heroine-v185-r11.glb \
+            --output /tmp/heroine-v185-r12.glb \
+            --report /tmp/hair-crown-v185-r12-report.json
+          grep -Fq '"geometry_unchanged": true' /tmp/hair-crown-v185-r12-report.json
+          grep -Fq '"face_unchanged": true' /tmp/hair-crown-v185-r12-report.json
+          grep -Fq '"main_hair_unchanged": true' /tmp/hair-crown-v185-r12-report.json
+          grep -Fq '"crown_lock_count": 7' /tmp/hair-crown-v185-r12-report.json
+      - name: Render four-view review
+        run: |
+          mkdir -p /tmp/hair-v185-r12-preview
+          "$BLENDER" --background --python-exit-code 1 --python tools/render-hair-preview-v185.py -- --input /tmp/heroine-v185-r12.glb --output /tmp/hair-v185-r12-preview/front.png --angle 0
+          "$BLENDER" --background --python-exit-code 1 --python tools/render-hair-preview-v185.py -- --input /tmp/heroine-v185-r12.glb --output /tmp/hair-v185-r12-preview/three-quarter.png --angle 32
+          "$BLENDER" --background --python-exit-code 1 --python tools/render-hair-preview-v185.py -- --input /tmp/heroine-v185-r12.glb --output /tmp/hair-v185-r12-preview/profile.png --angle 78
+          "$BLENDER" --background --python-exit-code 1 --python tools/render-hair-preview-v185.py -- --input /tmp/heroine-v185-r12.glb --output /tmp/hair-v185-r12-preview/rear-three-quarter.png --angle 145
+      - name: Assemble review artifact
+        run: |
+          mkdir -p /tmp/hair-v185-r12-candidate
+          cp /tmp/heroine-v185-r12.glb /tmp/hair-v185-r12-candidate/
+          cp /tmp/hair-crown-v185-r12-report.json /tmp/hair-v185-r12-candidate/
+          cp /tmp/hair-v185-r12-preview/*.png /tmp/hair-v185-r12-candidate/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hair-crown-v185-r12-candidate
+          path: /tmp/hair-v185-r12-candidate/*
+          retention-days: 7
+      - name: Commit only after acceptance
+        run: |
+          if ! grep -Fq 'accept=true' .github/hair-crown-v185-r12.trigger; then
+            echo 'Candidate review only; published model unchanged.'
+            exit 0
+          fi
+          cp /tmp/heroine-v185-r12.glb dist/assets/models/heroine-blender.glb
+          cp /tmp/hair-crown-v185-r12-report.json dist/hair-crown-v185-r12-report.json
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add dist/assets/models/heroine-blender.glb dist/hair-crown-v185-r12-report.json
+          git diff --cached --quiet && { echo 'No r12 model change'; exit 1; }
+          git commit -m 'fix: match added crown locks to donor hair color v18.5 r12'
+          git pull --rebase origin main
+          git push origin main
