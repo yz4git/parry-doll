@@ -1,0 +1,3 @@
+parry-doll hair v18.5 r15
+crown locks use donor Hair_Base via TEXCOORD_0
+commit=a7aff73e4a1a06a9d56d00fac14c38d2b599ffd6
