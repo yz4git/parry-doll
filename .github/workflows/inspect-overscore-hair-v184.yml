@@ -1,0 +1,56 @@
+name: Inspect OverScore hair v18.4
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/overscore-hair-v184.trigger'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download pinned CC0 OverScore Proxy 1.5
+        run: |
+          set -euxo pipefail
+          curl -L --fail --retry 4 --retry-delay 2 \
+            -o /tmp/proxy_1.5.blend \
+            https://opengameart.org/sites/default/files/proxy_1.5.blend
+          echo 'ac0dcdb2979dab7311e6d95ce6b1b20b118ef80d4de1f69aa9e88f733111b5ea  /tmp/proxy_1.5.blend' | sha256sum -c -
+          test -s /tmp/proxy_1.5.blend
+
+      - name: Install Blender 4.2
+        run: |
+          set -euxo pipefail
+          curl -L --fail --retry 4 --retry-delay 2 \
+            -o /tmp/blender.tar.xz \
+            https://download.blender.org/release/Blender4.2/blender-4.2.0-linux-x64.tar.xz
+          tar -xf /tmp/blender.tar.xz -C /tmp
+          BLENDER=/tmp/blender-4.2.0-linux-x64/blender
+          test -x "$BLENDER"
+          echo "BLENDER=$BLENDER" >> "$GITHUB_ENV"
+
+      - name: Inspect modular hair objects
+        run: |
+          set -euxo pipefail
+          python3 -m py_compile tools/inspect-overscore-hair-v184.py
+          "$BLENDER" --background --python-exit-code 1 --python tools/inspect-overscore-hair-v184.py -- \
+            --input /tmp/proxy_1.5.blend \
+            --output /tmp/overscore-hair-v184.json
+          python3 -m json.tool /tmp/overscore-hair-v184.json
+          grep -iE 'curtain|peek|ponytail' /tmp/overscore-hair-v184.json
+
+      - name: Upload inspection
+        uses: actions/upload-artifact@v4
+        with:
+          name: overscore-hair-v184-inspection
+          path: /tmp/overscore-hair-v184.json
+          retention-days: 7
