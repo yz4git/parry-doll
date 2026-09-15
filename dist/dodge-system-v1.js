@@ -4,6 +4,8 @@
  if(window.__parryDodgeSystemV1Loaded)return;window.__parryDodgeSystemV1Loaded=true;
  const CYAN='#67ddff';
  let dodgeQueued=false,dodgeTimer=0,dodgeIFrame=0,dodgeCool=0,dodges=0,perfectDodges=0,dodgeSide=1;
+ let testForcedMove=null;
+ const dodgeTestMode=new URLSearchParams(location.search).has('dodgecheck');
 
  const EXTRA_DODGE_MOVES=[
   [
@@ -34,7 +36,8 @@
  const dodgeStartEnemyAttackBase=startEnemyAttack;
  startEnemyAttack=function(move){
   const extras=EXTRA_DODGE_MOVES[level]||[];
-  if(extras.length&&boss&&boss.sequence%3===2){
+  if(testForcedMove){move=testForcedMove;testForcedMove=null;}
+  else if(extras.length&&boss&&boss.sequence%3===2){
    move=extras[Math.floor(boss.sequence/3)%extras.length];
   }
   return dodgeStartEnemyAttackBase(move);
@@ -127,6 +130,31 @@
   if(isDodge)dodgeCue.textContent=boss.wind>0?'≫ 避 け ろ ≫':'≫ DODGE ≫';
   return out;
  };
+
+ if(dodgeTestMode){
+  window.parryDodgeTest={
+   catalog:()=>EXTRA_DODGE_MOVES.map(group=>group.map(m=>({name:m.name,response:m.response,kind:m.kind,shape:m.shape}))),
+   placeAtCombatRange:()=>{
+    if(mode!=='play'||!player||!boss)return false;
+    const fromBoss=norm(V(player.pos.x-boss.pos.x,0,player.pos.z-boss.pos.z));
+    const desired=add(boss.pos,mul(fromBoss,2.15)),delta=sub(desired,player.pos);
+    player.pos=desired;player.vel=V();boss.vel=V();
+    for(const n of player.nodes){n.p=add(n.p,delta);n.prev=add(n.prev,delta)}
+    player.face=Math.atan2(boss.pos.x-player.pos.x,boss.pos.z-player.pos.z);
+    boss.face=Math.atan2(player.pos.x-boss.pos.x,player.pos.z-boss.pos.z);boss.aim=boss.face;
+    return true;
+   },
+   forceAttack:(response)=>{
+    if(mode!=='play'||!boss||boss.hp<=0||boss.wind>0||boss.strike>0||boss.stun>0||boss.down>0)return false;
+    const extras=EXTRA_DODGE_MOVES[level]||[],normals=(ENEMY_MOVES[level]||[]).filter(m=>m.response!=='dodge');
+    const move=response==='dodge'?extras[0]:response==='parry'?normals[0]:null;
+    if(!move)return false;
+    testForcedMove=move;boss.ai=0;
+    startEnemyAttack(move);
+    return true;
+   }
+  };
+ }
 
  if(window.parryDoll?.snapshot){
   const snapshotBase=window.parryDoll.snapshot;
