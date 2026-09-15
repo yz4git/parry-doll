@@ -1,0 +1,81 @@
+name: Restore v17.0 shape + eye textures only
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/restore-v170-eye-textures.trigger'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: restore-v170-eye-textures
+  cancel-in-progress: false
+
+jobs:
+  restore-and-texture:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      V170_COMMIT: ff135e507f5d44cc4bce6d49915aa4719105dd29
+    steps:
+      - name: Checkout current main with full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate eye-texture-only tools
+        run: |
+          set -euxo pipefail
+          python3 -m py_compile tools/add-eye-textures-v170.py tools/audit-v170-eye-textures.py
+          grep -Fq 'geometry_changed": False' tools/add-eye-textures-v170.py
+          grep -Fq 'exact-v17.0-shape-eye-texture-only' tools/add-eye-textures-v170.py
+
+      - name: Restore exact v17.0 shipping model
+        run: |
+          set -euxo pipefail
+          git cat-file -e "$V170_COMMIT^{commit}"
+          git show "$V170_COMMIT:dist/assets/models/heroine-blender.glb" > /tmp/heroine-v170-original.glb
+          test -s /tmp/heroine-v170-original.glb
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('/tmp/heroine-v170-original.glb')
+          d=p.read_bytes()
+          assert d[:4] == b'glTF', d[:4]
+          print('restored v17.0 bytes', len(d))
+          PY
+          mkdir -p dist/assets/models
+          cp /tmp/heroine-v170-original.glb dist/assets/models/heroine-blender.glb
+
+      - name: Add eye textures without changing geometry
+        run: |
+          set -euxo pipefail
+          python3 tools/add-eye-textures-v170.py \
+            --input /tmp/heroine-v170-original.glb \
+            --output dist/assets/models/heroine-blender.glb \
+            --manifest /tmp/v170-eye-texture-manifest.json
+          cat /tmp/v170-eye-texture-manifest.json
+
+      - name: Prove shape and topology remain exact v17.0
+        run: |
+          set -euxo pipefail
+          python3 tools/audit-v170-eye-textures.py \
+            --original /tmp/heroine-v170-original.glb \
+            --patched dist/assets/models/heroine-blender.glb
+
+      - name: Commit restored v17.0 model with eye textures
+        run: |
+          set -euxo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add dist/assets/models/heroine-blender.glb
+          if git diff --cached --quiet; then
+            echo 'Expected v17.0 eye-texture model change was not produced'
+            exit 1
+          fi
+          git commit -m 'feat: restore v17.0 shape with eye textures only'
+          git pull --rebase origin main
+          git push origin main
