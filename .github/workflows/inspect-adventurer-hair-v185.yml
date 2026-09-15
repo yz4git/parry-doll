@@ -35,20 +35,22 @@ jobs:
           file "$archive"
           sha256sum "$archive"
 
-      - name: Extract and list donor files
+      - name: Extract standalone donor hair
         run: |
           set -euxo pipefail
           mkdir -p /tmp/adventurer
           7z x -y "$ARCHIVE" -o/tmp/adventurer >/tmp/adventurer-7z.log
           find /tmp/adventurer -type f -printf '%s\t%p\n' | sort -nr > /tmp/adventurer-files.txt
           head -120 /tmp/adventurer-files.txt
-          model="$(find /tmp/adventurer -type f \( -iname '*.fbx' -o -iname '*.glb' -o -iname '*.gltf' \) \
-            ! -iname '*idle*' ! -iname '*run*' ! -iname '*attack*' ! -iname '*defeat*' ! -iname '*blink* \
-            -printf '%s\t%p\n' | sort -nr | head -1 | cut -f2-)"
+          model="$(find /tmp/adventurer -type f -path '*/MeshPieces/Hair.fbx' -print -quit)"
+          texture="$(find /tmp/adventurer -type f -path '*/Textures/Character/Hair_Base.png' -print -quit)"
           test -n "$model"
           test -s "$model"
+          test -n "$texture"
+          test -s "$texture"
           echo "MODEL=$model" >> "$GITHUB_ENV"
-          printf 'Selected model: %s\n' "$model"
+          echo "HAIR_TEXTURE=$texture" >> "$GITHUB_ENV"
+          printf 'Selected standalone hair: %s\nTexture: %s\n' "$model" "$texture"
 
       - name: Install Blender 4.3.2
         run: |
@@ -73,6 +75,8 @@ jobs:
           mkdir -p /tmp/adventurer-inspection
           cp /tmp/adventurer-hair-inspect.json /tmp/adventurer-inspection/
           cp /tmp/adventurer-files.txt /tmp/adventurer-inspection/
+          cp "$MODEL" /tmp/adventurer-inspection/Hair.fbx
+          cp "$HAIR_TEXTURE" /tmp/adventurer-inspection/Hair_Base.png
           printf '%s\n' "$MODEL" > /tmp/adventurer-inspection/selected-model.txt
 
       - name: Upload inspection
