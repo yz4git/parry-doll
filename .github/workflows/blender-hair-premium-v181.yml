@@ -1,0 +1,143 @@
+name: Blender premium anime hair v18.1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/hair-premium-v181.trigger'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: blender-hair-premium-v181
+  cancel-in-progress: false
+
+jobs:
+  build-premium-hair:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout current main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install pinned Blender 4.2
+        run: |
+          set -euxo pipefail
+          curl -L --fail --retry 4 --retry-delay 2 \
+            -o /tmp/blender.tar.xz \
+            https://download.blender.org/release/Blender4.2/blender-4.2.0-linux-x64.tar.xz
+          tar -xf /tmp/blender.tar.xz -C /tmp
+          BLENDER=/tmp/blender-4.2.0-linux-x64/blender
+          test -x "$BLENDER"
+          "$BLENDER" --version
+          echo "BLENDER=$BLENDER" >> "$GITHUB_ENV"
+
+      - name: Download CC0 curve-authored anime hair
+        run: |
+          set -euxo pipefail
+          python3 tools/download-blendswap-asset.py \
+            --page https://blendswap.com/blend/22778 \
+            --output /tmp/xane-hair.bin
+          python3 - <<'PY'
+          from pathlib import Path
+          import shutil, zipfile
+          src = Path('/tmp/xane-hair.bin')
+          data = src.read_bytes()[:8]
+          if data.startswith(b'BLENDER'):
+              shutil.copy2(src, '/tmp/xane-hair.blend')
+          elif data.startswith(b'PK\x03\x04'):
+              out = Path('/tmp/xane-hair-unpack')
+              out.mkdir(exist_ok=True)
+              with zipfile.ZipFile(src) as z:
+                  z.extractall(out)
+              blends = sorted(out.rglob('*.blend'), key=lambda p: p.stat().st_size, reverse=True)
+              if not blends:
+                  raise SystemExit('BlendSwap archive contains no .blend file')
+              shutil.copy2(blends[0], '/tmp/xane-hair.blend')
+              print('selected', blends[0], blends[0].stat().st_size)
+          else:
+              raise SystemExit('unexpected donor payload')
+          donor = Path('/tmp/xane-hair.blend')
+          if donor.read_bytes()[:7] != b'BLENDER':
+              raise SystemExit('selected donor is not a Blender file')
+          print('donor_bytes', donor.stat().st_size)
+          PY
+          test -s /tmp/xane-hair.blend
+
+      - name: Validate hair-only tools
+        run: |
+          set -euxo pipefail
+          python3 -m py_compile \
+            tools/download-blendswap-asset.py \
+            tools/build-hair-premium-v181.py \
+            tools/audit-hair-premium-v181.py \
+            tools/render-hair-preview-v181.py
+          grep -Fq 'BL_HAIR_ASSET' tools/build-hair-premium-v181.py
+          grep -Fq '10000' tools/audit-hair-premium-v181.py
+
+      - name: Build high-detail v18.1 hair
+        run: |
+          set -euxo pipefail
+          test -s dist/assets/models/heroine-blender.glb
+          cp dist/assets/models/heroine-blender.glb /tmp/heroine-before-hair-v181.glb
+          "$BLENDER" --background --python-exit-code 1 --python tools/build-hair-premium-v181.py -- \
+            --input dist/assets/models/heroine-blender.glb \
+            --output dist/assets/models/heroine-blender.glb \
+            --donor /tmp/xane-hair.blend \
+            --report dist/hair-premium-v181-build.json
+          test -s dist/assets/models/heroine-blender.glb
+          test -s dist/hair-premium-v181-build.json
+          python3 -m json.tool dist/hair-premium-v181-build.json >/dev/null
+          ! grep -Fq 'HairDonorV180_00' dist/hair-premium-v181-build.json || true
+
+      - name: Audit frozen face and hair density
+        run: |
+          set -euxo pipefail
+          "$BLENDER" --background --python-exit-code 1 --python tools/audit-hair-premium-v181.py -- \
+            --before /tmp/heroine-before-hair-v181.glb \
+            --after dist/assets/models/heroine-blender.glb \
+            --report dist/hair-premium-v181-audit.json
+          grep -Fq '"face_unchanged": true' dist/hair-premium-v181-audit.json
+          python3 -m json.tool dist/hair-premium-v181-audit.json >/dev/null
+          git diff --check
+
+      - name: Render hair review views
+        run: |
+          set -euxo pipefail
+          mkdir -p /tmp/hair-preview
+          "$BLENDER" --background --python-exit-code 1 --python tools/render-hair-preview-v181.py -- \
+            --input dist/assets/models/heroine-blender.glb \
+            --output /tmp/hair-preview/front.png \
+            --angle 0
+          "$BLENDER" --background --python-exit-code 1 --python tools/render-hair-preview-v181.py -- \
+            --input dist/assets/models/heroine-blender.glb \
+            --output /tmp/hair-preview/three-quarter.png \
+            --angle 32
+          test -s /tmp/hair-preview/front.png
+          test -s /tmp/hair-preview/three-quarter.png
+
+      - name: Upload visual review artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hair-premium-v181-preview
+          path: /tmp/hair-preview/*.png
+          retention-days: 7
+
+      - name: Commit high-detail game hair
+        run: |
+          set -euxo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add \
+            dist/assets/models/heroine-blender.glb \
+            dist/hair-premium-v181-build.json \
+            dist/hair-premium-v181-audit.json
+          git diff --cached --quiet && { echo 'No generated v18.1 hair change'; exit 1; }
+          git commit -m 'feat: replace blocky hair with high-detail anime hair v18.1'
+          git pull --rebase origin main
+          git push origin main
