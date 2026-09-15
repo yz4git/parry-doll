@@ -10,6 +10,7 @@ import bpy
 from mathutils import Vector
 
 FINAL = "HairPremiumV185_Adventurer"
+HAIR_PREFIX = "HairPremiumV185_"
 
 
 def tail_args():
@@ -98,13 +99,13 @@ def main():
     for obj in bpy.data.objects:
         if obj.type != "MESH":
             continue
-        keep = under(obj, "BL_HEAD") or under(obj, "BL_HAIR_ASSET") or obj is hair
+        keep = under(obj, "BL_HEAD") or under(obj, "BL_HAIR_ASSET") or obj.name.startswith(HAIR_PREFIX)
         obj.hide_render = not keep
         if keep:
             review.append(obj)
 
-    # Keep the donor's embedded textured hair material. Override only face/head helper materials so
-    # geometry is readable and the hair texture can be judged honestly.
+    # Preserve EVERY v18.5 hair-side material (textured donor hair + optional scalp/root pieces).
+    # Override only face/head helper materials so the review cannot accidentally paint a hair cap skin-white.
     mats = {
         "skin": solid_material("ReviewSkinV185", (0.54, 0.37, 0.31, 1.0), 0.58),
         "sclera": solid_material("ReviewScleraV185", (0.72, 0.72, 0.70, 1.0), 0.45),
@@ -113,7 +114,7 @@ def main():
         "lip": solid_material("ReviewLipV185", (0.42, 0.16, 0.18, 1.0), 0.52),
     }
     for obj in review:
-        if obj is hair:
+        if obj.name.startswith(HAIR_PREFIX):
             continue
         n = obj.name.lower()
         mat = mats["skin"]
@@ -131,7 +132,6 @@ def main():
     _, _, hc, hs = bounds(mesh_points(head))
     hlo, hhi, _, hsize = bounds(mesh_points(hair))
     target = Vector((hc.x, hc.y, hc.z + hs.z * 0.005))
-    # Do not let long rear strands shrink the face excessively in review framing.
     visible_height = min(hsize.z, hs.z * 2.65)
     visible_width = min(hsize.x, hs.x * 2.15)
     extent = max(hs.x * 1.85, visible_width, visible_height)
