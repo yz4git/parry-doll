@@ -1,0 +1,131 @@
+{
+  "version": 1,
+  "revision": "v17.3",
+  "name": "PARRY DOLL fresh David Onizaki donor heroine visual correction",
+  "build_policy": "Fresh empty-scene Blender build only. Never import the previous shipping GLB. Rebuild body, outfit, hair, weapon and runtime hierarchy from source, use the pinned David Onizaki CC-BY head as the actual head shell, and construct the visible portrait directly on that fitted donor surface.",
+  "donor": {
+    "author": "David Onizaki",
+    "license": "CC-ATTRIBUTION / CC BY as recorded by the pinned carrier repository",
+    "source": "https://sketchfab.com/3d-models/genshin-style-anime-female-base-mesh-for-blender-c2d6727e8c9742feb9a4a3bccac6e0e0",
+    "carrier_repo": "https://github.com/TjhaiME/Godot-Active-Rigid-Ragdoll",
+    "carrier_commit": "5328516c87d56c90e409dfd09b1c7694e37696fb"
+  },
+  "fit": {
+    "width_factor": 0.990,
+    "height_factor": 0.905,
+    "depth_factor_from_uniform": 1.015,
+    "center_x_offset": 0.0,
+    "center_y_offset": -0.0015,
+    "center_z_offset": -0.0045
+  },
+  "sculpt": {
+    "jaw_start_from_bottom": 0.40,
+    "jaw_narrow_at_bottom": 0.060,
+    "chin_start_from_bottom": 0.18,
+    "chin_extra_narrow": 0.030,
+    "cheek_soften": 0.004,
+    "forehead_compress_start": 0.67,
+    "forehead_compress": 0.045,
+    "bridge_center_h": 0.57,
+    "bridge_radius_h": 0.118,
+    "bridge_forward": 0.0120,
+    "nose_tip_center_h": 0.445,
+    "nose_tip_radius_h": 0.095,
+    "nose_tip_forward": 0.0240,
+    "nose_center_radius_x": 0.23,
+    "philtrum_center_h": 0.335,
+    "philtrum_radius_h": 0.055,
+    "philtrum_recess": 0.0020,
+    "upper_lip_center_h": 0.302,
+    "upper_lip_radius_h": 0.048,
+    "upper_lip_forward": 0.0065,
+    "lower_lip_center_h": 0.266,
+    "lower_lip_radius_h": 0.047,
+    "lower_lip_forward": 0.0060,
+    "chin_center_h": 0.115,
+    "chin_radius_h": 0.085,
+    "chin_forward": 0.0080
+  },
+  "surface": {
+    "subdivision_levels": 1,
+    "policy": "reuse-generator-skin-material-no-donor-albedo-no-donor-normal"
+  },
+  "portrait_cleanup_tokens": [
+    "EyeScleraGlobe", "IrisOuter", "IrisInner", "IrisRays", "Pupil", "EyeLight",
+    "UpperLash", "OuterLash", "LowerLid", "UpperSkinRim", "LowerSkinRim",
+    "ProfileLash", "ProfileUpperLid", "ProfileLowerLid", "WrappedCanthusLash",
+    "ProfileLashFan", "UpperLidFold", "EyeWetline", "InnerCanthus", "BL_EYELID",
+    "ProfileEyeFrame", "DonorEye", "DonorSclera", "DonorIris", "DonorPupil",
+    "DonorUpperLash", "DonorOuterLash", "DonorLowerLid", "DonorLidFold",
+    "DonorWetline", "DonorCanthus", "UpperLip", "LowerLip", "MouthSeam",
+    "NostrilTint", "DonorUpperLip", "DonorLowerLip", "DonorMouthSeam", "DonorNostril",
+    "BeautyMarkV172"
+  ],
+  "eyes": {
+    "center_x": 0.0460,
+    "center_y": 0.0290,
+    "aperture_rx": 0.0315,
+    "aperture_ry": 0.0122,
+    "lower_lid_ratio": 0.72,
+    "tilt": 0.0018,
+    "surface_sample_rx": 0.038,
+    "surface_sample_ry": 0.022,
+    "surface_percentile": 0.82,
+    "sclera_front": 0.0024,
+    "iris_front": 0.0032,
+    "iris_outer_rx": 0.0132,
+    "iris_outer_ry": 0.0101,
+    "iris_inner_rx": 0.0097,
+    "iris_inner_ry": 0.0073,
+    "pupil_rx": 0.00305,
+    "pupil_ry": 0.00385,
+    "lid_front_offset": 0.0034,
+    "lash_front_offset": 0.0045,
+    "blink_front_offset": 0.0029
+  },
+  "lips": {
+    "center_y": -0.0800,
+    "surface_sample_rx": 0.040,
+    "surface_sample_ry": 0.021,
+    "surface_percentile": 0.90,
+    "front_offset": 0.0018,
+    "half_width": 0.0330,
+    "upper_height": 0.0060,
+    "lower_height": 0.0076
+  },
+  "hair": {
+    "fringe_drop": 0.033,
+    "fringe_width_scale": 1.070,
+    "brow_drop": 0.0020,
+    "fringe_tokens": ["KeyArtBangV119", "KeyArtBangHiV119", "FringeSurfaceV90", "FringeFineV90"]
+  },
+  "neck": {
+    "raise": 0.003,
+    "width_scale": 1.075
+  },
+  "beauty_mark": {
+    "x": 0.061,
+    "y": 0.006,
+    "radius": 0.00135,
+    "front_offset": 0.0024
+  },
+  "remove_generated_ears": [
+    "EarV103_", "EarHelixV103_", "EarConchaBowlV144_", "EarTragusV144_",
+    "EarAntihelixV144_", "EarConchaV103_", "EarLobeFoldV144_"
+  ],
+  "audit": {
+    "min_head_vertices": 7000,
+    "min_head_polygons": 7000,
+    "min_new_eye_parts": 18,
+    "max_old_eye_parts": 0,
+    "min_new_lip_parts": 4,
+    "max_generated_ear_parts": 0,
+    "required_runtime_nodes": [
+      "BLENDER_HEROINE", "BL_PELVIS", "BL_TORSO", "BL_HEAD", "BL_HEAD_ASSET",
+      "BL_FACE_ASSET", "BL_HAIR_ASSET", "BL_EYE_L", "BL_EYE_R", "BL_MOUTH",
+      "BL_UPPER_ARM_L", "BL_FOREARM_L", "BL_HAND_L", "BL_UPPER_ARM_R", "BL_FOREARM_R",
+      "BL_HAND_R", "BL_THIGH_L", "BL_SHIN_L", "BL_FOOT_L", "BL_THIGH_R", "BL_SHIN_R",
+      "BL_FOOT_R", "BL_SWORD"
+    ]
+  }
+}
