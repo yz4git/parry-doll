@@ -1,0 +1,174 @@
+name: Blender-chan premium hair v18.2
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/hair-blenderchan-v182.trigger'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: blender-hair-blenderchan-v182
+  cancel-in-progress: false
+
+jobs:
+  candidate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Restore accepted face-locked source model to temp
+        run: |
+          set -euxo pipefail
+          SAFE_COMMIT=e16a4173c82cf2e097d855620a6d3af137d9e532
+          git cat-file -e "$SAFE_COMMIT:dist/assets/models/heroine-blender.glb"
+          git show "$SAFE_COMMIT:dist/assets/models/heroine-blender.glb" > /tmp/heroine-v182-base.glb
+          test -s /tmp/heroine-v182-base.glb
+          sha256sum /tmp/heroine-v182-base.glb
+
+      - name: Install Selenium and download public CC0 Blender-chan
+        run: |
+          set -euxo pipefail
+          python3 -m pip install --quiet selenium
+          google-chrome --version
+          mkdir -p /tmp/blenderchan
+          python3 tools/download-itch-free-asset.py \
+            --purchase-url https://amarilloarts.itch.io/blender-chan/purchase \
+            --expected-file 'BlenderChan - Free.blend' \
+            --download-dir /tmp/blenderchan \
+            --timeout 180
+          donor="$(find /tmp/blenderchan -maxdepth 1 -type f -iname '*BlenderChan*Free*.blend' -print -quit)"
+          test -n "$donor"
+          test -s "$donor"
+          cp "$donor" /tmp/blenderchan.blend
+          test "$(stat -c%s /tmp/blenderchan.blend)" -gt 20000000
+          ls -lh /tmp/blenderchan.blend
+
+      - name: Install Blender 4.3.2 for donor compatibility
+        run: |
+          set -euxo pipefail
+          curl -L --fail --retry 4 --retry-delay 2 \
+            -o /tmp/blender.tar.xz \
+            https://download.blender.org/release/Blender4.3/blender-4.3.2-linux-x64.tar.xz
+          tar -xf /tmp/blender.tar.xz -C /tmp
+          BLENDER=/tmp/blender-4.3.2-linux-x64/blender
+          test -x "$BLENDER"
+          "$BLENDER" --version
+          echo "BLENDER=$BLENDER" >> "$GITHUB_ENV"
+
+      - name: Validate v18.2 authoring tools
+        run: |
+          set -euxo pipefail
+          python3 -m py_compile \
+            tools/extract-blenderchan-hair-v182.py \
+            tools/build-hair-blenderchan-v182.py \
+            tools/audit-hair-blenderchan-v182.py \
+            tools/render-hair-preview-v182.py
+          grep -Fq 'Hair Rigged' tools/extract-blenderchan-hair-v182.py
+          grep -Fq 'FACE LOCK' tools/build-hair-blenderchan-v182.py
+          grep -Fq 'vulnerable_lash_canthus_helpers_checked' tools/audit-hair-blenderchan-v182.py
+
+      - name: Bake only Blender-chan hair from Geometry Nodes
+        run: |
+          set -euxo pipefail
+          "$BLENDER" --background --python-exit-code 1 --python tools/extract-blenderchan-hair-v182.py -- \
+            --input /tmp/blenderchan.blend \
+            --output /tmp/blenderchan-hair-v182.glb \
+            --report /tmp/blenderchan-hair-v182-extract.json
+          test -s /tmp/blenderchan-hair-v182.glb
+          test -s /tmp/blenderchan-hair-v182-extract.json
+          python3 -m json.tool /tmp/blenderchan-hair-v182-extract.json >/dev/null
+
+      - name: Fit hair to frozen Parry Doll face
+        run: |
+          set -euxo pipefail
+          "$BLENDER" --background --python-exit-code 1 --python tools/build-hair-blenderchan-v182.py -- \
+            --input /tmp/heroine-v182-base.glb \
+            --donor /tmp/blenderchan-hair-v182.glb \
+            --output /tmp/heroine-v182-candidate.glb \
+            --report /tmp/hair-blenderchan-v182-build.json
+          test -s /tmp/heroine-v182-candidate.glb
+          test -s /tmp/hair-blenderchan-v182-build.json
+          python3 -m json.tool /tmp/hair-blenderchan-v182-build.json >/dev/null
+
+      - name: Audit face helpers and premium hair density
+        run: |
+          set -euxo pipefail
+          "$BLENDER" --background --python-exit-code 1 --python tools/audit-hair-blenderchan-v182.py -- \
+            --before /tmp/heroine-v182-base.glb \
+            --after /tmp/heroine-v182-candidate.glb \
+            --report /tmp/hair-blenderchan-v182-audit.json
+          test -s /tmp/hair-blenderchan-v182-audit.json
+          grep -Fq '"face_unchanged": true' /tmp/hair-blenderchan-v182-audit.json
+          grep -Fq '"old_hair_removed": true' /tmp/hair-blenderchan-v182-audit.json
+          python3 -m json.tool /tmp/hair-blenderchan-v182-audit.json >/dev/null
+
+      - name: Render front, three-quarter and profile review views on CPU
+        run: |
+          set -euxo pipefail
+          mkdir -p /tmp/hair-v182-preview
+          "$BLENDER" --background --python-exit-code 1 --python tools/render-hair-preview-v182.py -- \
+            --input /tmp/heroine-v182-candidate.glb \
+            --output /tmp/hair-v182-preview/front.png \
+            --angle 0
+          "$BLENDER" --background --python-exit-code 1 --python tools/render-hair-preview-v182.py -- \
+            --input /tmp/heroine-v182-candidate.glb \
+            --output /tmp/hair-v182-preview/three-quarter.png \
+            --angle 32
+          "$BLENDER" --background --python-exit-code 1 --python tools/render-hair-preview-v182.py -- \
+            --input /tmp/heroine-v182-candidate.glb \
+            --output /tmp/hair-v182-preview/profile.png \
+            --angle 78
+          test -s /tmp/hair-v182-preview/front.png
+          test -s /tmp/hair-v182-preview/three-quarter.png
+          test -s /tmp/hair-v182-preview/profile.png
+
+      - name: Assemble candidate artifact
+        run: |
+          set -euxo pipefail
+          mkdir -p /tmp/hair-v182-candidate
+          cp /tmp/heroine-v182-candidate.glb /tmp/hair-v182-candidate/heroine-blender-v182-candidate.glb
+          cp /tmp/blenderchan-hair-v182-extract.json /tmp/hair-v182-candidate/
+          cp /tmp/hair-blenderchan-v182-build.json /tmp/hair-v182-candidate/
+          cp /tmp/hair-blenderchan-v182-audit.json /tmp/hair-v182-candidate/
+          cp /tmp/hair-v182-preview/*.png /tmp/hair-v182-candidate/
+          ls -lh /tmp/hair-v182-candidate
+
+      - name: Upload visual-review candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: hair-blenderchan-v182-candidate
+          path: /tmp/hair-v182-candidate/*
+          retention-days: 7
+
+      - name: Commit only when candidate is explicitly accepted
+        run: |
+          set -euxo pipefail
+          if ! grep -Fq 'accept=true' .github/hair-blenderchan-v182.trigger; then
+            echo 'Candidate-only run. main game model remains unchanged.'
+            exit 0
+          fi
+          cp /tmp/heroine-v182-candidate.glb dist/assets/models/heroine-blender.glb
+          cp /tmp/hair-blenderchan-v182-build.json dist/hair-blenderchan-v182-build.json
+          cp /tmp/hair-blenderchan-v182-audit.json dist/hair-blenderchan-v182-audit.json
+          cp /tmp/blenderchan-hair-v182-extract.json dist/hair-blenderchan-v182-extract.json
+          git diff --check
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add \
+            dist/assets/models/heroine-blender.glb \
+            dist/hair-blenderchan-v182-build.json \
+            dist/hair-blenderchan-v182-audit.json \
+            dist/hair-blenderchan-v182-extract.json
+          git diff --cached --quiet && { echo 'No accepted v18.2 generated change'; exit 1; }
+          git commit -m 'feat: implement Blender-chan anime hair v18.2'
+          git pull --rebase origin main
+          git push origin main
