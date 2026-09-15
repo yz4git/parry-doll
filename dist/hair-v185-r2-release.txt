@@ -1,0 +1,6 @@
+Parry Doll hair release
+revision=v18.5-r2
+model=Anime Female Adventurer v1.2 CC0 hair
+face=frozen
+accepted=true
+source_commit=8867f677a9c2ce86ec1cc290766f0706b14fab15
