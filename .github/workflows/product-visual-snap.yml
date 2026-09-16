@@ -28,6 +28,7 @@ jobs:
         with:
           name: product-visual-snapshot
           path: |
+            00-title.png
             01-neutral.png
             02-parry-telegraph.png
             03-after-parry.png
