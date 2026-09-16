@@ -1,0 +1,37 @@
+name: Product visual snapshot
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/product-visual-snap.trigger'
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Playwright
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Capture live product views
+        env:
+          TEST_URL: https://yz4git.github.io/parry-doll/
+        run: |
+          set -o pipefail
+          node tests/product-visual-snap.mjs | tee product-visual-ui.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: product-visual-snapshot
+          path: |
+            01-neutral.png
+            02-parry-telegraph.png
+            03-after-parry.png
+            04-dodge-telegraph.png
+            05-after-dodge.png
+            product-visual-ui.json
+          retention-days: 7
