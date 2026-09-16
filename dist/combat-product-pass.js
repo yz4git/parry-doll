@@ -68,7 +68,7 @@ drawDoll=function(d){
  if(parryOutline){
   const alpha=clamp(p5ParryGlow/.20,0,1),col=`rgba(255,92,164,${(.22+.42*alpha).toFixed(3)})`;
   for(const l of d.links){const a=d.nodes[l.a],b=d.nodes[l.b];if(a.name==='foot'||b.name==='foot')continue;segment(a.p,b.p,Math.max(.025,l.r*.28),col)}
-  const hand=d.nodes.find(n=>n.name==='hand')||d.nodes[1];orb(hand.p,.14*d.spec.scale,'#e7fff6');
+  const hand=d.nodes.find(n=>n.name==='hand')||d.nodes[1];orb(hand.p,.14*d.spec.scale,'#ff5ca4');
  }
 };
 

@@ -47,7 +47,7 @@ function damageApplyEnemyHit(d,amount,force,point){
  }else{
   damageSetReaction(d,'knockdown',.68,side);d.stun=.55;d.down=.48;d.recovery=0;damageLocalImpulse(d,point,add(mul(horizontal,16),mul(up,5)),.52,.032,.035);
  }
- burst(point,'#edac73',reaction==='flinch'?10:reaction==='stagger'?14:18,reaction==='flinch'?3.2:4.3);
+ burst(point,'#ff5260',reaction==='flinch'?10:reaction==='stagger'?14:18,reaction==='flinch'?3.2:4.3);
  const heavy=['heavy','buckle','spin','knockdown','wall'].includes(reaction);
  shake=Math.max(shake,heavy?.16:.075);hitstop=Math.max(hitstop,heavy?.065:.035);impact(point,'hit',heavy?1.05:.72);
  return true;

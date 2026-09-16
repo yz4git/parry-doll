@@ -123,7 +123,7 @@ drawDoll=function(d){
   if(n){
    const pulse=Math.sin(clamp(hitT/(d.hitRegionMax||.3),0,1)*Math.PI),base=d.player?'#ff5ca4':'#ff5260';
    orb(n.p,Math.max(n.r*1.12,.125*d.spec.scale),base);
-   if(pulse>.35)orb(add(n.p,V(0,.035*d.spec.scale,0)),Math.max(n.r*.42,.052*d.spec.scale),'#fff5d6');
+   if(pulse>.35)orb(add(n.p,V(0,.035*d.spec.scale,0)),Math.max(n.r*.42,.052*d.spec.scale),'#ff5260');
   }
  }
 };

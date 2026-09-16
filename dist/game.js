@@ -242,7 +242,7 @@ function groundImpact(p,power){
  ring(V(p.x,.06,p.z),'#ff5260');shake=Math.max(shake,Math.min(.3,power*.12));
  impact(V(p.x,.18,p.z),'ground',Math.min(1.7,power));
 }
-function hurt(d,amount,force,point){if(d.invuln>0||d.hp<=0)return false;d.hp=Math.max(0,d.hp-amount);d.invuln=d.player?.32:.12;d.stun=d.player?.22:.075;if(d.player){d.swing=null;d.attack=0;d.counter=0;}d.impulse(point,force);burst(point,d.player?'#ff5ca4':'#edac73',18,5);shake=Math.max(shake,amount>=25?.25:.12);hitstop=amount>=25?.08:.042;impact(point,amount>=60?'finish':'hit',amount>=25?1.5:1);if(d.player)feel.damage=.5;if(len(force)>24){d.down=amount>=60?1.2:.85;d.stun=amount>=60?1.6:1.15}if(d.hp<=0){d.down=99;d.impulse(point,mul(force,1.8));d.wind=0;if(!d.player){impact(point,'finish',2.3);feel.slow=.65;groundImpact(d.pos,d.spec.scale)}announce(d.player?'敗 北':'討 伐',2.6);transition=2.7}return true}
+function hurt(d,amount,force,point){if(d.invuln>0||d.hp<=0)return false;d.hp=Math.max(0,d.hp-amount);d.invuln=d.player?.32:.12;d.stun=d.player?.22:.075;if(d.player){d.swing=null;d.attack=0;d.counter=0;}d.impulse(point,force);burst(point,d.player?'#ff5ca4':'#ff5260',18,5);shake=Math.max(shake,amount>=25?.25:.12);hitstop=amount>=25?.08:.042;impact(point,amount>=60?'finish':'hit',amount>=25?1.5:1);if(d.player)feel.damage=.5;if(len(force)>24){d.down=amount>=60?1.2:.85;d.stun=amount>=60?1.6:1.15}if(d.hp<=0){d.down=99;d.impulse(point,mul(force,1.8));d.wind=0;if(!d.player){impact(point,'finish',2.3);feel.slow=.65;groundImpact(d.pos,d.spec.scale)}announce(d.player?'敗 北':'討 伐',2.6);transition=2.7}return true}
 let transition=0;
 function playerAttack(){
  // A new attack cannot overwrite an active swing. Recovery now starts after the motion,
@@ -355,15 +355,15 @@ function drawAttackTelegraph(){
  const ps=clipNear(points).map(project);if(ps.length<3)return;ctx.beginPath();ps.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();ctx.fillStyle=ready?'#ffd68c12':'#de89630a';ctx.fill();ctx.strokeStyle=color;ctx.lineWidth=ready?2:1;ctx.stroke();
 }
 function box(x,y,z,w,h,d,color){const a=V(x-w/2,y,z-d/2),b=V(x+w/2,y,z-d/2),c=V(x+w/2,y,z+d/2),e=V(x-w/2,y,z+d/2),lift=p=>add(p,V(0,h,0));polygon([a,b,lift(b),lift(a)],color);polygon([b,c,lift(c),lift(b)],'#253039');polygon([c,e,lift(e),lift(c)],color);polygon([e,a,lift(a),lift(e)],'#17212a');polygon([lift(a),lift(b),lift(c),lift(e)],'#4d5558')}
-function drawDoll(d){let color=d.invuln>0?'#f7ecd6':d.spec.color;for(const l of d.links)segment(d.nodes[l.a].p,d.nodes[l.b].p,l.r,color);for(const n of d.nodes)orb(n.p,n.r,n.name==='head'?'#e4d4b5':color);
+function drawDoll(d){let color=d.invuln>0?'#ff5260':d.spec.color;for(const l of d.links)segment(d.nodes[l.a].p,d.nodes[l.b].p,l.r,color);for(const n of d.nodes)orb(n.p,n.r,n.name==='head'?'#ff5260':color);
  const head=d.nodes[2].p,eyes=add(head,d.local(V(0,.02,d.nodes[2].r*.88)));segment(add(eyes,d.local(V(-.15,0,0))),add(eyes,d.local(V(.15,0,0))),.035,d.player?'#c6ffff':'#ffdf8d');
- if(d.spec.type==='human'){const hand=d.nodes.find(n=>n.name==='hand').p,blade=add(hand,d.local(mul(d.attack>0?motionPose(d).blade:d.wind>0?COMBO_POSES[enemyMove(d).motion].ready.blade:IDLE_POSE.blade,d.spec.scale)));segment(hand,blade,.045,d.player?'#c5f8ee':'#ff5260');orb(hand,.12,'#ff5260');if(d.attack>0){const end=add(blade,d.local(V(-.5,.1,-.15)));segment(blade,end,.06,'#ff526077')}}
+ if(d.spec.type==='human'){const hand=d.nodes.find(n=>n.name==='hand').p,blade=add(hand,d.local(mul(d.attack>0?motionPose(d).blade:d.wind>0?COMBO_POSES[enemyMove(d).motion].ready.blade:IDLE_POSE.blade,d.spec.scale)));segment(hand,blade,.045,d.player?'#ff5ca4':'#ff5260');orb(hand,.12,'#ff5260');if(d.attack>0){const end=add(blade,d.local(V(-.5,.1,-.15)));segment(blade,end,.06,'#ff526077')}}
  if(d.parry>0){const p=project(d.nodes[1].p);shapes.push({depth:p.z-.3,draw(){ctx.strokeStyle='#b9ffef';ctx.lineWidth=2;ctx.beginPath();ctx.arc(p.x,p.y,p.s*.85,-2.8,.2);ctx.stroke()}})}
 }
 function render(){setCamera();ctx.save();const recoil=feel.reduced?0:shake;ctx.translate(Math.sin(feel.clock*113)*recoil*14,Math.cos(feel.clock*139)*recoil*8);const bg=ctx.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#0b131e');bg.addColorStop(.55,'#27313a');bg.addColorStop(1,'#101820');ctx.fillStyle=bg;ctx.fillRect(-20,-20,W+40,H+40);shapes=[];
  // In-world arena and monumental gate, rendered geometry rather than backdrop art.
  polygon([V(-14,-.1,-14),V(14,-.1,-14),V(14,-.1,14),V(-14,-.1,14)],'#303b40');for(let i=-12;i<12;i+=2)for(let j=-12;j<12;j+=2){polygon([V(i,0,j),V(i+1.94,0,j),V(i+1.94,0,j+1.94),V(i,0,j+1.94)],(i+j)%4?'#354044':'#313b40','#56606522')}
- for(let i=0;i<12;i++){const a=i*Math.PI/6,x=Math.cos(a)*12,z=Math.sin(a)*12;box(x,0,z,.8,2.7+(i%3)*.65,.8,'#3b454a');orb(V(x,3+(i%3)*.65,z),.12,'#ff5260')}
+ for(let i=0;i<12;i++){const a=i*Math.PI/6,x=Math.cos(a)*12,z=Math.sin(a)*12;box(x,0,z,.8,2.7+(i%3)*.65,.8,'#ff5ca4');orb(V(x,3+(i%3)*.65,z),.12,'#ff5260')}
  box(-4,0,-12,1.5,6,1.3,'#37424a');box(4,0,-12,1.5,6,1.3,'#37424a');box(0,5.5,-12,9,1,1.5,'#404b51');
  shapes.sort((a,b)=>b.depth-a.depth);for(const s of shapes)s.draw();shapes=[];
  floorRing(V(0,.03,0),9.8,'#c4a57155',2);floorRing(V(0,.035,0),4,'#b3a28a33');

@@ -4,7 +4,7 @@
  if(window.__parryMirrorBreakV11Loaded)return;window.__parryMirrorBreakV11Loaded=true;
  const state=window.__mirrorBreakState;if(!state)return;
  const s={history:[],lastSerial:0,bossRef:null,attackCalls:0,scarIndex:0,scarEchoes:0,lastScar:null,pulseT:0};window.__mirrorBreakV11State=s;
- const LABEL=['BLADELESS','HOLLOW','THREADLESS','BELL TOWER'],COLOR=['#ffb36b','#ff5ca4','#d0a6ff','#ff5ca4'];
+ const LABEL=['BLADELESS','HOLLOW','THREADLESS','BELL TOWER'],COLOR=['#ff5260','#ff5ca4','#d0a6ff','#ff5ca4'];
  const clone=m=>({...m,hits:[...(m?.hits||[])]});
  const scarStyle=document.createElement('style');scarStyle.textContent=`body.mb-final-duel.mb-scar-firing #mbMirrorLoadout{opacity:0!important;visibility:hidden!important;transform:translateY(-3px) scale(.98)!important}`;document.head.appendChild(scarStyle);
  const hud=document.createElement('div');hud.id='mbScarMemory';Object.assign(hud.style,{position:'absolute',right:'max(22px,env(safe-area-inset-right))',top:'114px',zIndex:'30',pointerEvents:'none',textAlign:'right',fontSize:'7px',letterSpacing:'1.7px',lineHeight:'1.2',color:'#aab7b5',textShadow:'0 2px 8px #000',opacity:'0',transformOrigin:'100% 50%',transition:'opacity .14s,transform .14s'});document.body.appendChild(hud);

@@ -34,7 +34,7 @@ drawDoll=function(d){
    const pulse=Math.sin(clamp(d.hitRegionT/(d.hitRegionMax||.3),0,1)*Math.PI),base=d.player?'#ff5ca4':'#ff5260';
    orb(n.p,Math.max(n.r*1.55,.18*d.spec.scale),base);
    const q=add(n.p,V(0,.06*d.spec.scale,0));
-   orb(q,Math.max(n.r*.72,.09*d.spec.scale),'#fff5d6');
+   orb(q,Math.max(n.r*.72,.09*d.spec.scale),'#ff5260');
   }
  }
 };

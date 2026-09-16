@@ -5,7 +5,7 @@
  const proto=window.ParryVisual?.VisualScene?.prototype;if(!proto)return;
  const stageState={events:0,lastSerial:0,lastType:null,lastLevel:-1,meshCount:0};window.__mirrorBreakV10State=stageState;
  const TYPE=['DOJO BEAM BREAK','DUNGEON CAGE BREAK','BELFRY SPINE BREAK','ALTAR COLUMN COLLAPSE'];
- const PAL=[['#211713','#9a5935','#ffad58'],['#0d1c1f','#ff5ca4','#ff5ca4'],['#171020','#654b7d','#d6a7ff'],['#131a24','#ff5ca4','#ff5ca4']];
+ const PAL=[['#211713','#9a5935','#ff5260'],['#0d1c1f','#ff5ca4','#ff5ca4'],['#171020','#654b7d','#d6a7ff'],['#131a24','#ff5ca4','#ff5ca4']];
  function find(root,pred){let hit=null;root?.traverse?.(o=>{if(!hit&&pred(o))hit=o});return hit}
  function cleanup(vs){const d=vs.__mbStageDamage;if(!d)return;for(const m of d.meshes||[]){vs.scene.remove(m);try{m.material?.dispose?.()}catch{}try{m.geometry?.dispose?.()}catch{}}d.meshes=[];d.level=level;d.serial=0;stageState.meshCount=0}
  function material(vs,color,opacity=1,glow=false){const base=(vs.floor?.material||find(vs.scene,o=>o.isMesh&&o.material)?.material);if(!base?.clone)return null;const m=base.clone();m.color?.set?.(color);if('metalness'in m)m.metalness=glow ? .45 : .32;if('roughness'in m)m.roughness=glow ? .34 : .78;if(m.emissive){m.emissive.set(glow?color:'#000000');m.emissiveIntensity=glow ? .45 : 0}m.transparent=opacity<1;m.opacity=opacity;m.depthWrite=opacity>.85;return m}

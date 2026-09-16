@@ -11,13 +11,13 @@
  const vec=(x=0,y=0,z=0)=>({x,y,z}),vadd=(a,b)=>vec(a.x+b.x,a.y+b.y,a.z+b.z),vsub=(a,b)=>vec(a.x-b.x,a.y-b.y,a.z-b.z),vmul=(a,s)=>vec(a.x*s,a.y*s,a.z*s);
  const vlength=a=>Math.hypot(a.x,a.y,a.z),vnorm=a=>{const l=vlength(a)||1;return vmul(a,1/l)};
  const EFFECTS={
-  hit1:{life:.18,flash:.11,glow:42,rays:9,rayLen:48,ring:.22,shake:.14,stop:.052,push:.035,color:'#baffed',core:'#ffffff'},
+  hit1:{life:.18,flash:.11,glow:42,rays:9,rayLen:48,ring:.22,shake:.14,stop:.052,push:.035,color:'#ff5ca4',core:'#ffffff'},
   hit2:{life:.21,flash:.15,glow:52,rays:12,rayLen:62,ring:.28,shake:.20,stop:.062,push:.055,color:'#ff5ca4',core:'#ffffff'},
   hit3:{life:.29,flash:.24,glow:74,rays:20,rayLen:92,ring:.48,shake:.34,stop:.095,push:.12,color:'#ff5ca4',core:'#ffffff'},
-  parry:{life:.27,flash:.26,glow:78,rays:22,rayLen:90,ring:.55,shake:.38,stop:.092,push:.09,color:'#ff5260',core:'#fff9d8'},
+  parry:{life:.27,flash:.26,glow:78,rays:22,rayLen:90,ring:.55,shake:.38,stop:.092,push:.09,color:'#ff5260',core:'#ff5260'},
   perfect:{life:.34,flash:.42,glow:104,rays:30,rayLen:125,ring:.78,shake:.50,stop:.118,push:.15,color:'#ff5260',core:'#ffffff'},
   counter:{life:.34,flash:.36,glow:96,rays:24,rayLen:122,ring:.62,shake:.52,stop:.118,push:.18,color:'#ff5ca4',core:'#fffef1'},
-  break:{life:.48,flash:.46,glow:118,rays:32,rayLen:145,ring:1.25,shake:.60,stop:.142,push:.23,color:'#ff5260',core:'#fff8d4'},
+  break:{life:.48,flash:.46,glow:118,rays:32,rayLen:145,ring:1.25,shake:.60,stop:.142,push:.23,color:'#ff5260',core:'#ff5260'},
   finish:{life:.66,flash:.72,glow:170,rays:42,rayLen:190,ring:1.70,shake:.78,stop:.185,push:.38,color:'#ff5260',core:'#ffffff'},
   playerHit:{life:.24,flash:.12,glow:54,rays:10,rayLen:64,ring:.18,shake:.18,stop:.055,push:0,color:'#ff986f',core:'#ffe5d7'}
  };
@@ -90,7 +90,7 @@
   fctx.save();fctx.globalCompositeOperation='lighter';fctx.lineCap='round';
   const phase=cl(parryAura/.42),gold=parryAuraPerfect?'#ff5260':'#ff5ca4';
   for(const l of player.links){const a=project(player.nodes[l.a].p),b=project(player.nodes[l.b].p);if(!a||!b||a.z<=.05||b.z<=.05)continue;fctx.globalAlpha=.18+.54*phase;fctx.strokeStyle=gold;fctx.shadowColor=gold;fctx.shadowBlur=10+18*phase;fctx.lineWidth=Math.max(1.1,l.r*19*phase);fctx.beginPath();fctx.moveTo(a.x,a.y);fctx.lineTo(b.x,b.y);fctx.stroke()}
-  const hand=player.nodes.find(n=>n.name==='hand');if(hand){const h=project(hand.p);if(h?.z>0){const g=fctx.createRadialGradient(h.x,h.y,0,h.x,h.y,42*phase);g.addColorStop(0,'rgba(255,249,211,.9)');g.addColorStop(.28,parryAuraPerfect?'rgba(255,82,96,.52)':'rgba(255,92,164,.52)');g.addColorStop(1,'rgba(0,0,0,0)');fctx.globalAlpha=.9;fctx.fillStyle=g;fctx.fillRect(h.x-45,h.y-45,90,90)}}
+  const hand=player.nodes.find(n=>n.name==='hand');if(hand){const h=project(hand.p);if(h?.z>0){const g=fctx.createRadialGradient(h.x,h.y,0,h.x,h.y,42*phase);g.addColorStop(0,'rgba(255,82,96,.9)');g.addColorStop(.28,parryAuraPerfect?'rgba(255,82,96,.52)':'rgba(255,92,164,.52)');g.addColorStop(1,'rgba(0,0,0,0)');fctx.globalAlpha=.9;fctx.fillStyle=g;fctx.fillRect(h.x-45,h.y-45,90,90)}}
   fctx.restore();
  }
  function drawBeat(beat){
@@ -118,7 +118,7 @@
   for(const b of beats){const phase=b.life/b.max;if(b.kind==='finish'){dark=Math.max(dark,.30*phase);white=Math.max(white,.30*Math.sin((1-phase)*Math.PI));warm=Math.max(warm,.15*phase)}else if(b.kind==='break'){dark=Math.max(dark,.17*phase);white=Math.max(white,.10*phase)}else if(b.kind==='perfect'){white=Math.max(white,.16*phase);warm=Math.max(warm,.08*phase)}}
   if(dark>0){fctx.save();fctx.globalAlpha=dark;fctx.fillStyle='#020609';fctx.fillRect(0,0,W,H);fctx.restore()}
   if(warm>0){fctx.save();fctx.globalCompositeOperation='screen';fctx.globalAlpha=warm;fctx.fillStyle='#8b4b18';fctx.fillRect(0,0,W,H);fctx.restore()}
-  if(white>0){fctx.save();fctx.globalCompositeOperation='screen';fctx.globalAlpha=white;fctx.fillStyle='#fff7df';fctx.fillRect(0,0,W,H);fctx.restore()}
+  if(white>0){fctx.save();fctx.globalCompositeOperation='screen';fctx.globalAlpha=white;fctx.fillStyle='#ff5260';fctx.fillRect(0,0,W,H);fctx.restore()}
  }
  const fxResolveSwingBase=resolveSwing;
  resolveSwing=function(){

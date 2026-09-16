@@ -16,7 +16,7 @@
  #mbCoreChoice .mb-core{position:relative;overflow:hidden;transition:border-color .12s,transform .12s,box-shadow .12s}
  #mbCoreChoice .mb-core:before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;opacity:.75}
  #mbCoreChoice .mb-core.core-edge:before{background:#ff5260}#mbCoreChoice .mb-core.core-mirror:before{background:#ff5ca4}#mbCoreChoice .mb-core.core-pulse:before{background:#ff5ca4}
- #mbCoreChoice .mb-core.core-edge:active{border-color:#ff5260aa;box-shadow:0 0 20px #ff526024}#mbCoreChoice .mb-core.core-mirror:active{border-color:#9fffe0aa;box-shadow:0 0 20px #ff5ca424}#mbCoreChoice .mb-core.core-pulse:active{border-color:#ff5ca4aa;box-shadow:0 0 20px #ff5ca424}
+ #mbCoreChoice .mb-core.core-edge:active{border-color:#ff5260aa;box-shadow:0 0 20px #ff526024}#mbCoreChoice .mb-core.core-mirror:active{border-color:#ff5ca4aa;box-shadow:0 0 20px #ff5ca424}#mbCoreChoice .mb-core.core-pulse:active{border-color:#ff5ca4aa;box-shadow:0 0 20px #ff5ca424}
  #mbCoreChoice .mb-core-role{display:block;margin-top:8px;padding-top:7px;border-top:1px solid #b8c8c020;color:#ff5260;font-size:9px;font-weight:800;letter-spacing:2px}
  #mbCoreChoice .mb-core-rule{display:block;margin-top:4px;color:#aabbb7;font-size:9px;line-height:1.4;letter-spacing:.4px}
  #mbCoreChoice .mb-build-preview{margin-top:7px;text-align:center;color:#9fb0ad;font-size:8px;letter-spacing:2px}
