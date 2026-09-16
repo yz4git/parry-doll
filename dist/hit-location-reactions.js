@@ -126,7 +126,7 @@ function localPlayerDamage(d,amount,force,point,node,direction){
  if(region==='leg')impulse.y=Math.min(impulse.y,-1.2);
  damageLocalImpulse(d,point,impulse,region==='head'?.42:region==='arm'?.30:region==='leg'?.36:.38,heavy?.018:.008,region==='arm'?.050:.020);
  if(heavy&&amount>=25){d.down=region==='leg'?.34:.44;d.recovery=0;}
- burst(point,'#8ce6df',heavy?18:12,heavy?4.5:3.3);shake=Math.max(shake,heavy?.17:.085);hitstop=Math.max(hitstop,heavy?.065:.038);impact(point,'hit',heavy?1.05:.75);feel.damage=.45;
+ burst(point,'#ff5ca4',heavy?18:12,heavy?4.5:3.3);shake=Math.max(shake,heavy?.17:.085);hitstop=Math.max(hitstop,heavy?.065:.038);impact(point,'hit',heavy?1.05:.75);feel.damage=.45;
  return true;
 }
 

@@ -3,8 +3,8 @@
 let p5ParryGlow=0,p5BreakPrompt=0,p5FinishBeat=0;
 const p5Style=document.createElement('style');
 p5Style.textContent=`
-#attackHud{position:absolute;top:31px;left:8%;width:84%;height:20px;display:flex;align-items:center;justify-content:center;gap:7px;pointer-events:none;font-size:clamp(10px,1.6vw,13px);font-weight:750;letter-spacing:1.8px;color:#d9b984;text-shadow:0 2px 8px #000;background:linear-gradient(90deg,transparent,#0b1118b8 18%,#0b1118b8 82%,transparent);opacity:0;transform:translateY(-2px);transition:opacity .12s,transform .12s,color .12s}
-#attackHud.show{opacity:1;transform:none}#attackHud.ready{color:#ffd98e}#attackHud.dodge{color:#8eeaff;text-shadow:0 0 12px #28bde8,0 2px 8px #000}#attackHud.finish{color:#ffe7aa;font-size:clamp(13px,2vw,17px);letter-spacing:3.5px}
+#attackHud{position:absolute;top:31px;left:8%;width:84%;height:20px;display:flex;align-items:center;justify-content:center;gap:7px;pointer-events:none;font-size:clamp(10px,1.6vw,13px);font-weight:750;letter-spacing:1.8px;color:#ff5260;text-shadow:0 2px 8px #000;background:linear-gradient(90deg,transparent,#0b1118b8 18%,#0b1118b8 82%,transparent);opacity:0;transform:translateY(-2px);transition:opacity .12s,transform .12s,color .12s}
+#attackHud.show{opacity:1;transform:none}#attackHud.ready{color:#ff5260}#attackHud.dodge{color:#ff5ca4;text-shadow:0 0 12px #ff5ca4,0 2px 8px #000}#attackHud.finish{color:#ff5260;font-size:clamp(13px,2vw,17px);letter-spacing:3.5px}
 #attackHud .gem{font-size:9px;opacity:.65}#attackHud.ready .gem{opacity:1}
 #cue{top:19%!important;font-size:clamp(12px,1.9vw,15px)!important;letter-spacing:3px!important}
 @media(max-height:500px){#attackHud{top:30px}#cue{top:18%!important}}
@@ -66,7 +66,7 @@ drawDoll=function(d){
  if(parryOutline)d.invuln=0;
  p5DrawDollBase(d);d.invuln=savedInv;
  if(parryOutline){
-  const alpha=clamp(p5ParryGlow/.20,0,1),col=`rgba(198,255,241,${(.22+.42*alpha).toFixed(3)})`;
+  const alpha=clamp(p5ParryGlow/.20,0,1),col=`rgba(255,92,164,${(.22+.42*alpha).toFixed(3)})`;
   for(const l of d.links){const a=d.nodes[l.a],b=d.nodes[l.b];if(a.name==='foot'||b.name==='foot')continue;segment(a.p,b.p,Math.max(.025,l.r*.28),col)}
   const hand=d.nodes.find(n=>n.name==='hand')||d.nodes[1];orb(hand.p,.14*d.spec.scale,'#e7fff6');
  }

@@ -3,6 +3,7 @@
 (()=>{
  if(window.__parryDodgeSystemV1Loaded)return;window.__parryDodgeSystemV1Loaded=true;
  const CYAN='#67ddff';
+ const DODGE_SUCCESS='#ff5ca4';
  let dodgeQueued=false,dodgeTimer=0,dodgeIFrame=0,dodgeCool=0,dodges=0,perfectDodges=0,dodgeSide=1;
  let testForcedMove=null;
  const dodgeTestMode=new URLSearchParams(location.search).has('dodgecheck');
@@ -85,7 +86,7 @@
   // Long enough to cover a late visual read plus the first active hit, but still much
   // shorter than the cooldown so repeated mashing is not a permanent invulnerability.
   dodgeTimer=.38;dodgeIFrame=.34;dodgeCool=.62;
-  ring(player.nodes[0].p,CYAN);sound(920,.09,'triangle',.028);return true;
+  ring(player.nodes[0].p,DODGE_SUCCESS);sound(920,.09,'triangle',.028);return true;
  }
 
  const dodgeEnemyImpactBase=enemyImpact;
@@ -95,7 +96,7 @@
    // leaving the hit geometry is itself a valid evade and still counts as DODGE.
    if(dodgeIFrame>0){
     dodges++;const perfect=dodgeIFrame>.16;if(perfect)perfectDodges++;
-    player.invuln=Math.max(player.invuln,.06);ring(player.nodes[0].p,CYAN);burst(player.nodes[0].p,CYAN,18,5);sound(perfect?1420:1050,.11,'triangle',.035);announce(perfect?'PERFECT DODGE':'DODGE',.46);shake=Math.max(shake,.08);return;
+    player.invuln=Math.max(player.invuln,.06);ring(player.nodes[0].p,DODGE_SUCCESS);burst(player.nodes[0].p,DODGE_SUCCESS,18,5);sound(perfect?1420:1050,.11,'triangle',.035);announce(perfect?'PERFECT DODGE':'DODGE',.46);shake=Math.max(shake,.08);return;
    }
    // Cyan attacks are explicitly unparryable. PARRY cannot substitute for DODGE.
    const savedParry=player.parry;player.parry=0;

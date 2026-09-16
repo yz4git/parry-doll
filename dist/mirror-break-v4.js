@@ -37,16 +37,16 @@
   return{kind,target,targetIndex,hidden,anchor,branch,label:state.part.label||kind,level};
  }
  function stumpPoint(p){if(!p?.anchor||!p.target)return p?.anchor?.p||p?.target?.p||boss?.pos||V();return add(p.anchor.p,mul(sub(p.target.p,p.anchor.p),p.kind==='ARM'?.31:.26))}
- function addCrack(q,r,alpha=.8){const p=project(q);if(p.z<=.25)return;shapes.push({depth:p.z-.64,draw(){ctx.save();ctx.strokeStyle=`rgba(255,196,112,${alpha})`;ctx.lineWidth=Math.max(1,p.s*.012);for(let i=0;i<5;i++){const a=i*Math.PI*.4+.22,rr=r*p.s*(i%2?.72:1);ctx.beginPath();ctx.moveTo(p.x+Math.cos(a)*rr*.12,p.y+Math.sin(a)*rr*.12);ctx.lineTo(p.x+Math.cos(a)*rr,p.y+Math.sin(a)*rr);ctx.stroke()}ctx.restore()}})}
+ function addCrack(q,r,alpha=.8){const p=project(q);if(p.z<=.25)return;shapes.push({depth:p.z-.64,draw(){ctx.save();ctx.strokeStyle=`rgba(255,82,96,${alpha})`;ctx.lineWidth=Math.max(1,p.s*.012);for(let i=0;i<5;i++){const a=i*Math.PI*.4+.22,rr=r*p.s*(i%2?.72:1);ctx.beginPath();ctx.moveTo(p.x+Math.cos(a)*rr*.12,p.y+Math.sin(a)*rr*.12);ctx.lineTo(p.x+Math.cos(a)*rr,p.y+Math.sin(a)*rr);ctx.stroke()}ctx.restore()}})}
  function drawDamage(p){
   if(!p)return;
   if(p.kind==='CORE'){
-   const c=p.anchor?.p||p.target.p,sc=boss.spec.scale;orb(c,.24*sc,'#20262b');orb(add(c,boss.local(V(0,0,.035*sc))),.12*sc,'#ffd08a');addCrack(c,.46*sc,.92);return;
+   const c=p.anchor?.p||p.target.p,sc=boss.spec.scale;orb(c,.24*sc,'#20262b');orb(add(c,boss.local(V(0,0,.035*sc))),.12*sc,'#ff5260');addCrack(c,.46*sc,.92);return;
   }
-  const q=stumpPoint(p),sc=boss.spec.scale;segment(p.anchor?.p||q,q,p.kind==='ARM'?.105*sc:.09*sc,'#303941');orb(q,.105*sc,'#303941');orb(add(q,boss.local(V(0,0,.022*sc))),.058*sc,'#ffc66f');addCrack(q,.16*sc,.7);
+  const q=stumpPoint(p),sc=boss.spec.scale;segment(p.anchor?.p||q,q,p.kind==='ARM'?.105*sc:.09*sc,'#303941');orb(q,.105*sc,'#303941');orb(add(q,boss.local(V(0,0,.022*sc))),.058*sc,'#ff5260');addCrack(q,.16*sc,.7);
  }
  function drawDebris(){
-  for(const f of s.debris){if(f.life<=0)continue;const a=clamp(f.life/f.max,0,1),col=f.weapon?'#dfbf76':f.limb?'#747c82':f.heavy?'#9d7658':'#c48c68';if(f.weapon){segment(f.p,add(f.p,f.axis),f.r,col);orb(f.p,f.r*.9,'#57473a')}else if(f.limb){const end=add(f.p,f.axis);segment(f.p,end,f.r,col);orb(f.p,f.r*1.2,'#555d64');orb(end,f.r*.9,'#8e969a');if(a>.25)addCrack(f.p,f.r*2.1,Math.min(.55,a))}else{orb(f.p,f.r,col);if(f.heavy)addCrack(f.p,f.r*2.2,Math.min(.72,a))}}
+  for(const f of s.debris){if(f.life<=0)continue;const a=clamp(f.life/f.max,0,1),col=f.weapon?'#ff5260':f.limb?'#747c82':f.heavy?'#9d7658':'#c48c68';if(f.weapon){segment(f.p,add(f.p,f.axis),f.r,col);orb(f.p,f.r*.9,'#57473a')}else if(f.limb){const end=add(f.p,f.axis);segment(f.p,end,f.r,col);orb(f.p,f.r*1.2,'#555d64');orb(end,f.r*.9,'#8e969a');if(a>.25)addCrack(f.p,f.r*2.1,Math.min(.55,a))}else{orb(f.p,f.r,col);if(f.heavy)addCrack(f.p,f.r*2.2,Math.min(.72,a))}}
  }
  function spawnSever(){
   const p=plan();if(!p)return;s.lastPlan=p;s.severs++;const origin=p.kind==='CORE'?(p.anchor?.p||p.target.p):(p.branch?.p||p.target.p),sc=boss.spec.scale,count=p.kind==='CORE'?8:p.level===3?7:5;

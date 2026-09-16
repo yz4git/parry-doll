@@ -121,7 +121,7 @@ drawDoll=function(d){
  if(localized&&typeof hitNodeForRegion==='function'){
   const n=hitNodeForRegion(d,d.hitRegion,d.hitRegionSide);
   if(n){
-   const pulse=Math.sin(clamp(hitT/(d.hitRegionMax||.3),0,1)*Math.PI),base=d.player?'#bffcf0':'#ffd39a';
+   const pulse=Math.sin(clamp(hitT/(d.hitRegionMax||.3),0,1)*Math.PI),base=d.player?'#ff5ca4':'#ff5260';
    orb(n.p,Math.max(n.r*1.12,.125*d.spec.scale),base);
    if(pulse>.35)orb(add(n.p,V(0,.035*d.spec.scale,0)),Math.max(n.r*.42,.052*d.spec.scale),'#fff5d6');
   }

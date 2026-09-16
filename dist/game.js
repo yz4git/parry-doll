@@ -239,10 +239,10 @@ function burst(p,color,count=24,power=6){for(let i=0;i<count;i++){const v=V((Mat
 function ring(p,color){rings.push({p:{...p},life:.5,color});if(rings.length>24)rings.shift()}
 function groundImpact(p,power){
  burst(V(p.x,.12,p.z),'#a39e8b',Math.round(12+power*7),3.5+power);
- ring(V(p.x,.06,p.z),'#d4b98a');shake=Math.max(shake,Math.min(.3,power*.12));
+ ring(V(p.x,.06,p.z),'#ff5260');shake=Math.max(shake,Math.min(.3,power*.12));
  impact(V(p.x,.18,p.z),'ground',Math.min(1.7,power));
 }
-function hurt(d,amount,force,point){if(d.invuln>0||d.hp<=0)return false;d.hp=Math.max(0,d.hp-amount);d.invuln=d.player?.32:.12;d.stun=d.player?.22:.075;if(d.player){d.swing=null;d.attack=0;d.counter=0;}d.impulse(point,force);burst(point,d.player?'#8ce6df':'#edac73',18,5);shake=Math.max(shake,amount>=25?.25:.12);hitstop=amount>=25?.08:.042;impact(point,amount>=60?'finish':'hit',amount>=25?1.5:1);if(d.player)feel.damage=.5;if(len(force)>24){d.down=amount>=60?1.2:.85;d.stun=amount>=60?1.6:1.15}if(d.hp<=0){d.down=99;d.impulse(point,mul(force,1.8));d.wind=0;if(!d.player){impact(point,'finish',2.3);feel.slow=.65;groundImpact(d.pos,d.spec.scale)}announce(d.player?'敗 北':'討 伐',2.6);transition=2.7}return true}
+function hurt(d,amount,force,point){if(d.invuln>0||d.hp<=0)return false;d.hp=Math.max(0,d.hp-amount);d.invuln=d.player?.32:.12;d.stun=d.player?.22:.075;if(d.player){d.swing=null;d.attack=0;d.counter=0;}d.impulse(point,force);burst(point,d.player?'#ff5ca4':'#edac73',18,5);shake=Math.max(shake,amount>=25?.25:.12);hitstop=amount>=25?.08:.042;impact(point,amount>=60?'finish':'hit',amount>=25?1.5:1);if(d.player)feel.damage=.5;if(len(force)>24){d.down=amount>=60?1.2:.85;d.stun=amount>=60?1.6:1.15}if(d.hp<=0){d.down=99;d.impulse(point,mul(force,1.8));d.wind=0;if(!d.player){impact(point,'finish',2.3);feel.slow=.65;groundImpact(d.pos,d.spec.scale)}announce(d.player?'敗 北':'討 伐',2.6);transition=2.7}return true}
 let transition=0;
 function playerAttack(){
  // A new attack cannot overwrite an active swing. Recovery now starts after the motion,
@@ -280,13 +280,13 @@ function resolveSwing(){
   // Once the enemy has committed to a telegraphed attack, blind mashing cannot stun-cancel it.
   if(committedBoss){boss.stun=0;boss.down=0}
   if(finisher)boss.posture=0;else if(move.counter)boss.posture+=24;else boss.posture=Math.min(45,boss.posture+(committedBoss?1:move.combo===2?4:2));
-  if(finisher){boss.broken=0;boss.posture=0;if(boss.hp>0)announce('決 着 の 一 撃',1.2);ring(point,'#ffd287');hitstop=.15;shake=.5;sound(65,.5,'sawtooth',.1)}
-  else if(move.counter){if(boss.hp>0)announce('弾 き 返 し',.7);ring(point,'#baffee');hitstop=.085;shake=.3;}
+  if(finisher){boss.broken=0;boss.posture=0;if(boss.hp>0)announce('決 着 の 一 撃',1.2);ring(point,'#ff5260');hitstop=.15;shake=.5;sound(65,.5,'sawtooth',.1)}
+  else if(move.counter){if(boss.hp>0)announce('弾 き 返 し',.7);ring(point,'#ff5ca4');hitstop=.085;shake=.3;}
  }
 }
-function playerParry(){if(player.parryCool>0||player.down>0||player.hp<=0)return false;player.parry=.56;player.parryCool=.62;player.swing=null;player.attack=0;player.cool=Math.min(player.cool,.1);player.attackChain=0;player.attackChainTimer=0;player.comboWindow=0;ring(player.nodes[1].p,'#8de7e0');sound(680,.1,'sine',.025);return true}
+function playerParry(){if(player.parryCool>0||player.down>0||player.hp<=0)return false;player.parry=.56;player.parryCool=.62;player.swing=null;player.attack=0;player.cool=Math.min(player.cool,.1);player.attackChain=0;player.attackChainTimer=0;player.comboWindow=0;ring(player.nodes[1].p,'#ff5ca4');sound(680,.1,'sine',.025);return true}
 function enemyImpact(move=null){if(boss.hp<=0||boss.stun>0||player.hp<=0)return;const v=sub(player.pos,boss.pos),distance=len(v);if(move?!attackContains(move,boss.pos,boss.aim,player.pos):distance>2.5+boss.spec.scale*.8)return;
- if(player.parry>0){const perfect=player.parry>.22;parries++;if(perfect)perfects++;boss.posture+=perfect?38:30;const followup=move&&boss.hitIndex<move.hits.length;boss.stun=followup?.055:.5;boss.wind=0;if(!followup){boss.strike=0;boss.pattern=null;boss.ai=move?move.recover:.9;}player.invuln=.28;player.counter=1.25;player.parryCool=.1;player.cool=0;const point=boss.nodes[2].p;boss.impulse(point,add(mul(norm(v),-15),V(0,6,0)));burst(player.nodes[1].p,'#ffde8e',45,10);ring(player.nodes[1].p,'#ffdf91');announce(perfect?'PERFECT PARRY':'PARRY',.65);shake=.28;hitstop=.075;impact(player.nodes[1].p,'parry',1.6);player.parry=0;
+ if(player.parry>0){const perfect=player.parry>.22;parries++;if(perfect)perfects++;boss.posture+=perfect?38:30;const followup=move&&boss.hitIndex<move.hits.length;boss.stun=followup?.055:.5;boss.wind=0;if(!followup){boss.strike=0;boss.pattern=null;boss.ai=move?move.recover:.9;}player.invuln=.28;player.counter=1.25;player.parryCool=.1;player.cool=0;const point=boss.nodes[2].p;boss.impulse(point,add(mul(norm(v),-15),V(0,6,0)));burst(player.nodes[1].p,'#ff5260',45,10);ring(player.nodes[1].p,'#ff5260');announce(perfect?'PERFECT PARRY':'PARRY',.65);shake=.28;hitstop=.075;impact(player.nodes[1].p,'parry',1.6);player.parry=0;
  }else{const force=add(mul(norm(v),move?move.force:boss.spec.scale>2?29:18),V(0,boss.spec.scale>2?11:5,0)),counterHit=player.attack>0,damageScale=counterHit?1.35:1;if(counterHit)announce('COUNTER HIT — 攻撃を止めて弾け',.75);hurt(player,Math.round(boss.spec.damage*(move?move.damage:1)*damageScale),force,player.nodes[boss.sequence%2?2:1].p)}}
 function updateHUD(){$('bossName').textContent=boss.spec.name;$('phase').textContent=boss.enraged?'覚醒':`0${level+1} / 04`;$('bossHP').style.width=100*boss.hp/boss.spec.hp+'%';$('posture').style.width=clamp(boss.posture,0,100)+'%';$('playerHP').style.width=player.hp+'%';$('stats').textContent=player.counter>0?'反撃チャンス！':`PARRY ${parries} · PERFECT ${perfects}`;$('round').textContent=boss.spec.sub;}
 function step(dt){time+=dt;for(const d of [player,boss]){for(const k of ['invuln','stun','down','attack','parry','cool','parryCool','comboWindow','attackChainTimer','counter','broken','dash'])d[k]=Math.max(0,d[k]-dt)}if(player.attackChainTimer===0)player.attackChain=0;if(mode==='play'){
@@ -357,13 +357,13 @@ function drawAttackTelegraph(){
 function box(x,y,z,w,h,d,color){const a=V(x-w/2,y,z-d/2),b=V(x+w/2,y,z-d/2),c=V(x+w/2,y,z+d/2),e=V(x-w/2,y,z+d/2),lift=p=>add(p,V(0,h,0));polygon([a,b,lift(b),lift(a)],color);polygon([b,c,lift(c),lift(b)],'#253039');polygon([c,e,lift(e),lift(c)],color);polygon([e,a,lift(a),lift(e)],'#17212a');polygon([lift(a),lift(b),lift(c),lift(e)],'#4d5558')}
 function drawDoll(d){let color=d.invuln>0?'#f7ecd6':d.spec.color;for(const l of d.links)segment(d.nodes[l.a].p,d.nodes[l.b].p,l.r,color);for(const n of d.nodes)orb(n.p,n.r,n.name==='head'?'#e4d4b5':color);
  const head=d.nodes[2].p,eyes=add(head,d.local(V(0,.02,d.nodes[2].r*.88)));segment(add(eyes,d.local(V(-.15,0,0))),add(eyes,d.local(V(.15,0,0))),.035,d.player?'#c6ffff':'#ffdf8d');
- if(d.spec.type==='human'){const hand=d.nodes.find(n=>n.name==='hand').p,blade=add(hand,d.local(mul(d.attack>0?motionPose(d).blade:d.wind>0?COMBO_POSES[enemyMove(d).motion].ready.blade:IDLE_POSE.blade,d.spec.scale)));segment(hand,blade,.045,d.player?'#c5f8ee':'#f2c57c');orb(hand,.12,'#e9c989');if(d.attack>0){const end=add(blade,d.local(V(-.5,.1,-.15)));segment(blade,end,.06,'#ffe5a077')}}
+ if(d.spec.type==='human'){const hand=d.nodes.find(n=>n.name==='hand').p,blade=add(hand,d.local(mul(d.attack>0?motionPose(d).blade:d.wind>0?COMBO_POSES[enemyMove(d).motion].ready.blade:IDLE_POSE.blade,d.spec.scale)));segment(hand,blade,.045,d.player?'#c5f8ee':'#ff5260');orb(hand,.12,'#ff5260');if(d.attack>0){const end=add(blade,d.local(V(-.5,.1,-.15)));segment(blade,end,.06,'#ff526077')}}
  if(d.parry>0){const p=project(d.nodes[1].p);shapes.push({depth:p.z-.3,draw(){ctx.strokeStyle='#b9ffef';ctx.lineWidth=2;ctx.beginPath();ctx.arc(p.x,p.y,p.s*.85,-2.8,.2);ctx.stroke()}})}
 }
 function render(){setCamera();ctx.save();const recoil=feel.reduced?0:shake;ctx.translate(Math.sin(feel.clock*113)*recoil*14,Math.cos(feel.clock*139)*recoil*8);const bg=ctx.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#0b131e');bg.addColorStop(.55,'#27313a');bg.addColorStop(1,'#101820');ctx.fillStyle=bg;ctx.fillRect(-20,-20,W+40,H+40);shapes=[];
  // In-world arena and monumental gate, rendered geometry rather than backdrop art.
  polygon([V(-14,-.1,-14),V(14,-.1,-14),V(14,-.1,14),V(-14,-.1,14)],'#303b40');for(let i=-12;i<12;i+=2)for(let j=-12;j<12;j+=2){polygon([V(i,0,j),V(i+1.94,0,j),V(i+1.94,0,j+1.94),V(i,0,j+1.94)],(i+j)%4?'#354044':'#313b40','#56606522')}
- for(let i=0;i<12;i++){const a=i*Math.PI/6,x=Math.cos(a)*12,z=Math.sin(a)*12;box(x,0,z,.8,2.7+(i%3)*.65,.8,'#3b454a');orb(V(x,3+(i%3)*.65,z),.12,'#e2ab64')}
+ for(let i=0;i<12;i++){const a=i*Math.PI/6,x=Math.cos(a)*12,z=Math.sin(a)*12;box(x,0,z,.8,2.7+(i%3)*.65,.8,'#3b454a');orb(V(x,3+(i%3)*.65,z),.12,'#ff5260')}
  box(-4,0,-12,1.5,6,1.3,'#37424a');box(4,0,-12,1.5,6,1.3,'#37424a');box(0,5.5,-12,9,1,1.5,'#404b51');
  shapes.sort((a,b)=>b.depth-a.depth);for(const s of shapes)s.draw();shapes=[];
  floorRing(V(0,.03,0),9.8,'#c4a57155',2);floorRing(V(0,.035,0),4,'#b3a28a33');

@@ -12,11 +12,11 @@
  const tacticNames=['KICK STANCE','LIMP HUNT','FIVE-LEG STANCE','STOMP BIAS','COPY OVERLOAD'];
  const lossNames=['SWORD ARM LOST','FORELEG LOST','SPEAR LEG LOST','BELL ARM LOST','CORE SHATTERED'];
  const tacticStyle=document.createElement('style');tacticStyle.textContent=`
- #mbBreakHud.mb-tactic{left:max(14px,env(safe-area-inset-left));top:27%;transform:none!important;min-width:0;text-align:left;opacity:.9;padding:5px 8px;border-left:2px solid #d5b66f99;background:linear-gradient(90deg,#071018b8,transparent);text-shadow:0 2px 8px #000}
+ #mbBreakHud.mb-tactic{left:max(14px,env(safe-area-inset-left));top:27%;transform:none!important;min-width:0;text-align:left;opacity:.9;padding:5px 8px;border-left:2px solid #ff526099;background:linear-gradient(90deg,#071018b8,transparent);text-shadow:0 2px 8px #000}
  #mbBreakHud.mb-tactic span{display:block;color:#9daaa7;font-size:7px;letter-spacing:2px;white-space:nowrap}
- #mbBreakHud.mb-tactic b{display:block;margin-top:2px;color:#f0d798!important;font-size:10px;letter-spacing:2.4px;text-decoration:none!important;white-space:nowrap}
- #mbBreakHud.mb-tactic.core-error{border-left-color:#9fe7dcaa;background:linear-gradient(90deg,#06141bcc,transparent)}
- #mbBreakHud.mb-tactic.core-error b{color:#cffff3!important;text-shadow:0 0 12px #64e5d766,0 2px 8px #000}
+ #mbBreakHud.mb-tactic b{display:block;margin-top:2px;color:#ff5260!important;font-size:10px;letter-spacing:2.4px;text-decoration:none!important;white-space:nowrap}
+ #mbBreakHud.mb-tactic.core-error{border-left-color:#ff5ca4aa;background:linear-gradient(90deg,#06141bcc,transparent)}
+ #mbBreakHud.mb-tactic.core-error b{color:#cffff3!important;text-shadow:0 0 12px #ff5ca466,0 2px 8px #000}
  @media(max-height:500px){#mbBreakHud.mb-tactic{top:28%;font-size:7px;padding:4px 7px}#mbBreakHud.mb-tactic b{font-size:9px}}
  @media(orientation:portrait){#mbBreakHud.mb-tactic{left:12px;top:31%}}
  `;document.head.appendChild(tacticStyle);

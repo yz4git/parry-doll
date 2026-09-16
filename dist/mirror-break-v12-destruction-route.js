@@ -4,7 +4,7 @@
  if(window.__parryMirrorBreakV12Loaded)return;window.__parryMirrorBreakV12Loaded=true;
  const proto=window.ParryVisual?.VisualScene?.prototype;if(!proto)return;
  const ROUTE=['ASH GATE','CAGE BREACH','BROKEN SPINE','ALTAR RIFT'];
- const PAL=[['#241814','#8c5b3d','#ffc06c'],['#101d20','#547a77','#8fe7d7'],['#171222','#66507f','#d9b2ff'],['#151c27','#596d86','#b8e3ff']];
+ const PAL=[['#241814','#8c5b3d','#ff5260'],['#101d20','#ff5ca4','#ff5ca4'],['#171222','#66507f','#d9b2ff'],['#151c27','#ff5ca4','#ff5ca4']];
  const s={history:[],lastSerial:0,routeLevel:-1,routeSource:-1,routeName:null,routeMeshes:0,routeBuilds:0,pressureTicks:0,lastPressure:null,routeLaneSide:0};window.__mirrorBreakV12State=s;
  const find=(root,pred)=>{let hit=null;root?.traverse?.(o=>{if(!hit&&pred(o))hit=o});return hit};
  function record(hit){if(!hit||hit.level<0||hit.level>3||!hit.serial||hit.serial<=s.lastSerial)return;s.lastSerial=hit.serial;const e={serial:hit.serial,level:hit.level,x:hit.x||0,z:hit.z||0,power:hit.power||1.5,style:hit.style||'',part:hit.part||null,kind:hit.kind||null};const old=s.history.findIndex(q=>q.level===e.level);if(old>=0)s.history[old]=e;else s.history.push(e);s.history.sort((a,b)=>a.level-b.level)}

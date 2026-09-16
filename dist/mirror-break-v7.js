@@ -6,7 +6,7 @@
  const s={bossRef:null,attackCalls:0,echoIndex:0,echoes:0,lastEcho:null,history:[],pulseT:0};
  window.__mirrorBreakV7State=s;
  const clone=m=>({...m,hits:[...(m?.hits||[])]});
- const color={EDGE:'#ffd98b',MIRROR:'#b2fff0',PULSE:'#a9dcff'};
+ const color={EDGE:'#ff5260',MIRROR:'#ff5ca4',PULSE:'#ff5ca4'};
  function brokenFinal(){return !!(level===4&&boss&&state.boss===boss&&state.broken)}
  function pool(){const out=[],c=state.cores||{};for(const key of ['EDGE','MIRROR','PULSE'])for(let i=0;i<(c[key]||0);i++)out.push(key);return out}
  function echoMove(key){

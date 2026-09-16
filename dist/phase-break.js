@@ -17,7 +17,7 @@
   ['BELL WARDEN','BROKEN BELL','SKY BREAKER'],
   ['IMITATE','LEARN','MIRROR KILL']
  ];
- const PHASE_COLORS=['#d8b26f','#f08c5b','#ffcf70'];
+ const PHASE_COLORS=['#ff5260','#f08c5b','#ff5260'];
  const pb={bossRef:null,phase:1,chain:0,chainT:0,lastParryAt:-9,resolve:0,danger:null,transitionT:0,secretSpawned:false,secretWon:false,baseSpeed:0,baseDamage:0,parryAttempts:0,attacks:0};
 
  if(bosses.length<5){
@@ -36,13 +36,13 @@
   if(document.getElementById('pbPhaseStrip'))return;
   const style=document.createElement('style');
   style.textContent=`
-   #pbPhaseStrip{position:absolute;top:47px;left:28%;width:44%;max-width:650px;text-align:center;pointer-events:none;font-size:9px;letter-spacing:2.2px;color:#d8c59d;text-shadow:0 2px 8px #000;opacity:.92}
-   #pbPhaseStrip b{font-size:11px;color:#ffe0a3;font-weight:700;margin-left:7px}
-   #pbDanger{position:absolute;left:50%;top:22%;transform:translateX(-50%) scale(.96);min-width:190px;text-align:center;pointer-events:none;padding:6px 12px;border:1px solid #d7b36d55;background:linear-gradient(90deg,#07101800,#071018d8 18%,#071018d8 82%,#07101800);font-size:11px;letter-spacing:2px;color:#ffe0a2;opacity:0;transition:opacity .08s,transform .08s;text-shadow:0 2px 9px #000}
+   #pbPhaseStrip{position:absolute;top:47px;left:28%;width:44%;max-width:650px;text-align:center;pointer-events:none;font-size:9px;letter-spacing:2.2px;color:#ff5260;text-shadow:0 2px 8px #000;opacity:.92}
+   #pbPhaseStrip b{font-size:11px;color:#ff5260;font-weight:700;margin-left:7px}
+   #pbDanger{position:absolute;left:50%;top:22%;transform:translateX(-50%) scale(.96);min-width:190px;text-align:center;pointer-events:none;padding:6px 12px;border:1px solid #ff526055;background:linear-gradient(90deg,#07101800,#071018d8 18%,#071018d8 82%,#07101800);font-size:11px;letter-spacing:2px;color:#ff5260;opacity:0;transition:opacity .08s,transform .08s;text-shadow:0 2px 9px #000}
    #pbDanger.show{opacity:1;transform:translateX(-50%) scale(1)}#pbDanger strong{color:#fff1c9;margin-right:6px}
-   #pbChain{position:absolute;left:max(25px,env(safe-area-inset-left));bottom:243px;pointer-events:none;font-size:11px;letter-spacing:2px;color:#ffe3a4;text-shadow:0 2px 9px #000;opacity:0;transform:translateY(4px);transition:opacity .1s,transform .1s}#pbChain.show{opacity:1;transform:none}
-   #pbResolve{position:absolute;left:max(25px,env(safe-area-inset-left));bottom:220px;width:155px;pointer-events:none}#pbResolve label{display:flex;justify-content:space-between;font-size:8px;letter-spacing:1.7px;color:#9ebeb8;margin-bottom:3px}#pbResolve .track{height:3px;background:#071017c9}.track i{display:block;width:0;height:100%;background:linear-gradient(90deg,#6bc9c3,#f4d289);box-shadow:0 0 8px #9de0cb77;transition:width .15s}
-   #pbBanner{position:absolute;left:0;right:0;top:34%;text-align:center;pointer-events:none;opacity:0;transform:scale(.88);transition:opacity .14s,transform .14s;text-shadow:0 3px 18px #000}#pbBanner.show{opacity:1;transform:scale(1)}#pbBanner small{display:block;font-size:10px;letter-spacing:5px;color:#e5c382}#pbBanner b{display:block;margin-top:5px;font-size:26px;letter-spacing:8px;color:#fff0c7}
+   #pbChain{position:absolute;left:max(25px,env(safe-area-inset-left));bottom:243px;pointer-events:none;font-size:11px;letter-spacing:2px;color:#ff5260;text-shadow:0 2px 9px #000;opacity:0;transform:translateY(4px);transition:opacity .1s,transform .1s}#pbChain.show{opacity:1;transform:none}
+   #pbResolve{position:absolute;left:max(25px,env(safe-area-inset-left));bottom:220px;width:155px;pointer-events:none}#pbResolve label{display:flex;justify-content:space-between;font-size:8px;letter-spacing:1.7px;color:#9ebeb8;margin-bottom:3px}#pbResolve .track{height:3px;background:#071017c9}.track i{display:block;width:0;height:100%;background:linear-gradient(90deg,#ff5ca4,#ff5260);box-shadow:0 0 8px #9de0cb77;transition:width .15s}
+   #pbBanner{position:absolute;left:0;right:0;top:34%;text-align:center;pointer-events:none;opacity:0;transform:scale(.88);transition:opacity .14s,transform .14s;text-shadow:0 3px 18px #000}#pbBanner.show{opacity:1;transform:scale(1)}#pbBanner small{display:block;font-size:10px;letter-spacing:5px;color:#ff5260}#pbBanner b{display:block;margin-top:5px;font-size:26px;letter-spacing:8px;color:#fff0c7}
    @media(max-height:500px){#pbPhaseStrip{top:8px;left:28%;width:44%}#pbDanger{top:24%}#pbChain{bottom:195px}#pbResolve{bottom:174px}}
   `;
   document.head.appendChild(style);
@@ -90,7 +90,7 @@
   // enemy move, player input, velocities, AI timer and simulation speed while it is shown.
   pb.phase=next;tuneBoss();
   const p=boss.nodes.find(n=>n.name==='chest')?.p||boss.nodes[1]?.p||boss.pos;
-  ring(V(boss.pos.x,.05,boss.pos.z),PHASE_COLORS[next-1]);ring(V(boss.pos.x,.05,boss.pos.z),'#fff0bd');burst(p,PHASE_COLORS[next-1],next===3?38:26,next===3?8:6);
+  ring(V(boss.pos.x,.05,boss.pos.z),PHASE_COLORS[next-1]);ring(V(boss.pos.x,.05,boss.pos.z),'#ff5260');burst(p,PHASE_COLORS[next-1],next===3?38:26,next===3?8:6);
   shake=Math.max(shake,next===3?.22:.16);hitstop=Math.max(hitstop,next===3?.055:.035);feel.slow=Math.max(feel.slow,next===3?.10:.07);feel.flash=Math.max(feel.flash,next===3?.12:.07);feel.pulse=Math.max(feel.pulse,.12);
   showBanner(phaseName(next),next===3?'FINAL PHASE':'PHASE BREAK',next===3?1.35:1.05);combatSound('break');updatePhaseUI();
  }
@@ -152,7 +152,7 @@
   if(landed){
    if(swing?.counter)pb.resolve=Math.min(100,pb.resolve+12);
    else pb.resolve=Math.min(100,pb.resolve+(swing?.combo===2?7:3));
-   if(crush&&boss.hp>0){boss.wind=0;boss.strike=0;boss.pattern=null;boss.stun=Math.max(boss.stun,.72);boss.ai=Math.max(boss.ai,1);boss.posture=Math.min(115,Math.max(posture,boss.posture)+20);ring(boss.nodes[1].p,'#ffdc87');announce('破 壊 阻 止',.65);impact(boss.nodes[1].p,'break',1.45);shake=Math.max(shake,.22);hitstop=Math.max(hitstop,.065);pb.resolve=Math.min(100,pb.resolve+14)}
+   if(crush&&boss.hp>0){boss.wind=0;boss.strike=0;boss.pattern=null;boss.stun=Math.max(boss.stun,.72);boss.ai=Math.max(boss.ai,1);boss.posture=Math.min(115,Math.max(posture,boss.posture)+20);ring(boss.nodes[1].p,'#ff5260');announce('破 壊 阻 止',.65);impact(boss.nodes[1].p,'break',1.45);shake=Math.max(shake,.22);hitstop=Math.max(hitstop,.065);pb.resolve=Math.min(100,pb.resolve+14)}
    updatePhaseUI();
   }
   return out;

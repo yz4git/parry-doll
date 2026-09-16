@@ -15,14 +15,14 @@
  #mbCoreChoice .mb-panel:after{content:'THE PARRY DOLL WILL COPY THIS BUILD';display:block;margin-top:10px;text-align:center;color:#778c89;font-size:7px;letter-spacing:2.4px}
  #mbCoreChoice .mb-core{position:relative;overflow:hidden;transition:border-color .12s,transform .12s,box-shadow .12s}
  #mbCoreChoice .mb-core:before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;opacity:.75}
- #mbCoreChoice .mb-core.core-edge:before{background:#f1c56f}#mbCoreChoice .mb-core.core-mirror:before{background:#9ffff0}#mbCoreChoice .mb-core.core-pulse:before{background:#8cc9ff}
- #mbCoreChoice .mb-core.core-edge:active{border-color:#e6bd72aa;box-shadow:0 0 20px #dcae4d24}#mbCoreChoice .mb-core.core-mirror:active{border-color:#9fffe0aa;box-shadow:0 0 20px #75e6cf24}#mbCoreChoice .mb-core.core-pulse:active{border-color:#99d7ffaa;box-shadow:0 0 20px #63b7ef24}
- #mbCoreChoice .mb-core-role{display:block;margin-top:8px;padding-top:7px;border-top:1px solid #b8c8c020;color:#f0dfb5;font-size:9px;font-weight:800;letter-spacing:2px}
+ #mbCoreChoice .mb-core.core-edge:before{background:#ff5260}#mbCoreChoice .mb-core.core-mirror:before{background:#ff5ca4}#mbCoreChoice .mb-core.core-pulse:before{background:#ff5ca4}
+ #mbCoreChoice .mb-core.core-edge:active{border-color:#ff5260aa;box-shadow:0 0 20px #ff526024}#mbCoreChoice .mb-core.core-mirror:active{border-color:#9fffe0aa;box-shadow:0 0 20px #ff5ca424}#mbCoreChoice .mb-core.core-pulse:active{border-color:#ff5ca4aa;box-shadow:0 0 20px #ff5ca424}
+ #mbCoreChoice .mb-core-role{display:block;margin-top:8px;padding-top:7px;border-top:1px solid #b8c8c020;color:#ff5260;font-size:9px;font-weight:800;letter-spacing:2px}
  #mbCoreChoice .mb-core-rule{display:block;margin-top:4px;color:#aabbb7;font-size:9px;line-height:1.4;letter-spacing:.4px}
  #mbCoreChoice .mb-build-preview{margin-top:7px;text-align:center;color:#9fb0ad;font-size:8px;letter-spacing:2px}
- #mbCoreChoice .mb-build-preview b{color:#e6c985;font-weight:700}
+ #mbCoreChoice .mb-build-preview b{color:#ff5260;font-weight:700}
  #mbCoreProc{display:block;min-height:9px;margin-top:3px;font-size:7px;font-weight:800;letter-spacing:2px;opacity:0;transform:translateX(4px);transition:opacity .08s,transform .08s;text-shadow:0 0 9px currentColor,0 2px 7px #000}
- #mbCoreProc.show{opacity:.95;transform:none}#mbCoreProc.edge{color:#f3d184}#mbCoreProc.mirror{color:#b2fff0}#mbCoreProc.pulse{color:#acdfff}
+ #mbCoreProc.show{opacity:.95;transform:none}#mbCoreProc.edge{color:#ff5260}#mbCoreProc.mirror{color:#ff5ca4}#mbCoreProc.pulse{color:#ff5ca4}
  @media(max-height:500px){#mbCoreChoice .mb-core-role{margin-top:5px;padding-top:4px;font-size:8px}#mbCoreChoice .mb-core-rule{margin-top:2px;font-size:8px;line-height:1.25}#mbCoreChoice .mb-panel:after{margin-top:6px}#mbCoreProc{margin-top:2px;font-size:6.5px}}
  `;document.head.appendChild(style);
  function ensureProcHud(){let el=document.getElementById('mbCoreProc');if(el)return el;const host=document.getElementById('mbCores');if(!host)return null;el=document.createElement('small');el.id='mbCoreProc';host.appendChild(el);return el}
@@ -39,8 +39,8 @@
   const pf=perfects,out=v6EnemyImpact(move),didPerfect=perfects>pf;
   if(didPerfect){
    const edge=state.cores.EDGE||0,mirror=state.cores.MIRROR||0,point=player?.nodes?.find(n=>n.name==='hand')?.p||player?.nodes?.[1]?.p;
-   if(edge>0){s.edgeReadyT=Math.max(s.edgeReadyT,1.18+.16*edge);proc('EDGE READY',point,'#ffe0a0')}
-   if(mirror>0){s.mirrorChainT=Math.max(s.mirrorChainT,.84+.12*mirror);player.parryCool=Math.min(player.parryCool,.035);s.mirrorRefreshes++;proc('MIRROR CHAIN',point,'#aaffea')}
+   if(edge>0){s.edgeReadyT=Math.max(s.edgeReadyT,1.18+.16*edge);proc('EDGE READY',point,'#ff5260')}
+   if(mirror>0){s.mirrorChainT=Math.max(s.mirrorChainT,.84+.12*mirror);player.parryCool=Math.min(player.parryCool,.035);s.mirrorRefreshes++;proc('MIRROR CHAIN',point,'#ff5ca4')}
   }
   return out;
  };
@@ -52,18 +52,18 @@
   const edge=state.cores.EDGE||0,drive=edge>0&&s.edgeReadyT>0&&player?.counter>0;
   const ok=v6PlayerAttack();if(ok&&drive&&player.swing){
    player.swing.__mbEdgeDrive=true;player.swing.damage+=3.1*edge;player.swing.force+=2.4*edge;
-   const to=boss&&player?norm(sub(boss.pos,player.pos)):V();player.vel=add(player.vel,mul(to,2.25+.65*edge));s.edgeReadyT=0;s.edgeDrives++;proc('EDGE DRIVE',player.nodes.find(n=>n.name==='hand')?.p||player.nodes[1].p,'#ffe0a0');
+   const to=boss&&player?norm(sub(boss.pos,player.pos)):V();player.vel=add(player.vel,mul(to,2.25+.65*edge));s.edgeReadyT=0;s.edgeDrives++;proc('EDGE DRIVE',player.nodes.find(n=>n.name==='hand')?.p||player.nodes[1].p,'#ff5260');
   }
   return ok;
  };
  const v6ResolveSwing=resolveSwing;resolveSwing=function(){
   const move=player.swing?{...player.swing}:null,beforeHp=boss?.hp||0,beforePosture=boss?.posture||0,out=v6ResolveSwing(),landed=!!(boss&&boss.hp<beforeHp);if(!landed||!move)return out;
   const point=boss.nodes?.find(n=>n.name==='chest')?.p||boss.nodes?.[1]?.p||boss.pos;
-  if(move.__mbEdgeDrive){const lv=state.cores.EDGE||0;boss.posture=Math.min(115,boss.posture+4+2*lv);player.comboWindow=Math.max(player.comboWindow,.30+.055*lv);player.cool=Math.min(player.cool,.15);s.edgeHits++;proc('EDGE DRIVE',point,'#ffe0a0')}
+  if(move.__mbEdgeDrive){const lv=state.cores.EDGE||0;boss.posture=Math.min(115,boss.posture+4+2*lv);player.comboWindow=Math.max(player.comboWindow,.30+.055*lv);player.cool=Math.min(player.cool,.15);s.edgeHits++;proc('EDGE DRIVE',point,'#ff5260')}
   if(move.combo===2&&!move.counter&&(state.cores.PULSE||0)>0){
    const lv=state.cores.PULSE,bump=7+3*lv;boss.posture=Math.min(115,boss.posture+bump);boss.stun=Math.max(boss.stun,.08+.035*lv);
    if(window.__phaseBreakV2State)window.__phaseBreakV2State.resolve=Math.min(100,(window.__phaseBreakV2State.resolve||0)+6+2*lv);
-   ring(V(boss.pos.x,.06,boss.pos.z),'#9bdcff');ring(point,'#b9fff1');burst(point,'#9bdcff',7+lv*2,3.4+lv*.4);shake=Math.max(shake,.11+.025*lv);hitstop=Math.max(hitstop,.045+.008*lv);s.pulseCrushes++;proc('PULSE CRUSH',point,'#9bdcff');
+   ring(V(boss.pos.x,.06,boss.pos.z),'#ff5ca4');ring(point,'#ff5ca4');burst(point,'#ff5ca4',7+lv*2,3.4+lv*.4);shake=Math.max(shake,.11+.025*lv);hitstop=Math.max(hitstop,.045+.008*lv);s.pulseCrushes++;proc('PULSE CRUSH',point,'#ff5ca4');
   }
   s.lastPostureGain=Math.max(0,(boss.posture||0)-beforePosture);return out;
  };

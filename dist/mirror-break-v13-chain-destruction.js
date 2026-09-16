@@ -4,7 +4,7 @@
  if(window.__parryMirrorBreakV13Loaded)return;window.__parryMirrorBreakV13Loaded=true;
  const proto=window.ParryVisual?.VisualScene?.prototype,v12=window.__mirrorBreakV12State;if(!proto||!v12)return;
  const NAMES=['ASH GATE','CAGE BREACH','BROKEN SPINE','ALTAR RIFT'];
- const COLORS=['#ffc06c','#8fe7d7','#d9b2ff','#b8e3ff'];
+ const COLORS=['#ff5260','#ff5ca4','#d9b2ff','#ff5ca4'];
  const s={launch:null,triggers:0,history:[],consumed:new Set(),applying:false,collapse:null,scene:null,last:null,checks:0,uiToken:0,mirrorMount:null};window.__mirrorBreakV13State=s;
  const uiStyle=document.createElement('style');uiStyle.textContent='body.mb-chain-destruction #mbMirrorShift{display:none!important;opacity:0!important;visibility:hidden!important;transform:translate(-50%,-50%) scale(.96)!important}';document.head.appendChild(uiStyle);
  const named=(d,name)=>d?.nodes?.find?.(n=>n.name===name)||null;

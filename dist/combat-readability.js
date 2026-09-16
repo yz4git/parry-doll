@@ -2,8 +2,8 @@
 // Combat readability pass: preserve impact while keeping silhouettes and reaction direction visible.
 const readabilityStyle=document.createElement('style');
 readabilityStyle.textContent=`
-#toast.readability-parry{top:12%;left:auto;right:max(28px,env(safe-area-inset-right));width:auto;text-align:right;font-size:clamp(13px,2vw,18px);letter-spacing:2px;color:#ffe0a4}
-#toast.readability-finisher{top:auto;bottom:29%;left:58%;right:auto;width:auto;padding:5px 9px;border:1px solid #f0c47a88;background:#15181bb8;font-size:clamp(13px,2vw,18px);letter-spacing:3px;color:#ffe2a3;border-radius:3px}
+#toast.readability-parry{top:12%;left:auto;right:max(28px,env(safe-area-inset-right));width:auto;text-align:right;font-size:clamp(13px,2vw,18px);letter-spacing:2px;color:#ff5260}
+#toast.readability-finisher{top:auto;bottom:29%;left:58%;right:auto;width:auto;padding:5px 9px;border:1px solid #ff526088;background:#15181bb8;font-size:clamp(13px,2vw,18px);letter-spacing:3px;color:#ff5260;border-radius:3px}
 #toast.readability-normal{top:16%;left:0;right:0;width:100%;text-align:center}
 #cue{top:16%;font-size:clamp(13px,2.2vw,17px);letter-spacing:2.5px}
 @media(max-height:500px){#toast.readability-parry{top:10%}#toast.readability-finisher{bottom:27%}#cue{top:15%}}
@@ -31,7 +31,7 @@ drawDoll=function(d){
  if(localized&&typeof hitNodeForRegion==='function'){
   const n=hitNodeForRegion(d,d.hitRegion,d.hitRegionSide);
   if(n){
-   const pulse=Math.sin(clamp(d.hitRegionT/(d.hitRegionMax||.3),0,1)*Math.PI),base=d.player?'#bffcf0':'#ffd39a';
+   const pulse=Math.sin(clamp(d.hitRegionT/(d.hitRegionMax||.3),0,1)*Math.PI),base=d.player?'#ff5ca4':'#ff5260';
    orb(n.p,Math.max(n.r*1.55,.18*d.spec.scale),base);
    const q=add(n.p,V(0,.06*d.spec.scale,0));
    orb(q,Math.max(n.r*.72,.09*d.spec.scale),'#fff5d6');
