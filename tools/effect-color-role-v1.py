@@ -18,9 +18,11 @@ EFFECT_FILES={
 
 def reserved_rgb(r,g,b):
     h,s,v=colorsys.rgb_to_hsv(r/255,g/255,b/255);h*=360
-    if s<.22 or v<.28:return None
-    if 32<=h<=78:return 'yellow'
-    if 165<=h<=250:return 'blue'
+    if v<.28 or s<.08:return None
+    # Ignore muted grey-green UI tones, but treat pale bright cream/cyan as reserved too.
+    if s<.20 and v<.85:return None
+    if 28<=h<=85:return 'yellow'
+    if 140<=h<=255:return 'blue'
     return None
 
 def recolor_triplet(r,g,b):
