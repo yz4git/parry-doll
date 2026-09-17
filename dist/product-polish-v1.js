@@ -1,12 +1,12 @@
 'use strict';
-// Product polish v1 — reduce HUD noise and reserve gold/cyan for live reaction windows.
+// Product polish v2 — keep combat readable on iPhone: one HUD hierarchy, one response colour, no secret-mode noise.
 (()=>{
  if(window.__parryProductPolishV1Loaded)return;
  window.__parryProductPolishV1Loaded=true;
 
  const style=document.createElement('style');
  style.textContent=`
- /* Title/result presentation: the battle HUD must not leak behind the panel. */
+ /* Title/result presentation: battle UI must never leak behind the panel. */
  body.pd-title header,
  body.pd-title #bossHud,
  body.pd-title #playerHud,
@@ -26,41 +26,65 @@
    opacity:0!important;visibility:hidden!important;pointer-events:none!important;
  }
 
- /* Keep only one reaction instruction in combat. */
+ /* Combat hierarchy: boss identity + HP is the only persistent information in the upper centre. */
  body.pd-play #responseLegend,
  body.pd-play #dodgeCue,
  body.pd-play #pbDanger,
- body.pd-play #mbCores{display:none!important}
+ body.pd-play #mbCores,
+ body.pd-play #pbPhaseStrip{display:none!important}
+ body.pd-play .brand{display:none!important}
+ body.pd-play header{
+   left:auto!important;right:max(22px,env(safe-area-inset-right))!important;width:auto!important;
+   gap:8px!important;opacity:.72!important;z-index:12!important;
+ }
+ body.pd-play header button{
+   min-width:42px!important;padding:7px 10px!important;background:#0a1118b8!important;
+   border-color:#ffffff20!important;box-shadow:0 3px 12px #0005!important;font-size:12px!important;
+ }
+ body.pd-play #bossHud{
+   top:max(15px,env(safe-area-inset-top))!important;left:50%!important;transform:translateX(-50%)!important;
+   width:min(410px,44vw)!important;z-index:10!important;filter:drop-shadow(0 3px 8px #000a)!important;
+ }
+ body.pd-play #bossHud>div:first-child{margin-bottom:5px!important;font-size:13px!important;letter-spacing:1.5px!important}
+ body.pd-play #bossName{font-weight:760!important;text-shadow:0 2px 8px #000!important}
+ body.pd-play #phase{font-size:10px!important;letter-spacing:1.4px!important;color:#d4c7aa!important}
+ body.pd-play #bossHud .bar{height:8px!important}
+ body.pd-play #bossHud .posture{margin-top:5px!important;opacity:.86!important}
+
+ /* Move name is transient and gets its own row below the health bar instead of colliding with phase/name text. */
+ body.pd-play #attackHud{
+   position:fixed!important;top:max(68px,calc(env(safe-area-inset-top) + 53px))!important;
+   left:50%!important;right:auto!important;width:min(320px,48vw)!important;height:22px!important;
+   transform:translateX(-50%)!important;justify-content:center!important;padding:0 10px!important;
+   border:1px solid #ffffff24!important;color:#dce2e5!important;background:linear-gradient(90deg,transparent,#071019d8 16%,#071019d8 84%,transparent)!important;
+   box-shadow:none!important;text-shadow:0 2px 8px #000!important;z-index:11!important;
+ }
+ body.pd-play #attackHud small{color:#aab3b8!important}
+ body.pd-parry-warning #attackHud{
+   border-color:#ffd36b7a!important;color:#ffe39a!important;box-shadow:0 0 12px #ffd36b33!important;
+ }
+ body.pd-dodge-warning #attackHud{
+   border-color:#67ddff7a!important;color:#9aeaff!important;box-shadow:0 0 12px #67ddff33!important;
+ }
+
+ /* Secondary systems only appear when they actually matter. */
  body.pd-play #mbBreakHud{opacity:0!important;transform:translateX(-50%) scale(.94)!important}
  body.pd-play #mbBreakHud.exposed{opacity:1!important;transform:translateX(-50%) scale(1.02)!important}
- body.pd-play #mbBreakHud.broken{opacity:.32!important}
- body.pd-play .brand small{display:none!important}
- body.pd-play .brand{opacity:.68}
- body.pd-play #pbPhaseStrip{opacity:.58!important}
+ body.pd-play #mbBreakHud.broken{opacity:.28!important}
+ body.pd-play #pbResolve{opacity:.74!important}
+ body.pd-play #pbChain{z-index:12!important}
 
- /* Main on-field instruction. Gold means PARRY, cyan means DODGE, only while reading a wind-up. */
+ /* Main on-field instruction. Gold = PARRY, cyan = DODGE, only while reading a wind-up. */
  body.pd-play #cue{
    top:25%!important;font-size:clamp(18px,3vw,28px)!important;font-weight:900!important;
    letter-spacing:5px!important;line-height:1!important;transition:color .06s,text-shadow .06s,opacity .08s!important;
+   z-index:13!important;
  }
  body.pd-play:not(.pd-warning) #cue{opacity:0!important}
  body.pd-parry-warning #cue{color:#ffd36b!important;text-shadow:0 0 20px #d49a22cc,0 3px 12px #000!important}
  body.pd-dodge-warning #cue{color:#67ddff!important;text-shadow:0 0 20px #159dcacc,0 3px 12px #000!important}
 
- /* Enemy move card is secondary; reaction colour is applied only during its actual wind-up. */
- body.pd-play #attackHud{
-   border-color:#ffffff24!important;color:#dce2e5!important;background:#071019b8!important;
-   box-shadow:none!important;text-shadow:0 2px 8px #000!important;
- }
- body.pd-play #attackHud small{color:#aab3b8!important}
- body.pd-parry-warning #attackHud{
-   border-color:#ffd36b99!important;color:#ffe39a!important;box-shadow:0 0 14px #ffd36b44!important;
- }
- body.pd-dodge-warning #attackHud{
-   border-color:#67ddff99!important;color:#9aeaff!important;box-shadow:0 0 14px #67ddff44!important;
- }
-
- /* Response buttons are neutral at rest. The required button alone lights up on a real telegraph. */
+ /* Response buttons stay neutral until a real telegraph requires them. */
  body.pd-play #parry,
  body.pd-play #dodge{
    background:radial-gradient(circle at 40% 28%,#343b42ee,#171d23ed)!important;
@@ -83,15 +107,25 @@
  body.pd-parry-warning #dodge,
  body.pd-dodge-warning #parry{opacity:.43!important;transform:scale(.96)!important}
 
- /* Slightly calmer upper HUD on short iPhone landscapes. */
  @media(max-height:500px){
-   body.pd-play #bossHud{top:22px!important}
-   body.pd-play #pbPhaseStrip{top:7px!important}
-   body.pd-play header{opacity:.80}
-   body.pd-play #attackHud{top:16%!important}
+   body.pd-play #bossHud{top:max(12px,env(safe-area-inset-top))!important}
+   body.pd-play #attackHud{top:max(64px,calc(env(safe-area-inset-top) + 50px))!important}
+ }
+ @media(max-width:760px){
+   body.pd-play #bossHud{width:min(380px,43vw)!important}
+   body.pd-play #attackHud{width:min(290px,45vw)!important;font-size:11px!important}
+   body.pd-play header{gap:5px!important}
+   body.pd-play header button{padding:6px 8px!important}
  }
  `;
  document.head.appendChild(style);
+
+ let secretLabel=null;
+ function findSecretLabel(){
+   if(secretLabel?.isConnected)return secretLabel;
+   secretLabel=[...document.querySelectorAll('div,span,small')].find(el=>el.children.length===0&&el.textContent?.trim()==='MIRROR BREAK')||null;
+   return secretLabel;
+ }
 
  function updateState(){
    const overlay=document.getElementById('overlay');
@@ -112,6 +146,8 @@
    document.body.classList.toggle('pd-dodge-warning',isDodge&&!panelVisible);
    document.body.classList.toggle('pd-parry-warning',isParry&&!panelVisible);
    document.body.classList.toggle('pd-secret',secret&&!panelVisible);
+   const label=findSecretLabel();
+   if(label)label.style.display=playing&&!secret?'none':'';
    requestAnimationFrame(updateState);
  }
  updateState();
