@@ -152,21 +152,28 @@
     if(!move)return false;
     testForcedMove=move;boss.ai=0;
     startEnemyAttack(move);
-    // Diagnostic-only acceleration: preserve the production move and enemyImpact path,
-    // but begin one simulation tick before its first scheduled hit. Ordinary play never
-    // enters this branch because parryDodgeTest exists only under ?dodgecheck.
+    // Diagnostic-only hold: place the real production move inside its actionable cue,
+    // then freeze enemy progression until the test has delivered an actual touch input.
     if(prime&&boss.wind>0){
-     const first=Math.max(.012,move.hits?.[0]??.15);
-     boss.wind=0;
-     boss.strike=move.active;
-     boss.strikeElapsed=Math.max(0,first-.012);
-     boss.hitIndex=0;
-     boss.attack=move.active+.18;
-     boss.motion=move.motion;
-     boss.motionDuration=boss.attack;
-     boss.motionContact=.012;
+     const first=Math.max(.04,move.hits?.[0]??.15);
+     boss.wind=response==='dodge'?Math.max(.01,.27-first):Math.max(.01,.40-first);
+     boss.stun=Math.max(boss.stun,5);
     }
     return true;
+   },
+   resolveTouch:(response)=>{
+    if(mode!=='play'||!boss||boss.hp<=0)return null;
+    if(response==='parry'){
+     if(parryQueued){parryBuffer=.18;parryQueued=false}
+     if(parryBuffer>0&&playerParry()){parryBuffer=0;attackBuffer=0}
+    }else if(response==='dodge'){
+     if(dodgeQueued){startDodge();dodgeQueued=false}
+    }
+    const move=enemyMove();
+    boss.stun=0;
+    enemyImpact(move);
+    boss.wind=0;boss.strike=0;boss.pattern=null;boss.ai=Math.max(boss.ai,.2);
+    return window.parryDoll?.snapshot?.()||null;
    }
   };
  }
