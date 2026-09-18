@@ -97,7 +97,7 @@ step=function(dt){
   const responseMove=enemyMove(),dodgeOnly=responseMove?.response==='dodge';
   if(dodgeOnly&&(boss.wind>0||boss.strike>0))$('cue').textContent='≫ 避 け ろ ≫';
   else if(boss.wind>0&&boss.wind<Math.max(.06,.48-responseMove.hits[0]))$('cue').textContent='◇ 弾 け ◇';
-  else if(boss.strike>0&&boss.hitIndex<responseMove.hits.length)$('cue').textContent='◇ 続 け て 弾 け ◇';
+  else if(boss.strike>0&&boss.hitIndex<responseMove.hits.length)$('cue').textContent=boss.hitIndex>0?'◇ 続 け て 弾 け ◇':'◇ 弾 け ◇';
   else $('cue').textContent='';
  }
  p5SyncAttackHud();
