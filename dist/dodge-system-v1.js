@@ -152,9 +152,20 @@
     if(!move)return false;
     testForcedMove=move;boss.ai=0;
     startEnemyAttack(move);
-    // Diagnostic-only acceleration: preserve the production move/hit logic, but skip the
-    // long headless render wait and begin just before the real response window.
-    if(prime&&boss.wind>0)boss.wind=Math.min(boss.wind,response==='dodge'?.07:.16);
+    // Diagnostic-only acceleration: preserve the production move and enemyImpact path,
+    // but begin one simulation tick before its first scheduled hit. Ordinary play never
+    // enters this branch because parryDodgeTest exists only under ?dodgecheck.
+    if(prime&&boss.wind>0){
+     const first=Math.max(.012,move.hits?.[0]??.15);
+     boss.wind=0;
+     boss.strike=move.active;
+     boss.strikeElapsed=Math.max(0,first-.012);
+     boss.hitIndex=0;
+     boss.attack=move.active+.18;
+     boss.motion=move.motion;
+     boss.motionDuration=boss.attack;
+     boss.motionContact=.012;
+    }
     return true;
    }
   };
