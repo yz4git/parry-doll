@@ -15,7 +15,7 @@ await page.screenshot({path:'01-neutral.png'});
 
 async function force(kind){
  for(let i=0;i<100;i++){
-  const ok=await page.evaluate(k=>window.parryDodgeTest.forceAttack(k),kind);
+  const ok=await page.evaluate(k=>window.parryDodgeTest.forceAttack(k,true),kind);
   if(ok)return;
   await page.waitForTimeout(70);
  }
