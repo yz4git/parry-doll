@@ -145,13 +145,16 @@
     boss.face=Math.atan2(player.pos.x-boss.pos.x,player.pos.z-boss.pos.z);boss.aim=boss.face;
     return true;
    },
-   forceAttack:(response)=>{
+   forceAttack:(response,prime=false)=>{
     if(mode!=='play'||!boss||boss.hp<=0||boss.wind>0||boss.strike>0||boss.stun>0||boss.down>0)return false;
     const extras=EXTRA_DODGE_MOVES[level]||[],normals=(ENEMY_MOVES[level]||[]).filter(m=>m.response!=='dodge');
     const move=response==='dodge'?extras[0]:response==='parry'?(normals.find(m=>(m.hits?.length||0)===1)||normals[0]):null;
     if(!move)return false;
     testForcedMove=move;boss.ai=0;
     startEnemyAttack(move);
+    // Diagnostic-only acceleration: preserve the production move/hit logic, but skip the
+    // long headless render wait and begin just before the real response window.
+    if(prime&&boss.wind>0)boss.wind=Math.min(boss.wind,response==='dodge'?.07:.16);
     return true;
    }
   };
