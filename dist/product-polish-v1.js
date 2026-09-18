@@ -1,5 +1,5 @@
 'use strict';
-// Product polish v2 — keep combat readable on iPhone: one HUD hierarchy, one response colour, no secret-mode noise.
+// Product polish v3 — two-stage response telegraphs: identify early, press only inside the real success window.
 (()=>{
  if(window.__parryProductPolishV1Loaded)return;
  window.__parryProductPolishV1Loaded=true;
@@ -60,10 +60,10 @@
    box-shadow:none!important;text-shadow:0 2px 8px #000!important;z-index:11!important;
  }
  body.pd-play #attackHud small{color:#aab3b8!important}
- body.pd-parry-warning #attackHud{
+ body.pd-parry-telegraph #attackHud{
    border-color:#ffd36b7a!important;color:#ffe39a!important;box-shadow:0 0 12px #ffd36b33!important;
  }
- body.pd-dodge-warning #attackHud{
+ body.pd-dodge-telegraph #attackHud{
    border-color:#67ddff7a!important;color:#9aeaff!important;box-shadow:0 0 12px #67ddff33!important;
  }
 
@@ -130,21 +130,30 @@
  function updateState(){
    const overlay=document.getElementById('overlay');
    const panelVisible=!!overlay&&!overlay.classList.contains('hidden');
-   let playing=false,predicting=false,isDodge=false,isParry=false,secret=false;
+   let playing=false,active=false,ready=false,isDodge=false,isParry=false,secret=false;
    try{
      playing=typeof mode!=='undefined'&&mode==='play';
      secret=playing&&typeof level!=='undefined'&&level===4;
-     const active=playing&&typeof boss!=='undefined'&&boss&&boss.hp>0&&(boss.wind>0||boss.strike>0);
+     active=!!(playing&&typeof boss!=='undefined'&&boss&&boss.hp>0&&(boss.wind>0||boss.strike>0));
      const move=active&&typeof enemyMove==='function'?enemyMove():null;
-     predicting=!!(active&&boss.wind>0);
-     isDodge=!!(predicting&&move?.response==='dodge');
-     isParry=!!(predicting&&!isDodge);
+     isDodge=!!(active&&move?.response==='dodge');
+     isParry=!!(active&&!isDodge);
+     if(active&&move){
+       const hits=Array.isArray(move.hits)?move.hits:[.15];
+       const next=Math.min(Math.max(0,boss.hitIndex||0),Math.max(0,hits.length-1));
+       const timeToHit=boss.wind>0?boss.wind+(hits[0]??.15):Math.max(0,(hits[next]??0)-(boss.strikeElapsed||0));
+       // Leave execution margin for mobile touch dispatch. Early colour teaches the response;
+       // the strong button/cue only appears when pressing now can actually succeed.
+       ready=timeToHit<=(isDodge?.30:.44);
+     }
    }catch(_){/* load-order safe */}
    document.body.classList.toggle('pd-title',panelVisible||!playing);
    document.body.classList.toggle('pd-play',playing&&!panelVisible);
-   document.body.classList.toggle('pd-warning',predicting&&!panelVisible);
-   document.body.classList.toggle('pd-dodge-warning',isDodge&&!panelVisible);
-   document.body.classList.toggle('pd-parry-warning',isParry&&!panelVisible);
+   document.body.classList.toggle('pd-warning',ready&&!panelVisible);
+   document.body.classList.toggle('pd-dodge-telegraph',isDodge&&!panelVisible);
+   document.body.classList.toggle('pd-parry-telegraph',isParry&&!panelVisible);
+   document.body.classList.toggle('pd-dodge-warning',ready&&isDodge&&!panelVisible);
+   document.body.classList.toggle('pd-parry-warning',ready&&isParry&&!panelVisible);
    document.body.classList.toggle('pd-secret',secret&&!panelVisible);
    const label=findSecretLabel();
    if(label)label.style.display=playing&&!secret?'none':'';
