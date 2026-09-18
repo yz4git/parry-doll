@@ -110,7 +110,7 @@
  const dodgeTelegraphBase=drawAttackTelegraph;
  drawAttackTelegraph=function(){
   const move=enemyMove();if(move?.response!=='dodge')return dodgeTelegraphBase();
-  const ready=boss.wind<Math.max(.06,.48-move.hits[0]),pulse=.72+.28*Math.sin(time*13),color=ready?`rgba(103,221,255,${.72+.20*pulse})`:`rgba(60,168,200,${.48+.18*pulse})`,origin=V(boss.pos.x,.045,boss.pos.z),forward=V(Math.sin(boss.aim),0,Math.cos(boss.aim)),right=V(Math.cos(boss.aim),0,-Math.sin(boss.aim));
+  const timeToHit=(boss.wind>0?boss.wind:0)+(move.hits?.[0]??.18),ready=timeToHit<=.30,pulse=.72+.28*Math.sin(time*13),color=ready?`rgba(103,221,255,${.72+.20*pulse})`:`rgba(60,168,200,${.48+.18*pulse})`,origin=V(boss.pos.x,.045,boss.pos.z),forward=V(Math.sin(boss.aim),0,Math.cos(boss.aim)),right=V(Math.cos(boss.aim),0,-Math.sin(boss.aim));
   ctx.save();
   if(move.shape==='circle'){
    floorRing(origin,move.range,color,ready?3.2:2);floorRing(origin,Math.max(.35,move.range*.72),`rgba(103,221,255,${.22*pulse})`,1.2);
@@ -148,7 +148,7 @@
    forceAttack:(response)=>{
     if(mode!=='play'||!boss||boss.hp<=0||boss.wind>0||boss.strike>0||boss.stun>0||boss.down>0)return false;
     const extras=EXTRA_DODGE_MOVES[level]||[],normals=(ENEMY_MOVES[level]||[]).filter(m=>m.response!=='dodge');
-    const move=response==='dodge'?extras[0]:response==='parry'?normals[0]:null;
+    const move=response==='dodge'?extras[0]:response==='parry'?(normals.find(m=>(m.hits?.length||0)===1)||normals[0]):null;
     if(!move)return false;
     testForcedMove=move;boss.ai=0;
     startEnemyAttack(move);
