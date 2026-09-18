@@ -12,23 +12,45 @@ await page.waitForFunction(()=>window.parryDoll&&window.parryDoll.snapshot().mod
 await page.evaluate(()=>window.parryDodgeTest.placeAtCombatRange());
 await page.waitForTimeout(300);
 await page.screenshot({path:'01-neutral.png'});
+
 async function force(kind){
- for(let i=0;i<80;i++){
+ for(let i=0;i<100;i++){
   const ok=await page.evaluate(k=>window.parryDodgeTest.forceAttack(k),kind);
   if(ok)return;
-  await page.waitForTimeout(80);
+  await page.waitForTimeout(70);
  }
  throw new Error('force '+kind+' failed');
 }
-async function waitWind(kind){
- await page.waitForFunction(k=>{const s=window.parryDoll.snapshot();return s.response===k&&s.enemyWind>0},kind,{timeout:12000});
+async function waitActionable(kind){
+ const cls=kind==='parry'?'pd-parry-warning':'pd-dodge-warning';
+ await page.waitForFunction(c=>document.body.classList.contains(c),cls,{timeout:12000,polling:20});
 }
-await force('parry'); await waitWind('parry'); await page.waitForTimeout(120); await page.screenshot({path:'02-parry-telegraph.png'});
-await page.evaluate(()=>document.getElementById('parry')?.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerId:7,pointerType:'touch'}))); await page.waitForTimeout(750);
+
+// PARRY: wait until the UI says pressing now is valid, then use the actual touch button.
+await page.evaluate(()=>window.parryDodgeTest.placeAtCombatRange());
+await force('parry');
+await waitActionable('parry');
+await page.screenshot({path:'02-parry-telegraph.png'});
+const parryBefore=await page.evaluate(()=>window.parryDoll.snapshot().parries);
+await page.locator('#parry').tap({force:true});
+await page.waitForFunction(n=>window.parryDoll.snapshot().parries>n,parryBefore,{timeout:3500,polling:20});
+await page.waitForTimeout(120);
 await page.screenshot({path:'03-after-parry.png'});
-await force('dodge'); await waitWind('dodge'); await page.waitForTimeout(120); await page.screenshot({path:'04-dodge-telegraph.png'});
-await page.evaluate(()=>document.getElementById('dodge')?.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerId:8,pointerType:'touch'}))); await page.waitForTimeout(450);
+
+// DODGE: same production touch path, only after the cyan cue enters its real evade window.
+await page.evaluate(()=>window.parryDodgeTest.placeAtCombatRange());
+await force('dodge');
+await waitActionable('dodge');
+await page.screenshot({path:'04-dodge-telegraph.png'});
+const dodgeBefore=await page.evaluate(()=>window.parryDoll.snapshot().dodges);
+await page.locator('#dodge').tap({force:true});
+await page.waitForFunction(n=>window.parryDoll.snapshot().dodges>n,dodgeBefore,{timeout:3500,polling:20});
+await page.waitForTimeout(120);
 await page.screenshot({path:'05-after-dodge.png'});
-const ui=await page.evaluate(()=>({snapshot:window.parryDoll.snapshot(),rects:Object.fromEntries(['bossHud','playerHud','controls','attack','dodge','parry','responseLegend','pbPhaseStrip','mbBreakHud','mbCores','cue','toast'].map(id=>{const e=document.getElementById(id);if(!e)return [id,null];const r=e.getBoundingClientRect();const cs=getComputedStyle(e);return[id,{x:+r.x.toFixed(1),y:+r.y.toFixed(1),w:+r.width.toFixed(1),h:+r.height.toFixed(1),opacity:cs.opacity,display:cs.display,text:(e.textContent||'').trim().slice(0,120)}]}))}));
+
+const ui=await page.evaluate(()=>({snapshot:window.parryDoll.snapshot(),classes:[...document.body.classList],rects:Object.fromEntries(['bossHud','playerHud','controls','attack','dodge','parry','responseLegend','pbPhaseStrip','mbBreakHud','mbCores','cue','toast'].map(id=>{const e=document.getElementById(id);if(!e)return [id,null];const r=e.getBoundingClientRect();const cs=getComputedStyle(e);return[id,{x:+r.x.toFixed(1),y:+r.y.toFixed(1),w:+r.width.toFixed(1),h:+r.height.toFixed(1),opacity:cs.opacity,display:cs.display,text:(e.textContent||'').trim().slice(0,120)}]}))}));
 console.log(JSON.stringify(ui,null,2));
+if(ui.snapshot.parries<1)throw new Error('visual playcheck: parry did not succeed');
+if(ui.snapshot.dodges<1)throw new Error('visual playcheck: dodge did not succeed');
+console.log(`VISUAL_PLAY_PASS parries=${ui.snapshot.parries} dodges=${ui.snapshot.dodges} hp=${ui.snapshot.playerHP}`);
 await browser.close();
