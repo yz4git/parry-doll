@@ -22,7 +22,10 @@ function p5MaintainSpacing(){
  const delta=V(boss.pos.x-player.pos.x,0,boss.pos.z-player.pos.z),distance=Math.hypot(delta.x,delta.z);
  if(distance<.001)return;
  const normal=mul(delta,1/distance),type=boss.spec.type;
- let min=type==='spider'?1.95:type==='beast'?1.78:boss.spec.scale>1.8?2.18:1.58;
+ let min=type==='spider'?1.95:type==='beast'?1.78:boss.spec.scale>1.8?2.18:1.76;
+ // Humanoid wind-ups need a little more negative space so the weapon/body tell stays readable
+ // behind the heroine on a phone-sized landscape viewport.
+ if(type==='human'&&boss.spec.scale<=1.8&&(boss.wind>0||boss.strike>0))min=1.94;
  if(player.swing?.finisher)min*=.90;
  if(boss.broken>0||boss.down>0)min*=.92;
  if(distance>=min)return;
@@ -83,6 +86,7 @@ setCamera=function(){
  if(boss.spec.type==='beast'){up=.56;back=.40;side=.62}
  else if(boss.spec.type==='spider'){up=.86;back=.55;side=.48}
  else if(boss.spec.scale>1.8){up=.18;back=.92;side=.20}
+ else if(boss.spec.type==='human'&&(boss.wind>0||boss.strike>0)){up=.06;back=.10;side=.34}
  if(!up&&!back&&!side)return;
  const s=(level%2?-1:1);
  camera.y+=up;camera=sub(camera,mul(basis.f,back));camera=add(camera,mul(basis.right,side*s));
