@@ -2,7 +2,7 @@
 // Combat readability pass: preserve impact while keeping silhouettes and reaction direction visible.
 const readabilityStyle=document.createElement('style');
 readabilityStyle.textContent=`
-#toast.readability-parry{top:12%;left:auto;right:max(28px,env(safe-area-inset-right));width:auto;text-align:right;font-size:clamp(13px,2vw,18px);letter-spacing:2px;color:#ff5260}
+#toast.readability-parry{top:12%;left:auto;right:max(28px,env(safe-area-inset-right));width:auto;text-align:right;font-size:clamp(13px,2vw,18px);letter-spacing:2px;color:#ffe29a;text-shadow:0 0 16px #d9a72fcc,0 3px 12px #000}\n#toast.readability-dodge{top:12%;left:auto;right:max(28px,env(safe-area-inset-right));width:auto;text-align:right;font-size:clamp(13px,2vw,18px);letter-spacing:2px;color:#a8f0ff;text-shadow:0 0 16px #2bbfe3cc,0 3px 12px #000}
 #toast.readability-finisher{top:auto;bottom:29%;left:58%;right:auto;width:auto;padding:5px 9px;border:1px solid #ff526088;background:#15181bb8;font-size:clamp(13px,2vw,18px);letter-spacing:3px;color:#ff5260;border-radius:3px}
 #toast.readability-normal{top:16%;left:0;right:0;width:100%;text-align:center}
 #cue{top:16%;font-size:clamp(13px,2.2vw,17px);letter-spacing:2.5px}
@@ -13,8 +13,9 @@ document.head.appendChild(readabilityStyle);
 const readabilityAnnounce=announce;
 announce=function(t,d){
  const el=$('toast');
- el.classList.remove('readability-parry','readability-finisher','readability-normal');
+ el.classList.remove('readability-parry','readability-dodge','readability-finisher','readability-normal');
  if(t==='PERFECT PARRY'||t==='PARRY'||t==='弾 き 返 し')el.classList.add('readability-parry');
+ else if(t==='PERFECT DODGE'||t==='DODGE')el.classList.add('readability-dodge');
  else if(t==='斬 れ')el.classList.add('readability-finisher');
  else el.classList.add('readability-normal');
  return readabilityAnnounce(t,d);
