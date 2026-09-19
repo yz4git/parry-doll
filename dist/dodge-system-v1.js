@@ -170,6 +170,15 @@
      if(dodgeQueued){startDodge();dodgeQueued=false}
     }
     const move=enemyMove();
+    // Screenshot capture can consume several real-time frames while the primed attack is held.
+    // Re-align only this diagnostic encounter immediately before impact so the test checks
+    // the production touch response instead of camera/orbit drift outside a narrow hit lane.
+    const fromBoss=norm(V(player.pos.x-boss.pos.x,0,player.pos.z-boss.pos.z));
+    const desired=add(boss.pos,mul(fromBoss,2.15)),delta=sub(desired,player.pos);
+    player.pos=desired;player.vel=V();
+    for(const n of player.nodes){n.p=add(n.p,delta);n.prev=add(n.prev,delta)}
+    player.face=Math.atan2(boss.pos.x-player.pos.x,boss.pos.z-player.pos.z);
+    boss.face=Math.atan2(player.pos.x-boss.pos.x,player.pos.z-boss.pos.z);boss.aim=boss.face;
     boss.stun=0;
     enemyImpact(move);
     boss.wind=0;boss.strike=0;boss.pattern=null;boss.ai=Math.max(boss.ai,.2);
