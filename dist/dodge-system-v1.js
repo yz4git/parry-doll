@@ -157,7 +157,7 @@
     if(prime&&boss.wind>0){
      const first=Math.max(.04,move.hits?.[0]??.15);
      boss.wind=response==='dodge'?Math.max(.01,.27-first):Math.max(.01,.40-first);
-     boss.stun=Math.max(boss.stun,5);
+     boss.stun=Math.max(boss.stun,60);
     }
     return true;
    },
