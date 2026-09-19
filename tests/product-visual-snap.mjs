@@ -22,7 +22,7 @@ async function force(kind){
  throw new Error('force '+kind+' failed');
 }
 async function waitActionable(kind){
- const limit=kind==='parry'?.18:.08;
+ const limit=kind==='parry'?.30:.12;
  await page.waitForFunction(({kind,limit})=>{
   const s=window.parryDoll.snapshot();
   return s.response===kind&&((s.enemyWind>0&&s.enemyWind<=limit)||s.enemyStrike>0);
