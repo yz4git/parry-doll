@@ -86,7 +86,7 @@ setCamera=function(){
  if(boss.spec.type==='beast'){up=.56;back=.40;side=.62}
  else if(boss.spec.type==='spider'){up=.86;back=.55;side=.48}
  else if(boss.spec.scale>1.8){up=.18;back=.92;side=.20}
- else if(boss.spec.type==='human'&&(boss.wind>0||boss.strike>0)){up=.06;back=.10;side=.34}
+ else if(boss.spec.type==='human'&&(boss.wind>0||boss.strike>0)){up=.06;back=.16;side=.56}
  if(!up&&!back&&!side)return;
  const s=(level%2?-1:1);
  camera.y+=up;camera=sub(camera,mul(basis.f,back));camera=add(camera,mul(basis.right,side*s));
