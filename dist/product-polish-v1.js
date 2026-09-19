@@ -84,28 +84,46 @@
  body.pd-parry-warning #cue{color:#ffd36b!important;text-shadow:0 0 20px #d49a22cc,0 3px 12px #000!important}
  body.pd-dodge-warning #cue{color:#67ddff!important;text-shadow:0 0 20px #159dcacc,0 3px 12px #000!important}
 
- /* Response buttons stay neutral until a real telegraph requires them. */
+ /* Response buttons always carry their response colour.
+    The actionable window adds a much stronger pulse, not the first appearance of colour. */
+ @keyframes pd-response-pulse{
+   from{filter:brightness(1.06) saturate(1.08)}
+   to{filter:brightness(1.34) saturate(1.28)}
+ }
  body.pd-play #parry,
  body.pd-play #dodge{
-   background:radial-gradient(circle at 40% 28%,#343b42ee,#171d23ed)!important;
-   border:2px solid #77828b!important;color:#edf1f3!important;
-   box-shadow:inset 0 0 0 4px #0b111755,inset 0 1px #ffffff2e,0 5px 20px #0008!important;
    text-shadow:0 2px 7px #000!important;
-   transition:transform .08s,border-color .08s,color .08s,box-shadow .08s,opacity .08s!important;
+   transition:transform .08s,border-color .08s,color .08s,background .08s,box-shadow .08s,opacity .08s,filter .08s!important;
  }
- body.pd-play #dodge.ready{box-shadow:inset 0 0 0 4px #0b111755,inset 0 1px #ffffff2e,0 5px 20px #0008!important}
+ body.pd-play #parry{
+   background:radial-gradient(circle at 38% 26%,#71582fe8,#2b261be8 62%,#171b20f2)!important;
+   border:2px solid #caa554!important;color:#ffe6a0!important;
+   box-shadow:inset 0 0 0 4px #4a351f45,inset 0 1px #fff1bc4d,0 0 13px #d8a93b28,0 5px 20px #0008!important;
+ }
+ body.pd-play #dodge{
+   background:radial-gradient(circle at 38% 26%,#245d72e8,#123342e8 62%,#151d24f2)!important;
+   border:2px solid #4ebbd9!important;color:#bff3ff!important;
+   box-shadow:inset 0 0 0 4px #0b39484d,inset 0 1px #d9fbff4d,0 0 13px #48c8ed28,0 5px 20px #0008!important;
+ }
+ body.pd-play #dodge.ready{
+   box-shadow:inset 0 0 0 4px #0b39484d,inset 0 1px #d9fbff4d,0 0 13px #48c8ed28,0 5px 20px #0008!important;
+ }
  body.pd-parry-warning #parry{
-   border-color:#ffd36b!important;color:#fff1b0!important;
-   box-shadow:0 0 25px #ffd36b8c,inset 0 0 0 4px #5a431a55,inset 0 1px #fff4bf77!important;
-   transform:scale(1.065)!important;
+   background:radial-gradient(circle at 36% 24%,#b48a3ff2,#604414f2 58%,#2a2217f5)!important;
+   border-color:#ffe28a!important;color:#fff7cb!important;
+   box-shadow:0 0 16px #ffd36bcc,0 0 38px #ffbf35a8,inset 0 0 0 4px #7b581b88,inset 0 2px #fff9d6b8!important;
+   transform:scale(1.11)!important;
+   animation:pd-response-pulse .24s ease-in-out infinite alternate!important;
  }
  body.pd-dodge-warning #dodge{
-   border-color:#67ddff!important;color:#c6f3ff!important;
-   box-shadow:0 0 25px #67ddff88,inset 0 0 0 4px #103b4a66,inset 0 1px #d9f8ff77!important;
-   transform:scale(1.065)!important;
+   background:radial-gradient(circle at 36% 24%,#3f9fc2f2,#15536bf2 58%,#112b36f5)!important;
+   border-color:#8bedff!important;color:#effdff!important;
+   box-shadow:0 0 16px #67ddffcc,0 0 38px #33c9ffa8,inset 0 0 0 4px #12627d88,inset 0 2px #eaffffb8!important;
+   transform:scale(1.11)!important;
+   animation:pd-response-pulse .24s ease-in-out infinite alternate!important;
  }
  body.pd-parry-warning #dodge,
- body.pd-dodge-warning #parry{opacity:.43!important;transform:scale(.96)!important}
+ body.pd-dodge-warning #parry{opacity:.40!important;transform:scale(.94)!important;filter:saturate(.72) brightness(.78)!important;animation:none!important}
 
  @media(max-height:500px){
    body.pd-play #bossHud{top:max(12px,env(safe-area-inset-top))!important}
