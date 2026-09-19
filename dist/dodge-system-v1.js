@@ -181,7 +181,7 @@
     boss.face=Math.atan2(player.pos.x-boss.pos.x,player.pos.z-boss.pos.z);boss.aim=boss.face;
     boss.stun=0;
     enemyImpact(move);
-    boss.wind=0;boss.strike=0;boss.pattern=null;boss.ai=Math.max(boss.ai,.2);
+    boss.wind=0;boss.strike=0;boss.pattern=null;boss.ai=Math.max(boss.ai,2.0);
     return window.parryDoll?.snapshot?.()||null;
    }
   };
