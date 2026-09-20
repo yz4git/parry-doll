@@ -3,7 +3,7 @@
 (()=>{
  if(window.__parryDodgeSystemV1Loaded)return;window.__parryDodgeSystemV1Loaded=true;
  const CYAN='#67ddff';
- const DODGE_SUCCESS='#ff5ca4';
+ const DODGE_SUCCESS='#67ddff';
  let dodgeQueued=false,dodgeTimer=0,dodgeIFrame=0,dodgeCool=0,dodges=0,perfectDodges=0,dodgeSide=1;
  let testForcedMove=null;
  const dodgeTestMode=new URLSearchParams(location.search).has('dodgecheck');
