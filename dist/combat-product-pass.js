@@ -1,6 +1,7 @@
 'use strict';
 // Product-level combat pass: spacing, body-type cameras, restrained parry flash and HUD-only attack messaging.
 let p5ParryGlow=0,p5BreakPrompt=0,p5FinishBeat=0;
+const p5CameraTuning='shoulder-v2';
 const p5Style=document.createElement('style');
 p5Style.textContent=`
 #attackHud{position:absolute;top:31px;left:8%;width:84%;height:20px;display:flex;align-items:center;justify-content:center;gap:7px;pointer-events:none;font-size:clamp(10px,1.6vw,13px);font-weight:750;letter-spacing:1.8px;color:#ff5260;text-shadow:0 2px 8px #000;background:linear-gradient(90deg,transparent,#0b1118b8 18%,#0b1118b8 82%,transparent);opacity:0;transform:translateY(-2px);transition:opacity .12s,transform .12s,color .12s}
@@ -115,5 +116,5 @@ step=function(dt){
 
 if(window.parryDoll&&window.parryDoll.snapshot){
  const p5SnapshotBase=window.parryDoll.snapshot;
- window.parryDoll.snapshot=()=>({...p5SnapshotBase(),attackHud:p5AttackName.textContent,parryGlow:+p5ParryGlow.toFixed(3)});
+ window.parryDoll.snapshot=()=>({...p5SnapshotBase(),attackHud:p5AttackName.textContent,parryGlow:+p5ParryGlow.toFixed(3),cameraTuning:p5CameraTuning});
 }
