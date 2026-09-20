@@ -2,6 +2,7 @@
 // Final combat polish v2: true executions, camera dead-zone, split lower-body facing and tighter hit glows.
 let p6Execution=false,p6CameraYaw=Number.NaN;
 const P6_CAM_DEADZONE=.17; // ~10 degrees: let fighters travel on screen before camera follows.
+const P6_RESPONSE_SHOULDER=3.0;
 const p6Style=document.createElement('style');
 p6Style.textContent=`
 #attackHud{position:fixed!important;top:max(61px,env(safe-area-inset-top))!important;left:max(22px,env(safe-area-inset-left))!important;right:auto!important;width:min(230px,42vw)!important;height:22px!important;justify-content:flex-start!important;padding:0 8px!important;background:linear-gradient(90deg,#0b1118c8 0%,#0b111884 72%,transparent)!important;text-align:left!important}
@@ -63,6 +64,8 @@ setCamera=function(){
  reviewWasBroken=boss.broken>0;reviewCine=Math.max(0,reviewCine-feel.dt);
  const cine=clamp(reviewCine/.95,0,1)*(feel.reduced?.45:1);
  const v=sub(boss.pos,player.pos),distance=Math.hypot(v.x,v.z),desired=Math.atan2(v.x,v.z);
+ const responseHuman=boss.spec.type==='human'&&boss.spec.scale<=1.8&&(boss.wind>0||boss.strike>0);
+ const responseSide=responseHuman?(Math.sign(boss.flowAttackSide||0)||(level%2?-1:1)):0;
  if(!Number.isFinite(p6CameraYaw))p6CameraYaw=Number.isFinite(cameraRig.yaw)?cameraRig.yaw:desired;
  if(!cameraRig.initialized){p6CameraYaw=desired;cameraRig.initialized=true}
  const yawErr=angleDelta(desired,p6CameraYaw),dead=cine>0?.055:P6_CAM_DEADZONE;
@@ -87,11 +90,18 @@ setCamera=function(){
  else if(boss.spec.type==='spider'){typeUp=.88;typeBack=.52;typeSide=.52}
  else if(boss.spec.scale>1.8){typeUp=.10;typeBack=.28;typeSide=.12}
  back+=typeBack;shoulder+=typeSide*(level%2?-1:1);
+ if(responseHuman){
+  // Final camera layer: create a true two-shot during response telegraphs.
+  // This is intentionally applied here because earlier camera wrappers are replaced by this function.
+  back+=.22;
+  shoulder=P6_RESPONSE_SHOULDER*responseSide;
+ }
  const active=player.attack>0||boss.strike>0||boss.broken>0||player.counter>0;
  let contact=clamp((3.40-distance)/1.70,0,1)*(active?1:.45);
  if(boss.spec.scale>1.8)contact*=.66;
  const heavyBeat=player.attack>0&&player.motion===2?1.75:1;
- shoulder+=(W<H?.30:1.05)*contact*(level%2?-.82:1)*heavyBeat;
+ if(responseHuman)shoulder+=.24*contact*responseSide;
+ else shoulder+=(W<H?.30:1.05)*contact*(level%2?-.82:1)*heavyBeat;
  const kick=feel.reduced?0:Math.min(.35,feel.zoom*.35);
  function positionCamera(){
   camera=add(player.pos,add(mul(forward,-back+kick),add(mul(right,shoulder),V(0,2.75+giant*.55+(back-4.35)*.16+typeUp,0))));
@@ -132,6 +142,6 @@ if(window.parryDoll&&window.parryDoll.snapshot){
  const p6SnapshotBase=window.parryDoll.snapshot;
  window.parryDoll.snapshot=()=>{
   const targetYaw=Math.atan2(boss.pos.x-player.pos.x,boss.pos.z-player.pos.z),lower=Number.isFinite(player.p6LowerYaw)?player.p6LowerYaw:player.face;
-  return {...p6SnapshotBase(),cameraDeadzone:P6_CAM_DEADZONE,lowerBodyOffset:+clamp(angleDelta(lower,player.face),-.68,.68).toFixed(3),upperLockOffset:+angleDelta(player.face,targetYaw).toFixed(3),cameraYawOffset:+angleDelta(p6CameraYaw,targetYaw).toFixed(3)};
+  return {...p6SnapshotBase(),cameraDeadzone:P6_CAM_DEADZONE,responseShoulder:P6_RESPONSE_SHOULDER,lowerBodyOffset:+clamp(angleDelta(lower,player.face),-.68,.68).toFixed(3),upperLockOffset:+angleDelta(player.face,targetYaw).toFixed(3),cameraYawOffset:+angleDelta(p6CameraYaw,targetYaw).toFixed(3)};
  };
 }
