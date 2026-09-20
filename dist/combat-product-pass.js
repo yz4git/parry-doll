@@ -90,7 +90,7 @@ setCamera=function(){
   // Orbit toward the readable/open side of the active attack instead of using one fixed camera side.
   // The small target counter-shift keeps the heroine foregrounded while exposing the boss weapon/body tell.
   const attackSide=Math.sign(boss.flowAttackSide||0)||sideSign;
-  sideSign=attackSide;up=.07;back=.24;side=.72;targetSide=-.10*attackSide;
+  sideSign=attackSide;up=.08;back=.30;side=1.16;targetSide=-.22*attackSide;
  }
  if(!up&&!back&&!side)return;
  const cameraRight={...basis.right};
