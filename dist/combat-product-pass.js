@@ -82,14 +82,20 @@ const p5SetCameraBase=setCamera;
 setCamera=function(){
  p5SetCameraBase();
  if(!player||!boss||mode!=='play'||!basis)return;
- let up=0,back=0,side=0;
+ let up=0,back=0,side=0,sideSign=(level%2?-1:1),targetSide=0;
  if(boss.spec.type==='beast'){up=.56;back=.40;side=.62}
  else if(boss.spec.type==='spider'){up=.86;back=.55;side=.48}
  else if(boss.spec.scale>1.8){up=.18;back=.92;side=.20}
- else if(boss.spec.type==='human'&&(boss.wind>0||boss.strike>0)){up=.06;back=.16;side=.56}
+ else if(boss.spec.type==='human'&&(boss.wind>0||boss.strike>0)){
+  // Orbit toward the readable/open side of the active attack instead of using one fixed camera side.
+  // The small target counter-shift keeps the heroine foregrounded while exposing the boss weapon/body tell.
+  const attackSide=Math.sign(boss.flowAttackSide||0)||sideSign;
+  sideSign=attackSide;up=.07;back=.24;side=.72;targetSide=-.10*attackSide;
+ }
  if(!up&&!back&&!side)return;
- const s=(level%2?-1:1);
- camera.y+=up;camera=sub(camera,mul(basis.f,back));camera=add(camera,mul(basis.right,side*s));
+ const cameraRight={...basis.right};
+ camera.y+=up;camera=sub(camera,mul(basis.f,back));camera=add(camera,mul(cameraRight,side*sideSign));
+ if(targetSide)target=add(target,mul(cameraRight,targetSide));
  const f=norm(sub(target,camera)),r=norm(V(-f.z,0,f.x)),u=V(r.y*f.z-r.z*f.y,r.z*f.x-r.x*f.z,r.x*f.y-r.y*f.x);basis={f,right:r,up:u};
 };
 
