@@ -52,7 +52,9 @@ await snap('03-after-parry.png');
 // DODGE: same production touch path, only after the cyan cue enters its real evade window.
 await page.evaluate(()=>window.parryDodgeTest.placeAtCombatRange());
 await force('dodge');
-const dodgeCueState=await waitActionable('dodge');
+await waitActionable('dodge');
+await page.waitForFunction(()=>!document.body.classList.contains('pd-counter-ready'),null,{timeout:1000,polling:16});
+const dodgeCueState=await page.evaluate(()=>({classes:[...document.body.classList],snapshot:window.parryDoll.snapshot()}));
 console.log('DODGE_CUE',JSON.stringify(dodgeCueState));
 if(dodgeCueState.classes.includes('pd-counter-ready'))throw new Error('visual playcheck: counter highlight competes with dodge prompt');
 const dodgeBefore=await page.evaluate(()=>window.parryDoll.snapshot().dodges);
