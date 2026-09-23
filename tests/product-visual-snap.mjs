@@ -53,10 +53,12 @@ await snap('03-after-parry.png');
 await page.evaluate(()=>window.parryDodgeTest.placeAtCombatRange());
 await force('dodge');
 await waitActionable('dodge');
-await page.waitForFunction(()=>!document.body.classList.contains('pd-counter-ready'),null,{timeout:1000,polling:16});
-const dodgeCueState=await page.evaluate(()=>({classes:[...document.body.classList],snapshot:window.parryDoll.snapshot()}));
+const dodgeCueState=await page.evaluate(()=>{
+ const attack=document.getElementById('attack'),cs=attack?getComputedStyle(attack):null;
+ return {classes:[...document.body.classList],snapshot:window.parryDoll.snapshot(),attackOpacity:cs?Number(cs.opacity):1,attackLabel:attack?.textContent?.trim()||''};
+});
 console.log('DODGE_CUE',JSON.stringify(dodgeCueState));
-if(dodgeCueState.classes.includes('pd-counter-ready'))throw new Error('visual playcheck: counter highlight competes with dodge prompt');
+if(dodgeCueState.attackOpacity>.55)throw new Error('visual playcheck: attack remains too prominent during dodge prompt');
 const dodgeBefore=await page.evaluate(()=>window.parryDoll.snapshot().dodges);
 await snap('04-dodge-telegraph.png');
 await page.evaluate(()=>window.parryDodgeTest.placeAtCombatRange());
