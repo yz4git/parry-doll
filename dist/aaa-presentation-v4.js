@@ -13,10 +13,11 @@
     border-right-color:#f5c96f!important;
     text-shadow:0 3px 14px #000,0 0 19px rgba(245,201,111,.30)!important;
   }
-  body.pd-success-dodge #toast.pd-toast-impact{
+  body.pd-success-dodge #toast.pd-toast-impact,
+  #toast.pd-reward-dodge{
     color:#c9f7ff!important;
     border-right-color:#62dcff!important;
-    text-shadow:0 3px 14px #000,0 0 19px rgba(98,220,255,.34)!important;
+    text-shadow:0 3px 14px #000,0 0 19px rgba(98,220,255,.38)!important;
   }
 
   /* Low vitality switches the status plate from calm teal to danger red, without touching controls. */
@@ -41,4 +42,16 @@
   body.pd-counter-ready #attack{letter-spacing:.035em!important}
   `;
   document.head.appendChild(style);
+
+  // Keep semantic reward colour attached to the visible message itself.
+  // This survives screenshot / frame delays better than the short impact animation class.
+  const toast=document.getElementById('toast');
+  if(toast){
+    const syncRewardColour=()=>{
+      const text=(toast.textContent||'').trim();
+      toast.classList.toggle('pd-reward-dodge',/DODGE/i.test(text));
+    };
+    new MutationObserver(syncRewardColour).observe(toast,{childList:true,characterData:true,subtree:true});
+    syncRewardColour();
+  }
 })();
