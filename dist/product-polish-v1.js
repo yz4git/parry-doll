@@ -138,6 +138,12 @@
    box-shadow:0 0 16px #ff6aa0aa,0 0 32px #ff4f8a55,inset 0 0 0 4px #6b23445f,inset 0 2px #fff0f6a8!important;
    animation:pd-counter-pulse .28s ease-in-out infinite alternate!important;
  }
+ body.pd-warning #attack{
+   opacity:.48!important;transform:scale(.95)!important;filter:saturate(.62) brightness(.72)!important;
+   animation:none!important;background:radial-gradient(circle at 38% 26%,#26343ce8,#151d23f2)!important;
+   border-color:#71818a88!important;color:#9eabb1!important;
+   box-shadow:inset 0 0 0 4px #10171b66,0 4px 15px #0007!important;
+ }
 
  @media(max-height:500px){
    body.pd-play #bossHud{top:max(12px,env(safe-area-inset-top))!important}
