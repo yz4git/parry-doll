@@ -168,6 +168,7 @@
      secret=playing&&typeof level!=='undefined'&&level===4;
      counterReady=!!(playing&&typeof player!=='undefined'&&player&&player.hp>0&&player.counter>0&&typeof boss!=='undefined'&&boss&&boss.hp>0);
      active=!!(playing&&typeof boss!=='undefined'&&boss&&boss.hp>0&&(boss.wind>0||boss.strike>0));
+     if(active)counterReady=false;
      const move=active&&typeof enemyMove==='function'?enemyMove():null;
      isDodge=!!(active&&move?.response==='dodge');
      isParry=!!(active&&!isDodge);
