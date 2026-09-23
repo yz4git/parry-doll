@@ -76,8 +76,11 @@
 
  /* Main on-field instruction. Gold = PARRY, cyan = DODGE, only while reading a wind-up. */
  body.pd-play #cue{
-   top:25%!important;font-size:clamp(18px,3vw,28px)!important;font-weight:900!important;
-   letter-spacing:5px!important;line-height:1!important;transition:color .06s,text-shadow .06s,opacity .08s!important;
+   top:102px!important;left:max(24px,env(safe-area-inset-left))!important;right:auto!important;width:auto!important;
+   padding:5px 10px!important;border-left:2px solid currentColor!important;border-radius:2px!important;
+   background:linear-gradient(90deg,#071019c7,#07101955 78%,transparent)!important;
+   text-align:left!important;font-size:clamp(13px,1.9vw,17px)!important;font-weight:900!important;
+   letter-spacing:3.5px!important;line-height:1.05!important;transition:color .06s,text-shadow .06s,opacity .08s!important;
    z-index:13!important;
  }
  body.pd-play:not(.pd-warning) #cue{opacity:0!important}
@@ -125,6 +128,17 @@
  body.pd-parry-warning #dodge,
  body.pd-dodge-warning #parry{opacity:.40!important;transform:scale(.94)!important;filter:saturate(.72) brightness(.78)!important;animation:none!important}
 
+ @keyframes pd-counter-pulse{
+   from{filter:brightness(1.02) saturate(1.05);transform:scale(1.045)}
+   to{filter:brightness(1.26) saturate(1.22);transform:scale(1.09)}
+ }
+ body.pd-counter-ready #attack{
+   background:radial-gradient(circle at 38% 26%,#8a395eef,#3d1c2def 62%,#171b20f2)!important;
+   border-color:#ff8fbd!important;color:#ffe5f1!important;
+   box-shadow:0 0 16px #ff6aa0aa,0 0 32px #ff4f8a55,inset 0 0 0 4px #6b23445f,inset 0 2px #fff0f6a8!important;
+   animation:pd-counter-pulse .28s ease-in-out infinite alternate!important;
+ }
+
  @media(max-height:500px){
    body.pd-play #bossHud{top:max(12px,env(safe-area-inset-top))!important}
    body.pd-play #attackHud{top:max(64px,calc(env(safe-area-inset-top) + 50px))!important}
@@ -148,10 +162,11 @@
  function updateState(){
    const overlay=document.getElementById('overlay');
    const panelVisible=!!overlay&&!overlay.classList.contains('hidden');
-   let playing=false,active=false,ready=false,isDodge=false,isParry=false,secret=false;
+   let playing=false,active=false,ready=false,isDodge=false,isParry=false,secret=false,counterReady=false;
    try{
      playing=typeof mode!=='undefined'&&mode==='play';
      secret=playing&&typeof level!=='undefined'&&level===4;
+     counterReady=!!(playing&&typeof player!=='undefined'&&player&&player.hp>0&&player.counter>0&&typeof boss!=='undefined'&&boss&&boss.hp>0);
      active=!!(playing&&typeof boss!=='undefined'&&boss&&boss.hp>0&&(boss.wind>0||boss.strike>0));
      const move=active&&typeof enemyMove==='function'?enemyMove():null;
      isDodge=!!(active&&move?.response==='dodge');
@@ -173,6 +188,9 @@
    document.body.classList.toggle('pd-dodge-warning',ready&&isDodge&&!panelVisible);
    document.body.classList.toggle('pd-parry-warning',ready&&isParry&&!panelVisible);
    document.body.classList.toggle('pd-secret',secret&&!panelVisible);
+   document.body.classList.toggle('pd-counter-ready',counterReady&&!panelVisible);
+   const attackSmall=document.querySelector('#attack small');
+   if(attackSmall)attackSmall.textContent=counterReady&&!panelVisible?'COUNTER':'ATTACK';
    const label=findSecretLabel();
    if(label)label.style.display=playing&&!secret?'none':'';
    requestAnimationFrame(updateState);
