@@ -54,6 +54,7 @@ await page.evaluate(()=>window.parryDodgeTest.placeAtCombatRange());
 await force('dodge');
 const dodgeCueState=await waitActionable('dodge');
 console.log('DODGE_CUE',JSON.stringify(dodgeCueState));
+if(dodgeCueState.classes.includes('pd-counter-ready'))throw new Error('visual playcheck: counter highlight competes with dodge prompt');
 const dodgeBefore=await page.evaluate(()=>window.parryDoll.snapshot().dodges);
 await snap('04-dodge-telegraph.png');
 await page.evaluate(()=>window.parryDodgeTest.placeAtCombatRange());
