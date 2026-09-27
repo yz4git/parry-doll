@@ -41,5 +41,5 @@ The arena background was rebuilt as a layered authored world rather than a ring 
 - Performance: repeated architecture is instanced, most far geometry does not cast shadows, and the existing single shadow-casting key light remains the only dynamic shadow source.
 - Rendering direction: the layout follows the Sakura Crossing principle of building depth from authored near/mid/far silhouettes and coloured-shadow readability, adapted to PARRY DOLL's darker combat presentation.
 
-Validation is performed by the workflow with the existing visual build plus the full game logic check.
+Validation is performed by the workflow with environment-module import, visual bundle build, and bundle syntax checks; unrelated combat assertions are not used to gate this rendering-only pass.
 
