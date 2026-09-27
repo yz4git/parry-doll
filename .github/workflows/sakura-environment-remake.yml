@@ -1,0 +1,42 @@
+name: Sakura Environment Remake
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/sakura-environment-remake.trigger
+
+permissions:
+  contents: write
+
+jobs:
+  rebuild-environment:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Rebuild Sakura-inspired environment
+        run: |
+          python3 tools/rebuild-sakura-environment.py
+          cd visual-src
+          npm ci
+          npm run build
+          cd ..
+          node --check dist/visual-engine.js
+          node --check dist/sakura-render-pass-v1.js
+          node tests/check.cjs
+      - name: Commit rebuilt environment
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add visual-src/environment.js dist/visual-engine.js dist/visual-engine.js.LEGAL.txt docs/VISUAL_UPGRADE.md
+          git diff --cached --quiet && exit 0
+          git commit -m 'feat: rebuild background with layered anime environment'
+          git pull --rebase origin main
+          git push origin HEAD:main
