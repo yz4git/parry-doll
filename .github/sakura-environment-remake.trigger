@@ -1,1 +1,1 @@
-2026-09-27 layered Sakura Crossing-inspired environment remake retry 2
+2026-09-27 fix circular far-clip background cutoff
