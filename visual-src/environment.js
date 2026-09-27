@@ -182,8 +182,8 @@ function skyLayer(scene){
   vertexShader:'varying vec3 d;void main(){d=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
   fragmentShader:`varying vec3 d;uniform float uTime;float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+1.),f.x),f.y);}void main(){vec3 v=normalize(d);float h=smoothstep(-.16,.9,v.y);vec3 c=mix(vec3(.07,.12,.20),vec3(.23,.42,.64),h);c=mix(c,vec3(.62,.75,.87),smoothstep(.28,.96,v.y));vec2 p=v.xz/max(.18,v.y+.34);float t=uTime*.012;float n=noise(p*2.1+vec2(t,0.))*.68+noise(p*4.7-vec2(t*.6,0.))*.32;float cloud=smoothstep(.53,.76,n)*smoothstep(-.08,.24,v.y);c=mix(c,vec3(.94,.95,.97),cloud*.76);vec3 md=normalize(vec3(-.4,.63,-.56));float moon=pow(max(0.,dot(v,md)),230.);float halo=pow(max(0.,dot(v,md)),17.);c+=vec3(.78,.84,.96)*moon*.92+vec3(.14,.18,.29)*halo*.58;gl_FragColor=vec4(c,1.);}`
  });
- const sky=new THREE.Mesh(new THREE.SphereGeometry(150,32,16),material);scene.add(sky);
- const moon=new THREE.Mesh(new THREE.CircleGeometry(6.0,48),new THREE.MeshBasicMaterial({color:'#dce7f7',transparent:true,opacity:.86,depthWrite:false}));moon.position.set(-58,70,-90);moon.lookAt(0,0,0);scene.add(moon);
+ const sky=new THREE.Mesh(new THREE.SphereGeometry(150,32,16),material);sky.frustumCulled=false;scene.add(sky);
+ const moon=new THREE.Mesh(new THREE.CircleGeometry(6.0,48),new THREE.MeshBasicMaterial({color:'#dce7f7',transparent:true,opacity:.86,depthWrite:false}));moon.position.set(-58,70,-90);moon.lookAt(0,0,0);moon.frustumCulled=false;scene.add(moon);
  return{update(clock){material.uniforms.uTime.value=clock}};
 }
 
