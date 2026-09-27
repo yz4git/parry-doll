@@ -1,4 +1,3 @@
-2026-09-15 publish exact v17.0 heroine shape with visible donor-eye texture
-Model commit: 98a3f2ca3df311c4b59bf766053115f5eb1934e1
-Policy: exact v17.0 head/body/sclera geometry; only existing iris/pupil/highlight sclera-depth Z correction plus eye-texture changes in the donor eye UV islands.
-Audits: high-resolution five-view and WebGL model-viewer comparison succeeded before deployment.
+2026-09-27 deploy Sakura Crossing-inspired layered environment remake
+Environment commit: 1e15a0e9f7874dee92e25896aff6563adcec3cce
+Layers: arena foundation, broken parapets, grand gate and sanctuary, side cloisters, far skyline, floating ruins, procedural sky and dust.
