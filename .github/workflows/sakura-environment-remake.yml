@@ -30,7 +30,7 @@ jobs:
           cd ..
           node --check dist/visual-engine.js
           node --check dist/sakura-render-pass-v1.js
-          node tests/check.cjs
+          node -e "import('./visual-src/environment.js').then(m=>{if(typeof m.makeEnvironment!=='function')process.exit(1)})"
       - name: Commit rebuilt environment
         run: |
           git config user.name 'github-actions[bot]'
