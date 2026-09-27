@@ -1,3 +1,4 @@
-2026-09-27 deploy Sakura Crossing-inspired layered environment remake
-Environment commit: 1e15a0e9f7874dee92e25896aff6563adcec3cce
-Layers: arena foundation, broken parapets, grand gate and sanctuary, side cloisters, far skyline, floating ruins, procedural sky and dust.
+2026-09-27 deploy far-clip background fix
+Camera far clip: 320
+Sky sphere: frustum culling disabled
+Environment build commit: 530e02debce53159faf1ab57879eaa2af02c2621
