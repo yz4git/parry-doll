@@ -29,3 +29,17 @@ Build: `cd visual-src && npm ci && npm run build`. Runtime assets are vendored; 
 - Metal, cloth, stone and luminous elements use distinct material responses.
 - HUD surfaces, health bars and touch controls receive matching restrained colors and highlights, without layout/input changes.
 - Gameplay scripts remain unchanged from the baseline. Integration precedes final checks as requested.
+
+## Sakura Crossing-inspired environment remake
+
+The arena background was rebuilt as a layered authored world rather than a ring of disconnected props. The combat floor and gameplay geometry remain unchanged.
+
+- Near layer: stepped foundation, broken parapets, braziers, rails, rubble, moss and ground scatter soften the transition from arena to world.
+- Mid layer: a grand stair, gate, asymmetrical tower group, sanctuary, statues, altar, side cloisters, bridges and lit windows create a deliberate composition behind combat.
+- Far layer: irregular skyline masses, bridges, floating ruins and broken orbital structures provide readable depth without expensive unique meshes.
+- Sky layer: animated procedural clouds, moon/halo, cool aerial colour and sparse dust create atmosphere without extra texture assets.
+- Performance: repeated architecture is instanced, most far geometry does not cast shadows, and the existing single shadow-casting key light remains the only dynamic shadow source.
+- Rendering direction: the layout follows the Sakura Crossing principle of building depth from authored near/mid/far silhouettes and coloured-shadow readability, adapted to PARRY DOLL's darker combat presentation.
+
+Validation is performed by the workflow with the existing visual build plus the full game logic check.
+
