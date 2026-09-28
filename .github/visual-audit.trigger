@@ -1,1 +1,1 @@
-Parry Doll bespoke cathedral landmark playcheck 2026-09-28 JST
+Parry Doll sanctuary focal composition playcheck 2026-09-28 JST
