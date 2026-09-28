@@ -1,1 +1,1 @@
-2026-09-27 fix circular far-clip background cutoff
+2026-09-28 visual playcheck environment contrast pass
