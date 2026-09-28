@@ -1,4 +1,3 @@
-2026-09-28 deploy visual playcheck improvement pass
-Environment build: 986eb48526ad1ad0baff7e293dedafb3dd9d99e3
-Review fixes: darker layered stone values, softer aerial palette, reduced exposure, coloured fog depth, smaller silhouette-preserving parry burst.
-Verification: Main WebGL Visual Audit run 36417777850 succeeded with exact 852x393 viewport capture and a real parry.
+2026-09-28 deploy bespoke cathedral landmark pass
+Environment build: bd91d2cfa2066286a85a4b4e717b1938cb642153
+Added: rose window, cathedral gable crown, flying buttresses, broken guardian statues, sanctuary bell, arena ritual sigil.
