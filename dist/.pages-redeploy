@@ -1,4 +1,4 @@
-2026-09-27 deploy far-clip background fix
-Camera far clip: 320
-Sky sphere: frustum culling disabled
-Environment build commit: 530e02debce53159faf1ab57879eaa2af02c2621
+2026-09-28 deploy visual playcheck improvement pass
+Environment build: 986eb48526ad1ad0baff7e293dedafb3dd9d99e3
+Review fixes: darker layered stone values, softer aerial palette, reduced exposure, coloured fog depth, smaller silhouette-preserving parry burst.
+Verification: Main WebGL Visual Audit run 36417777850 succeeded with exact 852x393 viewport capture and a real parry.
