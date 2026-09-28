@@ -128,6 +128,100 @@ function grandGate(scene,m){
  batch(scene,box,m.floorAccent,steps);batch(scene,box,m.stone,walls);batch(scene,cyl,m.stone,columns);batch(scene,box,m.stone,caps);batch(scene,cone,m.stone,spires);batch(scene,arch,m.stone,arches);batch(scene,box,m.stoneCool,buttresses);batch(scene,box,m.metal,trims);batch(scene,box,m.glow,windows,{cast:false,receive:false});batch(scene,cyl,m.stoneCool,statues);batch(scene,box,m.stoneDark,altar);batch(scene,gem,m.glow,glass,{cast:false,receive:false});
 }
 
+
+function heroLandmarks(scene,m){
+ const facadeZ=-45.50;
+
+ // Large rose window: dark glass disk, stone/bronze rings and readable radial spokes.
+ const glass=new THREE.Mesh(new THREE.CircleGeometry(1.62,40),m.blackGlass);
+ glass.position.set(0,11.15,facadeZ);glass.castShadow=false;glass.receiveShadow=false;scene.add(glass);
+ const outer=new THREE.Mesh(new THREE.TorusGeometry(1.86,.13,8,48),m.stoneCool);
+ outer.position.set(0,11.15,facadeZ+.025);outer.castShadow=false;scene.add(outer);
+ const inner=new THREE.Mesh(new THREE.TorusGeometry(1.28,.075,7,40),m.bronze);
+ inner.position.set(0,11.15,facadeZ+.045);inner.castShadow=false;scene.add(inner);
+ const spokes=[],box=new THREE.BoxGeometry(1,1,1);
+ for(let i=0;i<12;i++){
+  const a=i*Math.PI/6;
+  spokes.push(item([Math.cos(a)*.73,11.15+Math.sin(a)*.73,facadeZ+.055],[1.35,.055,.055],[0,0,a],i%3===0?'#b39162':'#8b7b67'));
+ }
+ batch(scene,box,m.bronze,spokes,{cast:false,receive:false});
+
+ // Strong cathedral crown: one gable and asymmetric needle cluster.
+ const gable=new THREE.Mesh(new THREE.ConeGeometry(5.4,6.6,3),m.stoneDark);
+ gable.position.set(0,17.0,-48.15);gable.rotation.y=Math.PI;gable.scale.z=.58;gable.castShadow=false;scene.add(gable);
+ const crown=[];
+ for(const [x,y,h,r] of [[-3.5,18.8,4.3,.48],[3.6,19.5,5.8,.52],[-1.5,20.0,3.4,.34],[1.45,20.6,4.1,.36]]){
+  crown.push(item([x,y,-47.8],[r,h,r]));
+ }
+ batch(scene,new THREE.ConeGeometry(1,1,8),m.stoneDark,crown,{cast:false});
+
+ // Flying buttresses: diagonal braces make the mass read as authored gothic architecture.
+ const braces=[];
+ for(const side of [-1,1]){
+  const pairs=[
+   [side*6.2,10.6,-45.5,side*.48],
+   [side*9.2,8.8,-43.6,side*.55],
+   [side*12.3,7.2,-41.8,side*.62],
+  ];
+  for(const [x,y,z,tilt] of pairs){
+   braces.push(item([x,y,z],[4.8,.26,.44],[0,0,tilt]));
+   braces.push(item([x+side*.2,y+.38,z-.22],[3.8,.11,.28],[0,0,tilt]));
+  }
+ }
+ batch(scene,box,m.stoneCool,braces,{cast:false});
+
+ // Broken guardian statues. Chunky primitives are intentional: silhouette matters more than micro-detail.
+ const addGuardian=(x,z,mirror,broken)=>{
+  const group=new THREE.Group();group.position.set(x,0,z);group.rotation.y=mirror<0?.20:-.20;
+  const pedestal=new THREE.Mesh(new THREE.CylinderGeometry(.86,1.05,.55,10),m.stoneDark);pedestal.position.y=.28;group.add(pedestal);
+  const skirt=new THREE.Mesh(new THREE.ConeGeometry(.72,1.9,8),m.stoneCool);skirt.position.y=1.45;group.add(skirt);
+  const torso=new THREE.Mesh(new THREE.CylinderGeometry(.45,.60,1.55,9),m.stone);torso.position.y=2.82;torso.rotation.z=broken?.08:-.04;group.add(torso);
+  const head=new THREE.Mesh(new THREE.IcosahedronGeometry(.39,1),m.stone);head.position.set(broken?.13:0,3.92,0);head.scale.set(.82,1.08,.86);group.add(head);
+  const shoulderY=3.20;
+  const armA=new THREE.Mesh(new THREE.CylinderGeometry(.13,.17,1.55,8),m.stone);armA.position.set(mirror*.55,shoulderY+.02,0);armA.rotation.z=mirror*(broken?.95:.64);group.add(armA);
+  if(!broken){
+   const armB=new THREE.Mesh(new THREE.CylinderGeometry(.12,.16,1.45,8),m.stone);armB.position.set(-mirror*.50,shoulderY-.03,0);armB.rotation.z=-mirror*.52;group.add(armB);
+  }else{
+   const stump=new THREE.Mesh(new THREE.CylinderGeometry(.15,.18,.55,8),m.stone);stump.position.set(-mirror*.36,shoulderY+.02,0);stump.rotation.z=-mirror*.82;group.add(stump);
+   const fallen=new THREE.Mesh(new THREE.CylinderGeometry(.12,.16,1.02,8),m.stoneCool);fallen.position.set(-mirror*.95,.34,.58);fallen.rotation.set(.18,0,-mirror*1.08);group.add(fallen);
+  }
+  const wingMat=m.stoneCool;
+  for(const side of [-1,1]){
+   const wing=new THREE.Mesh(new THREE.BoxGeometry(.18,1.85,.70),wingMat);
+   wing.position.set(side*.50,3.08,-.18);wing.rotation.z=side*(broken&&side===-1?.92:.58);wing.rotation.x=-.18;group.add(wing);
+  }
+  group.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});
+  scene.add(group);
+ };
+ addGuardian(-7.2,-25.9,-1,true);
+ addGuardian(7.4,-26.3,1,false);
+
+ // Hanging sanctuary bell: a distinct mid-distance silhouette and focal accent.
+ const bellGroup=new THREE.Group();bellGroup.position.set(0,14.45,-44.85);
+ const yoke=new THREE.Mesh(new THREE.BoxGeometry(2.6,.20,.30),m.bronze);bellGroup.add(yoke);
+ const bell=new THREE.Mesh(new THREE.CylinderGeometry(.55,.92,1.15,16,1,true),m.bronze);bell.position.y=-.72;bell.scale.y=.90;bellGroup.add(bell);
+ const lip=new THREE.Mesh(new THREE.TorusGeometry(.91,.08,7,28),m.bronze);lip.rotation.x=Math.PI/2;lip.position.y=-1.25;bellGroup.add(lip);
+ const clapper=new THREE.Mesh(new THREE.CylinderGeometry(.07,.10,.70,8),m.metal);clapper.position.y=-1.28;bellGroup.add(clapper);
+ bellGroup.traverse(o=>{if(o.isMesh)o.castShadow=false});scene.add(bellGroup);
+}
+
+function arenaSigil(scene,m){
+ // Thin low-cost ritual marks break the large floor disc without interfering with fighters.
+ const rings=[
+  [2.35,.020,m.bronze],[5.75,.018,m.floorAccent],[8.55,.018,m.bronze]
+ ];
+ for(const [r,w,mat] of rings){
+  const t=new THREE.Mesh(new THREE.TorusGeometry(r,w,5,96),mat);
+  t.rotation.x=Math.PI/2;t.position.y=.010;t.castShadow=false;t.receiveShadow=false;scene.add(t);
+ }
+ const box=new THREE.BoxGeometry(1,1,1),marks=[];
+ for(let i=0;i<12;i++){
+  const a=i*Math.PI/6,r=7.1,len=i%3===0?2.15:1.30;
+  marks.push(item([Math.sin(a)*r,.012,Math.cos(a)*r],[.035,.012,len],[0,a,0],i%2?'#9f8b70':'#7f8790'));
+ }
+ batch(scene,box,m.floorAccent,marks,{cast:false,receive:false});
+}
+
 function cloisters(scene,m){
  const box=new THREE.BoxGeometry(1,1,1),cyl=new THREE.CylinderGeometry(1,1,1,10),arch=archGeometry(),cone=new THREE.ConeGeometry(1,1,9);
  const decks=[],columns=[],arches=[],rails=[],windows=[],pinnacles=[],hanging=[];
@@ -212,6 +306,8 @@ export function makeEnvironment(scene,baseURL){
  arenaFoundation(scene,m);
  nearRing(scene,m);
  grandGate(scene,m);
+ heroLandmarks(scene,m);
+ arenaSigil(scene,m);
  cloisters(scene,m);
  farCity(scene,m);
  floatingRuins(scene,m);
@@ -233,6 +329,7 @@ The arena background was rebuilt as a layered authored world rather than a ring 
 
 - Near layer: stepped foundation, broken parapets, braziers, rails, rubble, moss and ground scatter soften the transition from arena to world.
 - Mid layer: a grand stair, gate, asymmetrical tower group, sanctuary, statues, altar, side cloisters, bridges and lit windows create a deliberate composition behind combat.
+- Hero landmarks: a rose window, gable crown, flying buttresses, broken guardian statues, sanctuary bell and restrained arena sigil replace the previous generic-block feel with memorable silhouettes.
 - Far layer: irregular skyline masses, bridges, floating ruins and broken orbital structures provide readable depth without expensive unique meshes.
 - Sky layer: animated procedural clouds, moon/halo, cool aerial colour and sparse dust create atmosphere without extra texture assets.
 - Performance: repeated architecture is instanced, most far geometry does not cast shadows, and the existing single shadow-casting key light remains the only dynamic shadow source.
