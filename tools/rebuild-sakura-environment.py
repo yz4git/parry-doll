@@ -33,10 +33,10 @@ function makeMaterials(baseURL){
  const stoneMap=load('stone-color.png',true),stoneNormal=load('stone-normal.png'),stoneRough=load('stone-rough.png');
  for(const t of [stoneMap,stoneNormal,stoneRough])t.repeat.set(4,4);
  return{
-  floor:new THREE.MeshStandardMaterial({map:stoneMap,normalMap:stoneNormal,roughnessMap:stoneRough,normalScale:new THREE.Vector2(.22,.22),color:'#f1ecdf',roughness:.72,metalness:.07}),
-  stone:new THREE.MeshStandardMaterial({color:'#dfd8c8',roughness:.8,normalMap:stoneNormal,normalScale:new THREE.Vector2(.16,.16)}),
-  stoneCool:new THREE.MeshStandardMaterial({color:'#9eabb6',roughness:.9}),
-  stoneDark:new THREE.MeshStandardMaterial({color:'#68737f',roughness:.94}),
+  floor:new THREE.MeshStandardMaterial({map:stoneMap,normalMap:stoneNormal,roughnessMap:stoneRough,normalScale:new THREE.Vector2(.22,.22),color:'#d4cbbc',roughness:.72,metalness:.07}),
+  stone:new THREE.MeshStandardMaterial({color:'#b9b2a8',roughness:.8,normalMap:stoneNormal,normalScale:new THREE.Vector2(.16,.16)}),
+  stoneCool:new THREE.MeshStandardMaterial({color:'#7f8c98',roughness:.9}),
+  stoneDark:new THREE.MeshStandardMaterial({color:'#5c6976',roughness:.94}),
   metal:new THREE.MeshStandardMaterial({color:'#928777',metalness:.73,roughness:.4}),
   bronze:new THREE.MeshStandardMaterial({color:'#9a7653',metalness:.62,roughness:.46}),
   leaf:new THREE.MeshStandardMaterial({color:'#667957',roughness:1}),
@@ -44,7 +44,7 @@ function makeMaterials(baseURL){
   glow:new THREE.MeshBasicMaterial({color:'#d9efff'}),
   fire:new THREE.MeshBasicMaterial({color:'#ffd29a',transparent:true,opacity:.92}),
   blackGlass:new THREE.MeshBasicMaterial({color:'#1d3140'}),
-  floorAccent:new THREE.MeshStandardMaterial({color:'#c8bdac',roughness:.86,metalness:.02})
+  floorAccent:new THREE.MeshStandardMaterial({color:'#aea08e',roughness:.86,metalness:.02})
  };
 }
 
@@ -182,7 +182,7 @@ function skyLayer(scene){
  const material=new THREE.ShaderMaterial({
   side:THREE.BackSide,depthWrite:false,uniforms:{uTime:{value:0}},
   vertexShader:'varying vec3 d;void main(){d=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
-  fragmentShader:`varying vec3 d;uniform float uTime;float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+1.),f.x),f.y);}void main(){vec3 v=normalize(d);float h=smoothstep(-.16,.9,v.y);vec3 c=mix(vec3(.07,.12,.20),vec3(.23,.42,.64),h);c=mix(c,vec3(.62,.75,.87),smoothstep(.28,.96,v.y));vec2 p=v.xz/max(.18,v.y+.34);float t=uTime*.012;float n=noise(p*2.1+vec2(t,0.))*.68+noise(p*4.7-vec2(t*.6,0.))*.32;float cloud=smoothstep(.53,.76,n)*smoothstep(-.08,.24,v.y);c=mix(c,vec3(.94,.95,.97),cloud*.76);vec3 md=normalize(vec3(-.4,.63,-.56));float moon=pow(max(0.,dot(v,md)),230.);float halo=pow(max(0.,dot(v,md)),17.);c+=vec3(.78,.84,.96)*moon*.92+vec3(.14,.18,.29)*halo*.58;gl_FragColor=vec4(c,1.);}`
+  fragmentShader:`varying vec3 d;uniform float uTime;float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+1.),f.x),f.y);}void main(){vec3 v=normalize(d);float h=smoothstep(-.16,.9,v.y);vec3 c=mix(vec3(.11,.17,.25),vec3(.27,.43,.60),h);c=mix(c,vec3(.56,.69,.80),smoothstep(.28,.96,v.y));vec2 p=v.xz/max(.18,v.y+.34);float t=uTime*.012;float n=noise(p*2.1+vec2(t,0.))*.68+noise(p*4.7-vec2(t*.6,0.))*.32;float cloud=smoothstep(.53,.76,n)*smoothstep(-.08,.24,v.y);c=mix(c,vec3(.88,.91,.94),cloud*.76);vec3 md=normalize(vec3(-.4,.63,-.56));float moon=pow(max(0.,dot(v,md)),230.);float halo=pow(max(0.,dot(v,md)),17.);c+=vec3(.78,.84,.96)*moon*.92+vec3(.14,.18,.29)*halo*.58;gl_FragColor=vec4(c,1.);}`
  });
  const sky=new THREE.Mesh(new THREE.SphereGeometry(150,32,16),material);sky.frustumCulled=false;scene.add(sky);
  const moon=new THREE.Mesh(new THREE.CircleGeometry(6.0,48),new THREE.MeshBasicMaterial({color:'#dce7f7',transparent:true,opacity:.86,depthWrite:false}));moon.position.set(-58,70,-90);moon.lookAt(0,0,0);moon.frustumCulled=false;scene.add(moon);
@@ -202,7 +202,7 @@ function dust(scene){
  const g=new THREE.BufferGeometry(),pts=[];
  for(let i=0;i<150;i++){const a=rand()*Math.PI*2,r=9+rand()*50;pts.push(Math.sin(a)*r,.8+rand()*11,Math.cos(a)*r-10-rand()*34)}
  g.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));g.userData.base=Float32Array.from(pts);
- const mat=new THREE.PointsMaterial({color:'#d9e8f3',size:.065,transparent:true,opacity:.34,depthWrite:false});const p=new THREE.Points(g,mat);scene.add(p);
+ const mat=new THREE.PointsMaterial({color:'#d9e8f3',size:.065,transparent:true,opacity:.24,depthWrite:false});const p=new THREE.Points(g,mat);scene.add(p);
  return{update(clock){const a=g.attributes.position,b=g.userData.base;for(let i=0;i<a.count;i++){const x=b[i*3],y=b[i*3+1],z=b[i*3+2];a.setXYZ(i,x+Math.sin(clock*.15+i)*.05,y+Math.sin(clock*.55+i*.73)*.09,z+Math.cos(clock*.12+i*.33)*.04)}a.needsUpdate=true}};
 }
 
