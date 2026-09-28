@@ -146,6 +146,25 @@ function heroLandmarks(scene,m){
  }
  batch(scene,box,m.bronze,spokes,{cast:false,receive:false});
 
+ // Dark sanctuary portal sits below the HUD and gives the boss a clean readable silhouette.
+ const portal=new THREE.Mesh(new THREE.PlaneGeometry(7.4,6.3),m.blackGlass);
+ portal.position.set(0,5.55,-34.93);portal.castShadow=false;portal.receiveShadow=false;scene.add(portal);
+ const portalFrame=[];
+ for(const x of [-3.55,3.55])portalFrame.push(item([x,5.55,-34.88],[.24,6.45,.20]));
+ portalFrame.push(item([0,8.66,-34.88],[7.35,.24,.20]));
+ batch(scene,box,m.stoneCool,portalFrame,{cast:false});
+
+ // Low stained-glass windows remain visible during normal combat instead of hiding behind the boss HUD.
+ const blueGlass=new THREE.MeshBasicMaterial({color:'#7fb4cb',transparent:true,opacity:.48,depthWrite:false});
+ const amberGlass=new THREE.MeshBasicMaterial({color:'#d1aa72',transparent:true,opacity:.42,depthWrite:false});
+ for(const [x,mat] of [[-5.65,blueGlass],[5.65,amberGlass]]){
+  const pane=new THREE.Mesh(new THREE.PlaneGeometry(1.12,2.75),mat);pane.position.set(x,6.40,-34.84);scene.add(pane);
+  const frame=new THREE.Mesh(new THREE.TorusGeometry(.66,.075,7,28,Math.PI),m.bronze);
+  frame.position.set(x,7.78,-34.80);frame.rotation.z=Math.PI;scene.add(frame);
+  const mullion=new THREE.Mesh(new THREE.BoxGeometry(.08,2.70,.08),m.bronze);
+  mullion.position.set(x,6.40,-34.79);scene.add(mullion);
+ }
+
  // Strong cathedral crown: one gable and asymmetric needle cluster.
  const gable=new THREE.Mesh(new THREE.ConeGeometry(5.4,6.6,3),m.stoneDark);
  gable.position.set(0,17.0,-48.15);gable.rotation.y=Math.PI;gable.scale.z=.58;gable.castShadow=false;scene.add(gable);
@@ -226,14 +245,14 @@ function cloisters(scene,m){
  const box=new THREE.BoxGeometry(1,1,1),cyl=new THREE.CylinderGeometry(1,1,1,10),arch=archGeometry(),cone=new THREE.ConeGeometry(1,1,9);
  const decks=[],columns=[],arches=[],rails=[],windows=[],pinnacles=[],hanging=[];
  for(const side of [-1,1])for(let i=0;i<6;i++){
-  const x=side*(21.2+i*4.9),z=-6.0-i*6.35,y=4.1+i*.62;
+  const x=side*(24.0+i*5.05),z=-7.2-i*6.45,y=4.0+i*.58;
   decks.push(item([x,y,z],[4.35,.28,2.15]));columns.push(item([x,y-2.0,z],[.30,4.0,.30]));columns.push(item([x-side*1.7,y-1.65,z+.75],[.18,3.3,.18]));columns.push(item([x+side*1.7,y-1.65,z+.75],[.18,3.3,.18]));
   rails.push(item([x,y+.62,z+1.0],[4.05,.07,.07]));arches.push(item([x-side*2.25,y+1.0,z],[2.9,2.25,.9],[0,Math.PI/2,0]));
   windows.push(item([x,y+1.04,z-.93],[.22,.74,.06],null,i%3===0?'#f0d1a1':'#c6e6f6'));pinnacles.push(item([x,y+3.25,z],[.42,1.55,.42]));
-  if(i<5){const nx=side*(23.6+i*4.9),nz=-9.15-i*6.35;decks.push(item([(x+nx)/2,y+.9,(z+nz)/2],[5.5,.18,1.0],[.10,side*-.28,0]));}
+  if(i<5){const nx=side*(26.45+i*5.05),nz=-10.4-i*6.45;decks.push(item([(x+nx)/2,y+.9,(z+nz)/2],[5.5,.18,1.0],[.10,side*-.28,0]));}
   if(i%2===0)hanging.push(item([x,y-.55,z+1.07],[.055,.92,.055],[.1,0,0]));
  }
- batch(scene,box,m.stone,decks);batch(scene,cyl,m.stone,columns);batch(scene,arch,m.stone,arches);batch(scene,box,m.metal,rails);batch(scene,box,m.glow,windows,{cast:false,receive:false});batch(scene,cone,m.stone,pinnacles);batch(scene,cyl,m.metal,hanging,{cast:false});
+ batch(scene,box,m.stoneCool,decks);batch(scene,cyl,m.stone,columns);batch(scene,arch,m.stoneCool,arches);batch(scene,box,m.metal,rails);batch(scene,box,m.glow,windows,{cast:false,receive:false});batch(scene,cone,m.stone,pinnacles);batch(scene,cyl,m.metal,hanging,{cast:false});
 }
 
 function farCity(scene,m){
