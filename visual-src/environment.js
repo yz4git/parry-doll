@@ -22,6 +22,69 @@ function archGeometry(){
  g.setIndex(archData.indices);g.computeVertexNormals();return g;
 }
 
+
+const textureCache=new Map();
+
+function makeStainedGlassTexture(kind='blue'){
+ const key='glass:'+kind;if(textureCache.has(key))return textureCache.get(key);
+ const rose=kind==='rose',w=rose?256:128,h=rose?256:256;
+ const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
+ const ctx=canvas.getContext('2d');
+ const palette=kind==='amber'
+  ?['#3d2b33','#b66d3d','#e3bd6c','#72546d','#d78b55']
+  :kind==='rose'
+   ?['#26334e','#6b4d78','#c48764','#77a5b8','#d5b36b']
+   :['#26384c','#4f7894','#87b8c7','#65739b','#c5a56b'];
+ ctx.fillStyle='#172532';ctx.fillRect(0,0,w,h);
+ if(rose){
+  const cx=w/2,cy=h/2;
+  for(let ring=0;ring<4;ring++){
+   const inner=18+ring*24,outer=inner+21,segments=ring===0?8:12+ring*4;
+   for(let i=0;i<segments;i++){
+    const a0=i/segments*Math.PI*2+.10*ring,a1=(i+1)/segments*Math.PI*2+.10*ring;
+    ctx.beginPath();ctx.moveTo(cx+Math.cos(a0)*inner,cy+Math.sin(a0)*inner);
+    ctx.arc(cx,cy,outer,a0,a1);ctx.lineTo(cx+Math.cos(a1)*inner,cy+Math.sin(a1)*inner);
+    ctx.arc(cx,cy,inner,a1,a0,true);ctx.closePath();
+    ctx.fillStyle=palette[(i+ring*2)%palette.length];ctx.globalAlpha=.88;ctx.fill();
+    ctx.globalAlpha=1;ctx.strokeStyle='#1a1d23';ctx.lineWidth=4;ctx.stroke();
+   }
+  }
+  ctx.beginPath();ctx.arc(cx,cy,17,0,Math.PI*2);ctx.fillStyle='#d6ba74';ctx.fill();ctx.strokeStyle='#181b20';ctx.lineWidth=5;ctx.stroke();
+ }else{
+  for(let y=0;y<4;y++)for(let x=0;x<3;x++){
+   const x0=x*w/3,y0=y*h/4,x1=(x+1)*w/3,y1=(y+1)*h/4;
+   const inset=5,skew=((x+y)%2?9:-7);
+   ctx.beginPath();ctx.moveTo(x0+inset,y0+inset);ctx.lineTo(x1-inset,y0+inset+skew*.30);ctx.lineTo(x1-inset-skew*.18,y1-inset);ctx.lineTo(x0+inset+skew*.12,y1-inset-skew*.22);ctx.closePath();
+   ctx.fillStyle=palette[(x+y*2)%palette.length];ctx.globalAlpha=.90;ctx.fill();ctx.globalAlpha=1;
+   ctx.strokeStyle='#1b2027';ctx.lineWidth=5;ctx.stroke();
+  }
+  ctx.strokeStyle='rgba(225,198,126,.55)';ctx.lineWidth=2;ctx.strokeRect(7,7,w-14,h-14);
+  ctx.beginPath();ctx.moveTo(w*.5,8);ctx.lineTo(w*.5,h-8);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(8,h*.52);ctx.lineTo(w-8,h*.45);ctx.stroke();
+ }
+ const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace;tex.anisotropy=2;
+ textureCache.set(key,tex);return tex;
+}
+
+function makeBannerTexture(side,index){
+ const key='banner:'+side+':'+index;if(textureCache.has(key))return textureCache.get(key);
+ const canvas=document.createElement('canvas');canvas.width=128;canvas.height=256;const ctx=canvas.getContext('2d');
+ const base=side<0?(index?'#435b73':'#314967'):(index?'#665f78':'#5a536d');
+ ctx.fillStyle=base;ctx.fillRect(0,0,128,256);
+ const grad=ctx.createLinearGradient(0,0,128,256);grad.addColorStop(0,'rgba(255,255,255,.14)');grad.addColorStop(.48,'rgba(255,255,255,0)');grad.addColorStop(1,'rgba(5,12,20,.32)');ctx.fillStyle=grad;ctx.fillRect(0,0,128,256);
+ ctx.strokeStyle='#b79a67';ctx.lineWidth=5;ctx.strokeRect(9,8,110,240);
+ ctx.strokeStyle='rgba(218,195,146,.55)';ctx.lineWidth=2;ctx.strokeRect(16,16,96,224);
+ ctx.translate(64,112);
+ ctx.strokeStyle='#d1b574';ctx.fillStyle='rgba(211,183,116,.16)';ctx.lineWidth=6;
+ ctx.beginPath();ctx.moveTo(0,-45);ctx.lineTo(29,-8);ctx.lineTo(16,38);ctx.lineTo(0,54);ctx.lineTo(-16,38);ctx.lineTo(-29,-8);ctx.closePath();ctx.fill();ctx.stroke();
+ ctx.beginPath();ctx.arc(0,-3,17,0,Math.PI*2);ctx.stroke();
+ ctx.beginPath();ctx.moveTo(-42,6);ctx.lineTo(42,6);ctx.moveTo(0,-48);ctx.lineTo(0,56);ctx.stroke();
+ ctx.resetTransform();
+ ctx.fillStyle='rgba(230,214,177,.58)';for(let i=0;i<5;i++)ctx.fillRect(23+i*18,220+(i%2)*4,7,7);
+ const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace;tex.anisotropy=2;
+ textureCache.set(key,tex);return tex;
+}
+
 function makeMaterials(baseURL){
  const loader=new THREE.TextureLoader();
  const load=(name,srgb=false)=>{
@@ -131,7 +194,8 @@ function heroLandmarks(scene,m){
  const facadeZ=-45.50;
 
  // Large rose window: dark glass disk, stone/bronze rings and readable radial spokes.
- const glass=new THREE.Mesh(new THREE.CircleGeometry(1.62,40),m.blackGlass);
+ const roseGlass=new THREE.MeshBasicMaterial({map:makeStainedGlassTexture('rose'),transparent:true,opacity:.88,depthWrite:false,toneMapped:false});
+ const glass=new THREE.Mesh(new THREE.CircleGeometry(1.62,40),roseGlass);
  glass.position.set(0,11.15,facadeZ);glass.castShadow=false;glass.receiveShadow=false;scene.add(glass);
  const outer=new THREE.Mesh(new THREE.TorusGeometry(1.86,.13,8,48),m.stoneCool);
  outer.position.set(0,11.15,facadeZ+.025);outer.castShadow=false;scene.add(outer);
@@ -153,8 +217,8 @@ function heroLandmarks(scene,m){
  batch(scene,box,m.stoneCool,portalFrame,{cast:false});
 
  // Low stained-glass windows remain visible during normal combat instead of hiding behind the boss HUD.
- const blueGlass=new THREE.MeshBasicMaterial({color:'#7fb4cb',transparent:true,opacity:.48,depthWrite:false});
- const amberGlass=new THREE.MeshBasicMaterial({color:'#d1aa72',transparent:true,opacity:.42,depthWrite:false});
+ const blueGlass=new THREE.MeshBasicMaterial({map:makeStainedGlassTexture('blue'),transparent:true,opacity:.72,depthWrite:false,toneMapped:false});
+ const amberGlass=new THREE.MeshBasicMaterial({map:makeStainedGlassTexture('amber'),transparent:true,opacity:.68,depthWrite:false,toneMapped:false});
  for(const [x,mat] of [[-5.65,blueGlass],[5.65,amberGlass]]){
   const pane=new THREE.Mesh(new THREE.PlaneGeometry(1.12,2.75),mat);pane.position.set(x,6.40,-34.84);scene.add(pane);
   const frame=new THREE.Mesh(new THREE.TorusGeometry(.66,.075,7,28,Math.PI),m.bronze);
@@ -303,7 +367,7 @@ function skyLayer(scene){
 function flags(scene){
  const list=[];
  for(const side of [-1,1])for(let i=0;i<3;i++){
-  const mat=new THREE.MeshStandardMaterial({color:side<0?(i?'#53677f':'#3f5777'):(i?'#76798a':'#746d83'),roughness:.93,side:THREE.DoubleSide});
+  const mat=new THREE.MeshStandardMaterial({map:makeBannerTexture(side,i),color:'#ffffff',roughness:.92,side:THREE.DoubleSide});
   const flag=new THREE.Mesh(new THREE.PlaneGeometry(1.35+i*.16,3.5+i*.24,5,12),mat);flag.position.set(side*(10.5+i*4.0),8.5+i*1.45,-20-i*5.1);flag.rotation.y=side<0?.18:-.18;flag.userData.base=Float32Array.from(flag.geometry.attributes.position.array);scene.add(flag);list.push(flag);
  }
  return{update(clock){list.forEach((f,k)=>{const p=f.geometry.attributes.position,b=f.userData.base;for(let i=0;i<p.count;i++){const x=b[i*3],y=b[i*3+1],z=b[i*3+2];const w=Math.sin(clock*1.35+y*1.45+k*.63)*.13+Math.sin(clock*2.1+x*2.4+k)*.045;p.setXYZ(i,x,y,z+w*(1.8-y)/3.6)}p.needsUpdate=true;if((Math.floor(clock*30)+k)%3===0)f.geometry.computeVertexNormals()})}};
