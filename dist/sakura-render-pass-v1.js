@@ -49,12 +49,12 @@
     constructor(canvas){
       super(canvas);
       // Keep highlights cinematic while restoring readable coloured shadows.
-      this.renderer.toneMappingExposure=1.13;
-      if(this.scene.environmentIntensity!==undefined)this.scene.environmentIntensity=.76;
+      this.renderer.toneMappingExposure=1.02;
+      if(this.scene.environmentIntensity!==undefined)this.scene.environmentIntensity=.70;
       this.scene.background?.set?.('#b9d5e6');
       if(this.scene.fog){
-        this.scene.fog.color?.set?.('#c2d9e6');
-        if('density' in this.scene.fog)this.scene.fog.density=.0082;
+        this.scene.fog.color?.set?.('#9fb1bd');
+        if('density' in this.scene.fog)this.scene.fog.density=.0105;
       }
 
       // Two-light anime logic: warm key, cool opposite-side separation,
@@ -63,21 +63,21 @@
       for(const hemi of hemis){
         hemi.color?.set?.('#c9e6ff');
         hemi.groundColor?.set?.('#6c6880');
-        hemi.intensity=1.66;
+        hemi.intensity=1.42;
       }
       if(this.key){
         this.key.color?.set?.('#ffe8cb');
-        this.key.intensity=3.72;
+        this.key.intensity=3.20;
       }
       const dirs=this.scene.children.filter(o=>o?.isDirectionalLight&&o!==this.key);
       if(dirs[0]){
         dirs[0].color?.set?.('#8fc7f0');
-        dirs[0].intensity=2.18;
+        dirs[0].intensity=1.92;
       }
 
       // Cheap final resolve for the WebGL layer only; HUD/telegraphs keep their
       // semantic colours and touch readability.
-      canvas.style.filter='saturate(1.055) contrast(1.035) brightness(1.012)';
+      canvas.style.filter='saturate(1.04) contrast(1.045) brightness(.98)';
       this._pdSweepMaterials();
     }
 
