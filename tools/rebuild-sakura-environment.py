@@ -132,8 +132,8 @@ function nearRing(scene,m){
  for(let i=0;i<40;i++){
   const a=i*Math.PI/20,r=14.72,x=Math.sin(a)*r,z=Math.cos(a)*r;
   if(!([18,19,20,21,22].includes(i))){
-   parapets.push(item([x,.48,z],[.82,.94,1.2],[0,a,0],i%5===0?'#c9c0b2':null));
-   if(i%2===0)caps.push(item([x,1.02,z],[1.02,.11,1.38],[0,a,0]));
+   parapets.push(item([x,.48,z],[.82,.94,1.2],[0,a,0],i%5===0?'#9eabb3':i%3===0?'#b6ada2':'#aaa8a2'));
+   if(i%2===0)caps.push(item([x,1.02,z],[1.02,.11,1.38],[0,a,0],i%4===0?'#8f9ba5':'#b0a79d'));
   }
   if(i%5===0){
    posts.push(item([Math.sin(a)*14.45,1.25,Math.cos(a)*14.45],[.11,1.55,.11]));
@@ -165,10 +165,10 @@ function grandGate(scene,m){
   walls.push(item([side*9.1,4.1,-34.0],[1.5,4.5,4.4]));
   for(let i=0;i<5;i++){
    const x=side*(12.2+i*4.15),z=-27.2-i*2.05,y=3.1+i*.18;
-   columns.push(item([x,y,z],[.44,6.2,.44]));
-   caps.push(item([x,y+3.22,z],[.9,.15,.9]));
-   arches.push(item([x-side*2.04,y+1.05,z],[3.05,2.7,1.0],[0,Math.PI/2,0]));
-   walls.push(item([x-side*2.05,y+2.85,z],[4.35,.28,1.35]));
+   columns.push(item([x,y,z],[.44,6.2,.44],null,i%2===0?'#a6abb0':'#b7aca0'));
+   caps.push(item([x,y+3.22,z],[.9,.15,.9],null,i%2===0?'#8f9ba5':'#b3aaa0'));
+   arches.push(item([x-side*2.04,y+1.05,z],[3.05,2.7,1.0],[0,Math.PI/2,0],i%2===0?'#9ba6af':'#b4aaa0'));
+   walls.push(item([x-side*2.05,y+2.85,z],[4.35,.28,1.35],null,i%2===0?'#8996a1':'#aaa197'));
    windows.push(item([x,y+1.02,z+.58],[.26,.9,.07],null,i%2?'#dff1ff':'#bcdff0'));
    buttresses.push(item([x+side*.9,y-1.1,z-1.2],[.38,3.8,.72],[.12,0,side*.18]));
   }
@@ -310,10 +310,10 @@ function cloisters(scene,m){
  const decks=[],columns=[],arches=[],rails=[],windows=[],pinnacles=[],hanging=[];
  for(const side of [-1,1])for(let i=0;i<6;i++){
   const x=side*(24.0+i*5.05),z=-7.2-i*6.45,y=4.0+i*.58;
-  decks.push(item([x,y,z],[4.35,.28,2.15]));columns.push(item([x,y-2.0,z],[.30,4.0,.30]));columns.push(item([x-side*1.7,y-1.65,z+.75],[.18,3.3,.18]));columns.push(item([x+side*1.7,y-1.65,z+.75],[.18,3.3,.18]));
-  rails.push(item([x,y+.62,z+1.0],[4.05,.07,.07]));arches.push(item([x-side*2.25,y+1.0,z],[2.9,2.25,.9],[0,Math.PI/2,0]));
-  windows.push(item([x,y+1.04,z-.93],[.22,.74,.06],null,i%3===0?'#f0d1a1':'#c6e6f6'));pinnacles.push(item([x,y+3.25,z],[.42,1.55,.42]));
-  if(i<5){const nx=side*(26.45+i*5.05),nz=-10.4-i*6.45;decks.push(item([(x+nx)/2,y+.9,(z+nz)/2],[5.5,.18,1.0],[.10,side*-.28,0]));}
+  decks.push(item([x,y,z],[4.35,.28,2.15],null,i%2===0?'#74828e':'#88929a'));columns.push(item([x,y-2.0,z],[.30,4.0,.30],null,i%2===0?'#9ea5a8':'#b2a99f'));columns.push(item([x-side*1.7,y-1.65,z+.75],[.18,3.3,.18],null,'#8f9aa3'));columns.push(item([x+side*1.7,y-1.65,z+.75],[.18,3.3,.18],null,'#a9a39d'));
+  rails.push(item([x,y+.62,z+1.0],[4.05,.07,.07]));arches.push(item([x-side*2.25,y+1.0,z],[2.9,2.25,.9],[0,Math.PI/2,0],i%2===0?'#71808d':'#89949d'));
+  windows.push(item([x,y+1.04,z-.93],[.22,.74,.06],null,i%3===0?'#f0d1a1':'#c6e6f6'));pinnacles.push(item([x,y+3.25,z],[.42,1.55,.42],null,i%2===0?'#9da5aa':'#b1a79e'));
+  if(i<5){const nx=side*(26.45+i*5.05),nz=-10.4-i*6.45;decks.push(item([(x+nx)/2,y+.9,(z+nz)/2],[5.5,.18,1.0],[.10,side*-.28,0],i%2===0?'#73818c':'#879199'));}
   if(i%2===0)hanging.push(item([x,y-.55,z+1.07],[.055,.92,.055],[.1,0,0]));
  }
  batch(scene,box,m.stoneCool,decks);batch(scene,cyl,m.stone,columns);batch(scene,arch,m.stoneCool,arches);batch(scene,box,m.metal,rails);batch(scene,box,m.glow,windows,{cast:false,receive:false});batch(scene,cone,m.stone,pinnacles);batch(scene,cyl,m.metal,hanging,{cast:false});
@@ -414,6 +414,7 @@ The arena background was rebuilt as a layered authored world rather than a ring 
 - Mid layer: a grand stair, gate, asymmetrical tower group, sanctuary, statues, altar, side cloisters, bridges and lit windows create a deliberate composition behind combat.
 - Hero landmarks: a rose window, gable crown, flying buttresses, broken guardian statues, sanctuary bell and restrained arena sigil replace the previous generic-block feel with memorable silhouettes.
 - Procedural detail: stained glass and heraldic cloth textures are generated once with Canvas2D, following Sakura Crossing's asset-light authored-detail approach without adding image downloads.
+- Material breakup: repeated stone instances receive restrained warm-grey/cool-grey variation so the architecture reads as an authored painted environment rather than uniform white primitives.
 - Far layer: irregular skyline masses, bridges, floating ruins and broken orbital structures provide readable depth without expensive unique meshes.
 - Sky layer: animated procedural clouds, moon/halo, cool aerial colour and sparse dust create atmosphere without extra texture assets.
 - Performance: repeated architecture is instanced, most far geometry does not cast shadows, and the existing single shadow-casting key light remains the only dynamic shadow source.
