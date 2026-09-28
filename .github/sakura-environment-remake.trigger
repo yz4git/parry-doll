@@ -1,1 +1,1 @@
-2026-09-28 bespoke cathedral landmark pass
+2026-09-28 sanctuary focal composition pass
