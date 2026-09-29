@@ -6,10 +6,20 @@ const browser=await chromium.launch({headless:true});
 const context=await browser.newContext({viewport:{width:932,height:430},isMobile:true,hasTouch:true,deviceScaleFactor:1});
 const page=await context.newPage();
 await page.goto(`${url}?dodgecheck=${Date.now()}`,{waitUntil:'networkidle',timeout:60000});
-await page.waitForSelector('#dodge',{state:'attached',timeout:10000});
+await page.waitForFunction(()=>!!document.getElementById('dodge'),null,{timeout:10000});
 await page.locator('#start').tap();
 await page.waitForFunction(()=>window.parryDoll&&window.parryDoll.snapshot().mode==='play'&&window.parryDodgeTest,null,{timeout:10000});
-await page.waitForSelector('#dodge',{state:'visible',timeout:10000});
+await page.waitForFunction(()=>{
+  const e=document.getElementById('dodge');if(!e)return false;
+  const r=e.getBoundingClientRect(),cs=getComputedStyle(e);
+  return r.width>0&&r.height>0&&cs.display!=='none'&&cs.visibility!=='hidden'&&cs.pointerEvents!=='none';
+},null,{timeout:10000});
+
+async function touchControl(id){
+  const box=await page.locator('#'+id).boundingBox();
+  if(!box||box.width<=0||box.height<=0)throw new Error(id+' control has no touch rect');
+  await page.touchscreen.tap(box.x+box.width/2,box.y+box.height/2);
+}
 
 const catalog=await page.evaluate(()=>window.parryDodgeTest.catalog());
 if(catalog.length!==4||catalog.some(group=>group.length<2||group.some(m=>m.response!=='dodge'))){
@@ -45,8 +55,8 @@ await page.screenshot({path:'parry-telegraph.png',fullPage:true});parryShot=true
 while(Date.now()-started<timeoutMs){
   const s=await snap('parry-window');
   if(s.parries>=1)break;
-  if(s.response==='parry'&&s.enemyWind>0&&s.enemyWind<.26&&s.parryActive<=.03){await page.locator('#parry').tap()}
-  else if(s.response==='parry'&&s.enemyStrike>0&&s.parryActive<=.03){await page.locator('#parry').tap()}
+  if(s.response==='parry'&&s.enemyWind>0&&s.enemyWind<.26&&s.parryActive<=.03){await touchControl('parry')}
+  else if(s.response==='parry'&&s.enemyStrike>0&&s.parryActive<=.03){await touchControl('parry')}
   await page.waitForTimeout(75);
 }
 let afterParry=await snap('after-parry');
@@ -59,8 +69,8 @@ await page.screenshot({path:'dodge-telegraph.png',fullPage:true});dodgeShot=true
 while(Date.now()-started<timeoutMs){
   const s=await snap('dodge-window');
   if(s.dodges>=1)break;
-  if(s.response==='dodge'&&s.enemyWind>0&&s.enemyWind<.14&&s.dodgeCool<=0){await page.locator('#dodge').tap()}
-  else if(s.response==='dodge'&&s.enemyStrike>0&&s.dodgeCool<=0&&s.dodgeTimer<=0){await page.locator('#dodge').tap()}
+  if(s.response==='dodge'&&s.enemyWind>0&&s.enemyWind<.14&&s.dodgeCool<=0){await touchControl('dodge')}
+  else if(s.response==='dodge'&&s.enemyStrike>0&&s.dodgeCool<=0&&s.dodgeTimer<=0){await touchControl('dodge')}
   await page.waitForTimeout(75);
 }
 const final=await snap('final');
