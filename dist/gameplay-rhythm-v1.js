@@ -27,6 +27,12 @@
  }
  applyRhythmTuning();
 
+ const gpPlayerAttackBase=playerAttack;
+ playerAttack=function(){
+  applyRhythmTuning();
+  return gpPlayerAttackBase();
+ };
+
  const gpPlayerParryBase=playerParry;
  playerParry=function(){
   // Do not let a pre-contact attack startup become a risk-free parry cancel.
