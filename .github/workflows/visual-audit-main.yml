@@ -44,7 +44,7 @@ jobs:
             const context=await browser.newContext({viewport:{width:852,height:393},deviceScaleFactor:1,isMobile:true,hasTouch:true,userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 26_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1'});
             const page=await context.newPage();
             const errors=[],badResponses=[],attackTrace=[];page.on('pageerror',e=>errors.push('pageerror: '+e.message));page.on('console',m=>{if(m.type()==='error')errors.push('console: '+m.text())});page.on('response',r=>{if(r.status()>=400)badResponses.push(r.status()+' '+r.url())});
-            const shot=path=>page.screenshot({path,animations:'disabled'});
+            const shot=path=>page.screenshot({path,animations:'disabled',timeout:60000});
             const attackState=label=>page.evaluate(label=>({label,mode,attackQueued,attackBuffer:+attackBuffer.toFixed(3),hp:player?.hp??0,cool:+(player?.cool||0).toFixed(3),stun:+(player?.stun||0).toFixed(3),down:+(player?.down||0).toFixed(3),attack:+(player?.attack||0).toFixed(3),motion:player?.motion??-1,swing:player?.swing?.name||null,v2:window.parryMirrorBreakDiagnostics?.().attackVisual||null,bossWind:+(boss?.wind||0).toFixed(3),bossStrike:+(boss?.strike||0).toFixed(3)}),label);
             await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});await page.waitForSelector('#start',{timeout:12000});
             await page.waitForFunction(()=>!!document.getElementById('visual-scene')&&typeof window.parryVisualDiagnostics==='function',{timeout:12000});await sleep(900);
