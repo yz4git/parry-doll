@@ -167,7 +167,6 @@
 
  function updateState(){
    const overlay=document.getElementById('overlay');
-   const panelVisible=!!overlay&&!overlay.classList.contains('hidden');
    let playing=false,active=false,ready=false,isDodge=false,isParry=false,secret=false,counterReady=false;
    try{
      playing=typeof mode!=='undefined'&&mode==='play';
@@ -187,17 +186,21 @@
        ready=timeToHit<=(isDodge?.30:.44);
      }
    }catch(_){/* load-order safe */}
-   document.body.classList.toggle('pd-title',panelVisible||!playing);
-   document.body.classList.toggle('pd-play',playing&&!panelVisible);
-   document.body.classList.toggle('pd-warning',ready&&!panelVisible);
-   document.body.classList.toggle('pd-dodge-telegraph',isDodge&&!panelVisible);
-   document.body.classList.toggle('pd-parry-telegraph',isParry&&!panelVisible);
-   document.body.classList.toggle('pd-dodge-warning',ready&&isDodge&&!panelVisible);
-   document.body.classList.toggle('pd-parry-warning',ready&&isParry&&!panelVisible);
-   document.body.classList.toggle('pd-secret',secret&&!panelVisible);
-   document.body.classList.toggle('pd-counter-ready',counterReady&&!panelVisible);
+   // Core combat mode is authoritative. Heal a stale overlay/body presentation state
+   // instead of hiding controls while the simulation is already running.
+   if(playing&&overlay&&!overlay.classList.contains('hidden'))overlay.classList.add('hidden');
+   const panelVisible=!!overlay&&!overlay.classList.contains('hidden');
+   document.body.classList.toggle('pd-title',!playing&&panelVisible);
+   document.body.classList.toggle('pd-play',playing);
+   document.body.classList.toggle('pd-warning',ready&&playing);
+   document.body.classList.toggle('pd-dodge-telegraph',isDodge&&playing);
+   document.body.classList.toggle('pd-parry-telegraph',isParry&&playing);
+   document.body.classList.toggle('pd-dodge-warning',ready&&isDodge&&playing);
+   document.body.classList.toggle('pd-parry-warning',ready&&isParry&&playing);
+   document.body.classList.toggle('pd-secret',secret&&playing);
+   document.body.classList.toggle('pd-counter-ready',counterReady&&playing);
    const attackSmall=document.querySelector('#attack small');
-   if(attackSmall)attackSmall.textContent=counterReady&&!panelVisible?'COUNTER':'ATTACK';
+   if(attackSmall)attackSmall.textContent=counterReady&&playing?'COUNTER':'ATTACK';
    const label=findSecretLabel();
    if(label)label.style.display=playing&&!secret?'none':'';
    requestAnimationFrame(updateState);
