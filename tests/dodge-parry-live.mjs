@@ -6,9 +6,10 @@ const browser=await chromium.launch({headless:true});
 const context=await browser.newContext({viewport:{width:932,height:430},isMobile:true,hasTouch:true,deviceScaleFactor:1});
 const page=await context.newPage();
 await page.goto(`${url}?dodgecheck=${Date.now()}`,{waitUntil:'networkidle',timeout:60000});
-await page.waitForSelector('#dodge',{state:'visible',timeout:10000});
+await page.waitForSelector('#dodge',{state:'attached',timeout:10000});
 await page.locator('#start').tap();
 await page.waitForFunction(()=>window.parryDoll&&window.parryDoll.snapshot().mode==='play'&&window.parryDodgeTest,null,{timeout:10000});
+await page.waitForSelector('#dodge',{state:'visible',timeout:10000});
 
 const catalog=await page.evaluate(()=>window.parryDodgeTest.catalog());
 if(catalog.length!==4||catalog.some(group=>group.length<2||group.some(m=>m.response!=='dodge'))){
