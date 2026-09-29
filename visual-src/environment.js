@@ -214,7 +214,9 @@ function pointedArchFillGeometry(w,h){
  return new THREE.ShapeGeometry(shape,18);
 }
 
+let guardianWingCache=null;
 function guardianWingGeometry(){
+ if(guardianWingCache)return guardianWingCache;
  const shape=new THREE.Shape();
  shape.moveTo(0,-.15);
  shape.lineTo(.26,.18);
@@ -228,8 +230,8 @@ function guardianWingGeometry(){
  shape.lineTo(.62,-.42);
  shape.lineTo(.34,-.32);
  shape.closePath();
- const g=new THREE.ExtrudeGeometry(shape,{depth:.12,bevelEnabled:true,bevelSize:.025,bevelThickness:.025,bevelSegments:1,curveSegments:2});
- g.translate(0,0,-.06);g.computeVertexNormals();return g;
+ const g=new THREE.ExtrudeGeometry(shape,{depth:.08,bevelEnabled:false,curveSegments:1});
+ g.translate(0,0,-.04);g.computeVertexNormals();guardianWingCache=g;return g;
 }
 
 function makeGuardianStatue(scene,m,x,z,mirror=1,broken=false){
@@ -253,7 +255,7 @@ function makeGuardianStatue(scene,m,x,z,mirror=1,broken=false){
   new THREE.Vector2(.22,3.18),
   new THREE.Vector2(.08,3.30)
  ];
- const body=new THREE.Mesh(new THREE.LatheGeometry(profile,12),m.stone);
+ const body=new THREE.Mesh(new THREE.LatheGeometry(profile,10),m.stone);
  body.position.y=.66;body.rotation.z=broken?.055:-.025;group.add(body);
 
  const head=new THREE.Mesh(new THREE.DodecahedronGeometry(.34,0),m.stone);
@@ -294,7 +296,7 @@ function makeGuardianStatue(scene,m,x,z,mirror=1,broken=false){
   }
  }
 
- group.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});
+ group.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=true}});
  scene.add(group);
  return group;
 }
@@ -313,16 +315,13 @@ function makeSanctuaryAltar(scene,m){
  }
  batch(group,new THREE.BoxGeometry(1,1,1),m.stoneCool,fins,{cast:false});
 
- const coreMat=new THREE.MeshPhysicalMaterial({
-  color:'#b9e6f0',emissive:'#6fb5d0',emissiveIntensity:.55,roughness:.24,metalness:.08,
-  transmission:.05,transparent:true,opacity:.92
- });
+ const coreMat=new THREE.MeshStandardMaterial({color:'#9edbe5',emissive:'#4f9bb6',emissiveIntensity:.72,roughness:.28,metalness:.06});
  const core=new THREE.Mesh(new THREE.OctahedronGeometry(.52,1),coreMat);
  core.position.y=1.62;core.scale.y=1.45;group.add(core);
  const crown=new THREE.Mesh(new THREE.TorusGeometry(.76,.045,6,28),m.bronze);
  crown.rotation.x=Math.PI/2;crown.position.y=1.27;group.add(crown);
 
- group.traverse(o=>{if(o.isMesh){o.castShadow=o!==core;o.receiveShadow=true}});
+ group.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=true}});
  scene.add(group);
  return group;
 }
