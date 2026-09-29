@@ -12,17 +12,20 @@
  const GP_PERFECT_PARRY_COUNTER=1.55;
  let bufferedAttack=0,lastBoss=null;
 
- // Tighten only the downtime after an enemy action. Telegraph/active timings remain unchanged.
- for(const group of ENEMY_MOVES){
-  for(const move of group){
-   if(!move.__gameplayRhythmBaseRecover)move.__gameplayRhythmBaseRecover=move.recover;
-   move.recover=Math.max(.72,move.recover*.90);
+ function applyRhythmTuning(){
+  // Tighten only downtime. Telegraph/active timings and hit geometry remain unchanged.
+  for(const group of ENEMY_MOVES){
+   for(const move of group){
+    if(!Number.isFinite(move.__gameplayRhythmBaseRecover))move.__gameplayRhythmBaseRecover=move.recover;
+    move.recover=Math.max(.72,move.__gameplayRhythmBaseRecover*.90);
+   }
   }
+  // Player's first two links form one phrase; the heavy third hit retains commitment.
+  MOVES[0].recover=.23;
+  MOVES[1].recover=.25;
+  MOVES[2].recover=.44;
  }
- // Player's first two links should feel like one phrase; the heavy third hit still has commitment.
- MOVES[0].recover=Math.min(MOVES[0].recover,.23);
- MOVES[1].recover=Math.min(MOVES[1].recover,.25);
- MOVES[2].recover=Math.min(MOVES[2].recover,.44);
+ applyRhythmTuning();
 
  const gpPlayerParryBase=playerParry;
  playerParry=function(){
@@ -68,6 +71,7 @@
  reset=function(l=0){
   bufferedAttack=0;
   const out=gpResetBase(l);
+  applyRhythmTuning();
   if(boss)boss.ai=Math.min(boss.ai,.95);
   lastBoss=boss;
   return out;
@@ -85,6 +89,7 @@
 
   if(boss&&boss!==lastBoss){
    lastBoss=boss;
+   applyRhythmTuning();
    boss.ai=Math.min(boss.ai,1.0);
   }
 
