@@ -1,2 +1,1 @@
-run=2026-09-15T22:39:00+09:00
-scenario=iphone-touch-attack-mash-plus-forward
+2026-09-30 gameplay rhythm v1 anti-mash live check
