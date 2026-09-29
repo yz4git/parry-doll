@@ -1,1 +1,1 @@
-2026-09-29 dedicated sanctuary geometry pass
+2026-09-29 optimized dedicated sanctuary geometry pass
