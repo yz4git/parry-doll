@@ -182,13 +182,150 @@ function grandGate(scene,m){
  walls.push(item([0,8.2,-48.4],[8.5,9.8,5.4]));arches.push(item([0,8.5,-45.65],[3.8,4.3,1.2]));caps.push(item([0,13.3,-48.4],[10.0,.36,6.0]));
  for(const side of [-1,1]){
   for(let y=5.2;y<11;y+=2.5)windows.push(item([side*2.05,y,-45.58],[.34,1.0,.07],null,side<0?'#c6e7f7':'#f0d8b7'));
-  statues.push(item([side*5.0,3.05,-24.8],[.58,2.7,.58]));statues.push(item([side*5.0,4.85,-24.8],[.94,1.05,.94]));statues.push(item([side*5.0,5.95,-24.8],[.32,1.7,.32]));
  }
- altar.push(item([0,2.55,-24.0],[2.15,.46,2.15]));altar.push(item([0,3.08,-24.0],[1.2,.26,1.2]));glass.push(item([0,3.72,-24.0],[.46,.65,.46],null,'#e5f7ff'));
- for(let i=0;i<7;i++){const a=i/7*Math.PI*2;glass.push(item([Math.sin(a)*1.12,3.47, -24+Math.cos(a)*1.12],[.10,.22,.10],null,i%2?'#9fdaf0':'#f0c889'))}
  batch(scene,box,m.floorAccent,steps);batch(scene,box,m.stone,walls);batch(scene,cyl,m.stone,columns);batch(scene,box,m.stone,caps);batch(scene,cone,m.stone,spires);batch(scene,arch,m.stone,arches);batch(scene,box,m.stoneCool,buttresses);batch(scene,box,m.metal,trims);batch(scene,box,m.glow,windows,{cast:false,receive:false});batch(scene,cyl,m.stoneCool,statues);batch(scene,box,m.stoneDark,altar);batch(scene,gem,m.glow,glass,{cast:false,receive:false});
 }
 
+
+
+function tracePointedArch(path,w,h){
+ const y0=-h*.5,shoulder=h*.04,top=h*.5;
+ path.moveTo(-w*.5,y0);
+ path.lineTo(-w*.5,shoulder);
+ path.quadraticCurveTo(-w*.48,h*.30,0,top);
+ path.quadraticCurveTo(w*.48,h*.30,w*.5,shoulder);
+ path.lineTo(w*.5,y0);
+ path.closePath();
+ return path;
+}
+
+function pointedArchGeometry(w,h,frame=.28,depth=.26){
+ const outer=tracePointedArch(new THREE.Shape(),w,h);
+ const inner=tracePointedArch(new THREE.Path(),Math.max(.2,w-frame*2),Math.max(.3,h-frame*2.1));
+ outer.holes.push(inner);
+ const g=new THREE.ExtrudeGeometry(outer,{depth,bevelEnabled:true,bevelSegments:1,bevelSize:.035,bevelThickness:.035,curveSegments:10});
+ g.translate(0,0,-depth*.5);
+ g.computeVertexNormals();
+ return g;
+}
+
+function pointedArchFillGeometry(w,h){
+ const shape=tracePointedArch(new THREE.Shape(),w,h);
+ return new THREE.ShapeGeometry(shape,18);
+}
+
+function guardianWingGeometry(){
+ const shape=new THREE.Shape();
+ shape.moveTo(0,-.15);
+ shape.lineTo(.26,.18);
+ shape.lineTo(.62,.56);
+ shape.lineTo(.50,.16);
+ shape.lineTo(.98,.72);
+ shape.lineTo(.76,.08);
+ shape.lineTo(1.22,.44);
+ shape.lineTo(.84,-.18);
+ shape.lineTo(1.10,-.30);
+ shape.lineTo(.62,-.42);
+ shape.lineTo(.34,-.32);
+ shape.closePath();
+ const g=new THREE.ExtrudeGeometry(shape,{depth:.12,bevelEnabled:true,bevelSize:.025,bevelThickness:.025,bevelSegments:1,curveSegments:2});
+ g.translate(0,0,-.06);g.computeVertexNormals();return g;
+}
+
+function makeGuardianStatue(scene,m,x,z,mirror=1,broken=false){
+ const group=new THREE.Group();
+ group.position.set(x,0,z);
+ group.rotation.y=mirror<0?.20:-.20;
+
+ const pedestal=new THREE.Mesh(new THREE.CylinderGeometry(.98,1.14,.46,8),m.stoneDark);
+ pedestal.position.y=.23;group.add(pedestal);
+ const plinth=new THREE.Mesh(new THREE.CylinderGeometry(.76,.88,.22,8),m.stoneCool);
+ plinth.position.y=.57;group.add(plinth);
+
+ const profile=[
+  new THREE.Vector2(.34,0),
+  new THREE.Vector2(.58,.18),
+  new THREE.Vector2(.70,.70),
+  new THREE.Vector2(.58,1.42),
+  new THREE.Vector2(.46,2.02),
+  new THREE.Vector2(.50,2.55),
+  new THREE.Vector2(.36,2.92),
+  new THREE.Vector2(.22,3.18),
+  new THREE.Vector2(.08,3.30)
+ ];
+ const body=new THREE.Mesh(new THREE.LatheGeometry(profile,12),m.stone);
+ body.position.y=.66;body.rotation.z=broken?.055:-.025;group.add(body);
+
+ const head=new THREE.Mesh(new THREE.DodecahedronGeometry(.34,0),m.stone);
+ head.position.set(broken?.13:0,4.17,0);head.scale.set(.82,1.10,.86);group.add(head);
+ const hood=new THREE.Mesh(new THREE.ConeGeometry(.48,.72,10,1,true),m.stoneCool);
+ hood.position.set(0,4.05,-.05);hood.rotation.x=Math.PI;group.add(hood);
+
+ const halo=new THREE.Mesh(new THREE.TorusGeometry(.49,.045,6,22),m.bronze);
+ halo.position.set(0,4.20,-.18);halo.rotation.x=.06;group.add(halo);
+
+ const armGeom=new THREE.CapsuleGeometry(.13,1.02,3,8);
+ const armA=new THREE.Mesh(armGeom,m.stone);
+ armA.position.set(mirror*.53,3.47,0);armA.rotation.z=mirror*(broken?.90:.62);group.add(armA);
+ if(!broken){
+  const armB=new THREE.Mesh(armGeom,m.stone);
+  armB.position.set(-mirror*.50,3.42,0);armB.rotation.z=-mirror*.52;group.add(armB);
+ }else{
+  const stump=new THREE.Mesh(new THREE.CapsuleGeometry(.14,.25,2,7),m.stone);
+  stump.position.set(-mirror*.34,3.46,0);stump.rotation.z=-mirror*.86;group.add(stump);
+  const fallen=new THREE.Mesh(new THREE.CapsuleGeometry(.12,.70,2,7),m.stoneCool);
+  fallen.position.set(-mirror*.94,.55,.62);fallen.rotation.set(.18,0,-mirror*1.06);group.add(fallen);
+ }
+
+ const wingGeom=guardianWingGeometry();
+ for(const side of [-1,1]){
+  if(broken&&side===-1)continue;
+  const wing=new THREE.Mesh(wingGeom,m.stoneCool);
+  wing.scale.set(side*.92,1.55,1);
+  wing.position.set(side*.20,3.18,-.22);
+  wing.rotation.z=side*(broken?.30:.12);
+  group.add(wing);
+ }
+ if(broken){
+  const shardMat=m.stoneCool;
+  for(const [px,py,pz,sc,rz] of [[-.65,.40,.52,.34,.7],[-1.05,.28,.20,.24,-.4],[-.38,.20,.94,.18,.2]]){
+   const shard=new THREE.Mesh(new THREE.TetrahedronGeometry(sc,0),shardMat);
+   shard.position.set(mirror*px,py,pz);shard.rotation.z=rz;group.add(shard);
+  }
+ }
+
+ group.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});
+ scene.add(group);
+ return group;
+}
+
+function makeSanctuaryAltar(scene,m){
+ const group=new THREE.Group();group.position.set(0,0,-24.15);
+ const base=new THREE.Mesh(new THREE.CylinderGeometry(2.35,2.65,.38,8),m.stoneDark);base.position.y=.19;group.add(base);
+ const step=new THREE.Mesh(new THREE.CylinderGeometry(1.72,2.02,.30,8),m.stoneCool);step.position.y=.52;group.add(step);
+ const dais=new THREE.Mesh(new THREE.CylinderGeometry(1.10,1.36,.34,8),m.stone);dais.position.y=.82;group.add(dais);
+ const ring=new THREE.Mesh(new THREE.TorusGeometry(1.06,.055,6,32),m.bronze);ring.rotation.x=Math.PI/2;ring.position.y=1.01;group.add(ring);
+
+ const fins=[];
+ for(let i=0;i<8;i++){
+  const a=i*Math.PI/4,r=1.64;
+  fins.push(item([Math.sin(a)*r,.86,Math.cos(a)*r],[.11,.55,.42],[0,a,0],i%2?'#7f8c98':'#a89f94'));
+ }
+ batch(group,new THREE.BoxGeometry(1,1,1),m.stoneCool,fins,{cast:false});
+
+ const coreMat=new THREE.MeshPhysicalMaterial({
+  color:'#b9e6f0',emissive:'#6fb5d0',emissiveIntensity:.55,roughness:.24,metalness:.08,
+  transmission:.05,transparent:true,opacity:.92
+ });
+ const core=new THREE.Mesh(new THREE.OctahedronGeometry(.52,1),coreMat);
+ core.position.y=1.62;core.scale.y=1.45;group.add(core);
+ const crown=new THREE.Mesh(new THREE.TorusGeometry(.76,.045,6,28),m.bronze);
+ crown.rotation.x=Math.PI/2;crown.position.y=1.27;group.add(crown);
+
+ group.traverse(o=>{if(o.isMesh){o.castShadow=o!==core;o.receiveShadow=true}});
+ scene.add(group);
+ return group;
+}
 
 function heroLandmarks(scene,m){
  const facadeZ=-45.50;
@@ -209,12 +346,12 @@ function heroLandmarks(scene,m){
  batch(scene,box,m.bronze,spokes,{cast:false,receive:false});
 
  // Dark sanctuary portal sits below the HUD and gives the boss a clean readable silhouette.
- const portal=new THREE.Mesh(new THREE.PlaneGeometry(7.4,6.3),m.blackGlass);
- portal.position.set(0,5.55,-34.93);portal.castShadow=false;portal.receiveShadow=false;scene.add(portal);
- const portalFrame=[];
- for(const x of [-3.55,3.55])portalFrame.push(item([x,5.55,-34.88],[.24,6.45,.20]));
- portalFrame.push(item([0,8.66,-34.88],[7.35,.24,.20]));
- batch(scene,box,m.stoneCool,portalFrame,{cast:false});
+ const portal=new THREE.Mesh(pointedArchFillGeometry(7.15,6.45),m.blackGlass);
+ portal.position.set(0,5.62,-34.93);portal.castShadow=false;portal.receiveShadow=false;scene.add(portal);
+ const portalFrame=new THREE.Mesh(pointedArchGeometry(7.85,7.10,.34,.28),m.stoneCool);
+ portalFrame.position.set(0,5.63,-34.86);portalFrame.castShadow=false;portalFrame.receiveShadow=true;scene.add(portalFrame);
+ const portalInner=new THREE.Mesh(pointedArchGeometry(7.20,6.48,.10,.12),m.bronze);
+ portalInner.position.set(0,5.61,-34.70);portalInner.castShadow=false;scene.add(portalInner);
 
  // Low stained-glass windows remain visible during normal combat instead of hiding behind the boss HUD.
  const blueGlass=new THREE.MeshBasicMaterial({map:makeStainedGlassTexture('blue'),transparent:true,opacity:.72,depthWrite:false,toneMapped:false});
@@ -251,31 +388,10 @@ function heroLandmarks(scene,m){
  }
  batch(scene,box,m.stoneCool,braces,{cast:false});
 
- // Broken guardian statues. Chunky primitives are intentional: silhouette matters more than micro-detail.
- const addGuardian=(x,z,mirror,broken)=>{
-  const group=new THREE.Group();group.position.set(x,0,z);group.rotation.y=mirror<0?.20:-.20;
-  const pedestal=new THREE.Mesh(new THREE.CylinderGeometry(.86,1.05,.55,10),m.stoneDark);pedestal.position.y=.28;group.add(pedestal);
-  const skirt=new THREE.Mesh(new THREE.ConeGeometry(.72,1.9,8),m.stoneCool);skirt.position.y=1.45;group.add(skirt);
-  const torso=new THREE.Mesh(new THREE.CylinderGeometry(.45,.60,1.55,9),m.stone);torso.position.y=2.82;torso.rotation.z=broken?.08:-.04;group.add(torso);
-  const head=new THREE.Mesh(new THREE.IcosahedronGeometry(.39,1),m.stone);head.position.set(broken?.13:0,3.92,0);head.scale.set(.82,1.08,.86);group.add(head);
-  const shoulderY=3.20;
-  const armA=new THREE.Mesh(new THREE.CylinderGeometry(.13,.17,1.55,8),m.stone);armA.position.set(mirror*.55,shoulderY+.02,0);armA.rotation.z=mirror*(broken?.95:.64);group.add(armA);
-  if(!broken){
-   const armB=new THREE.Mesh(new THREE.CylinderGeometry(.12,.16,1.45,8),m.stone);armB.position.set(-mirror*.50,shoulderY-.03,0);armB.rotation.z=-mirror*.52;group.add(armB);
-  }else{
-   const stump=new THREE.Mesh(new THREE.CylinderGeometry(.15,.18,.55,8),m.stone);stump.position.set(-mirror*.36,shoulderY+.02,0);stump.rotation.z=-mirror*.82;group.add(stump);
-   const fallen=new THREE.Mesh(new THREE.CylinderGeometry(.12,.16,1.02,8),m.stoneCool);fallen.position.set(-mirror*.95,.34,.58);fallen.rotation.set(.18,0,-mirror*1.08);group.add(fallen);
-  }
-  const wingMat=m.stoneCool;
-  for(const side of [-1,1]){
-   const wing=new THREE.Mesh(new THREE.BoxGeometry(.18,1.85,.70),wingMat);
-   wing.position.set(side*.50,3.08,-.18);wing.rotation.z=side*(broken&&side===-1?.92:.58);wing.rotation.x=-.18;group.add(wing);
-  }
-  group.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});
-  scene.add(group);
- };
- addGuardian(-7.2,-25.9,-1,true);
- addGuardian(7.4,-26.3,1,false);
+ // Dedicated guardian silhouettes and sanctuary altar use authored procedural geometry.
+ makeGuardianStatue(scene,m,-7.35,-26.0,-1,true);
+ makeGuardianStatue(scene,m,7.55,-26.35,1,false);
+ makeSanctuaryAltar(scene,m);
 
  // Hanging sanctuary bell: a distinct mid-distance silhouette and focal accent.
  const bellGroup=new THREE.Group();bellGroup.position.set(0,14.45,-44.85);
