@@ -1,1 +1,1 @@
-2026-09-28 repeated stone color breakup pass
+2026-09-29 dedicated sanctuary geometry pass
