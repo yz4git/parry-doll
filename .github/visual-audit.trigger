@@ -1,1 +1,1 @@
-Parry Doll stone color breakup final playcheck 2026-09-28 JST
+Parry Doll dedicated sanctuary geometry playcheck 2026-09-29 JST
