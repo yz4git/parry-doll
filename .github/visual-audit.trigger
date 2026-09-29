@@ -1,1 +1,1 @@
-Parry Doll dedicated sanctuary geometry playcheck retry 2026-09-29 JST
+Parry Doll optimized sanctuary geometry final playcheck 2026-09-29 JST
