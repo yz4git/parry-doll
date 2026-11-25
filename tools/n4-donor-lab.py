@@ -144,8 +144,9 @@ if skin and skin.use_nodes:
 # At this point meshes are in world space and attached to the rest-pose armature.
 import bmesh
 from mathutils import Vector
+old_hair_names={q.name for q in hairobjs}
 for o in list(bpy.data.objects):
-    if o.type=='MESH' and (o.name.startswith('HairPremium') or o.name in [q.name for q in hairobjs]):
+    if o.type=='MESH' and (o.name.startswith('HairPremium') or o.name in old_hair_names):
         bpy.data.objects.remove(o,do_unlink=True)
 def mat(name,color,rough=.47):
     m=bpy.data.materials.new(name);m.use_nodes=True;m.diffuse_color=(*color,1)
