@@ -84,7 +84,7 @@ for o in bpy.data.objects:
         for p in o.data.polygons:p.use_smooth=True
 root=bpy.data.objects.get('BLENDER_HEROINE')
 if root:
-    root['candidate']='N4 anime donor lab B';root['source']='Parry Doll v18.5 r2 / David Onizaki CC BY / Dawn to Dusk Games CC0'
+    root['candidate']='N4 anime donor lab C';root['source']='Parry Doll v18.5 r2 / David Onizaki CC BY / Dawn to Dusk Games CC0'
 
 # Original game GLB uses unplaced body modules; reconstruct runtime REST in Blender coordinates.
 from mathutils import Matrix
@@ -139,9 +139,116 @@ if skin and skin.use_nodes:
     bs=next((n for n in skin.node_tree.nodes if n.type=='BSDF_PRINCIPLED'),None)
     if bs and not bs.inputs['Base Color'].is_linked:bs.inputs['Base Color'].default_value=(.63,.40,.33,1)
 
+
+# N4 C: replace the blue donor ponytail with layered, individually shaped long locks.
+# At this point meshes are in world space and attached to the rest-pose armature.
+import bmesh
+from mathutils import Vector
+for o in list(bpy.data.objects):
+    if o.type=='MESH' and (o.name.startswith('HairPremium') or o.name in [q.name for q in hairobjs]):
+        bpy.data.objects.remove(o,do_unlink=True)
+def mat(name,color,rough=.47):
+    m=bpy.data.materials.new(name);m.use_nodes=True;m.diffuse_color=(*color,1)
+    b=m.node_tree.nodes.get('Principled BSDF')
+    b.inputs['Base Color'].default_value=(*color,1);b.inputs['Roughness'].default_value=rough
+    b.inputs['Specular IOR Level'].default_value=.27
+    return m
+palette=[mat('N4 Espresso root',(.035,.018,.014)),mat('N4 Chestnut mass',(.065,.034,.026)),mat('N4 Warm brown ribbon',(.095,.052,.038)),mat('N4 Soft brown sheen',(.13,.076,.054)),mat('N4 Deep overlap',(.022,.011,.009))]
+def bind_mesh(name,verts,faces,inds):
+    me=bpy.data.meshes.new(name);me.from_pydata(verts,[],faces);me.update()
+    o=bpy.data.objects.new(name,me);bpy.context.collection.objects.link(o)
+    for m in palette:me.materials.append(m)
+    for p,i in zip(me.polygons,inds):p.material_index=i;p.use_smooth=True
+    bm=bmesh.new();bm.from_mesh(me);bmesh.ops.recalc_face_normals(bm,faces=list(bm.faces));bm.to_mesh(me);bm.free()
+    o.parent=rig;vg=o.vertex_groups.new(name='BL_HEAD');vg.add(list(range(len(me.vertices))),1,'REPLACE')
+    mod=o.modifiers.new('Hair head binding','ARMATURE');mod.object=rig
+    return o
+# Copy scalp geometry with a wider cap reaching sideburns and nape, avoiding visible skin holes.
+vs=[];fs=[];lookup={}
+for poly in head.data.polygons:
+    pp=[head.matrix_world@head.data.vertices[i].co for i in poly.vertices]
+    p=sum(pp,Vector())/len(pp)
+    h=(p.z-lo.z)/s.z;front=(p.y-c.y)*sign
+    if h<(.69 if front>.025 else .36):continue
+    f=[]
+    for i,wp in zip(poly.vertices,pp):
+        if i not in lookup:
+            d=wp-c;d.x*=1.055;d.y*=1.065;d.z*=1.045;lookup[i]=len(vs);vs.append(c+d)
+        f.append(lookup[i])
+    fs.append(f)
+bind_mesh('N4 sculpted scalp',vs,fs,[0]*len(fs))
+# coordinates normalized to head width and height; front-positive coordinate converted to Blender
+def pt(x,z,f):return c+Vector((x*s.x,sign*f*s.y,z*s.z))
+def cat(a,b,d,e,t):
+    return .5*((2*b)+(-a+d)*t+(2*a-5*b+4*d-e)*t*t+(-a+3*b-3*d+e)*t*t*t)
+def lock(name,controls,width,depth,col=1):
+    P=[pt(*p) for p in controls];vs=[];fs=[];mi=[];steps=42;sides=14
+    for i in range(steps+1):
+        u=i/steps*(len(P)-1);j=min(len(P)-2,int(u));t=u-j
+        a,b,d,e=P[max(0,j-1)],P[j],P[j+1],P[min(len(P)-1,j+2)]
+        q=cat(a,b,d,e,t);q0=cat(a,b,d,e,max(0,t-.006));q1=cat(a,b,d,e,min(1,t+.006));tangent=(q1-q0).normalized()
+        if tangent.length<.01:tangent=Vector((0,0,-1))
+        radial=Vector((q.x-c.x,q.y-c.y,0)).normalized()
+        if radial.length<.01:radial=Vector((0,sign,0))
+        side=tangent.cross(radial).normalized()
+        if side.length<.01:side=Vector((1,0,0))
+        normal=side.cross(tangent).normalized()
+        f=i/steps;w=width*s.x*(.28+.72*math.sin(math.pi*min(.999,f*.96+.04))**.55)*(1-f**7)+.00045
+        dpth=depth*s.x*(.4+.6*math.sin(math.pi*f))*(1-f**6)+.0003
+        for k in range(sides):
+            th=k*2*math.pi/sides;vs.append(q+side*(math.cos(th)*w)+normal*(math.sin(th)*dpth))
+        if i:
+            for k in range(sides):
+                a0=(i-1)*sides+k;b0=(i-1)*sides+(k+1)%sides
+                fs.append((a0,b0,b0+sides,a0+sides));mi.append(2 if k in (2,3) else (4 if k in (9,10) else col))
+    fs.append(tuple(reversed(range(sides))));mi.append(0);fs.append(tuple(range(steps*sides,(steps+1)*sides)));mi.append(col)
+    return bind_mesh(name,vs,fs,mi)
+# Broad rear silhouette, layered side lengths, then thin face-framing bangs.
+for i in range(13):
+    a=-math.pi*.94+i*math.pi*1.88/12; x=math.sin(a);f=-abs(math.cos(a))
+    lock('N4 back lock %02d'%i,[(x*.12,.47,f*.18),(x*.42,.25,f*.49),(x*.54,-.35,f*.58),(x*.57,-1.05,f*.72),(x*.55+math.sin(i*2)*.07,-1.82-(i%3)*.11,f*.64)],.115,.058,1 if i%3 else 0)
+for k in [-1,1]:
+    for j in range(4):
+        a=.16+j*.095
+        lock('N4 side %s %d'%(k,j),[(k*(.10+j*.035),.48,.08),(k*(.43+j*.025),.19,.19-j*.07),(k*(.52+j*.025),-.43,.15-j*.09),(k*(.59+j*.016),-1.15,.17-j*.10),(k*(.65+j*.015),-1.80-(j%2)*.15,.24-j*.08)],.087,.045,1 if j%2 else 2)
+# Fine, asymmetrical feathered bangs with eyebrow gap; no giant uniform chunks.
+for i in range(11):
+    x=-.45+i*.085;root=x*.39+.065;end=x+(.06 if i<5 else -.035)
+    length=.08+abs(x)*.33+(.035 if i%3==0 else 0)
+    lock('N4 fringe %02d'%i,[(root,.49,.10),(x*.70,.38,.35),(x,.23,.52),(end,.11-length,.54-abs(x)*.12)],.047 if i in (0,10) else .038,.024,1 if i%3 else 2)
+# Dark brown eyes with a stronger iris silhouette; move complete iris assemblies, not just pupils.
+for o in list(bpy.data.objects):
+    if o.type!='MESH':continue
+    n=o.name.lower()
+    if not any(t in n for t in ('irisouter','irisinner','irisrays','pupil','eyelight')):continue
+    center=sum((v.co for v in o.data.vertices),Vector())/len(o.data.vertices)
+    side=1 if center.x>c.x else -1
+    anchor=Vector((c.x+side*.047,center.y,2.320))
+    for v in o.data.vertices:
+        v.co.x=anchor.x+(v.co.x-anchor.x)*1.20;v.co.z=anchor.z+(v.co.z-anchor.z)*1.22
+        v.co.y+=sign*.0008
+    o.data.update()
+# Use material multiplication to retain existing iris detail while shifting toward brown.
+for m in bpy.data.materials:
+    if 'iris' not in m.name.lower() or not m.use_nodes:continue
+    bs=next((n for n in m.node_tree.nodes if n.type=='BSDF_PRINCIPLED'),None)
+    if not bs:continue
+    bc=bs.inputs['Base Color']
+    if bc.is_linked:
+        source=bc.links[0].from_node
+        if source.type=='TEX_IMAGE' and source.image:
+            im=source.image; cp=bpy.data.images.new('N4 brown '+im.name,width=im.size[0],height=im.size[1],alpha=True)
+            px=array('f',[0.0])*len(im.pixels);im.pixels.foreach_get(px)
+            for k in range(0,len(px),4):
+                l=max(0,min(1,.2126*px[k]+.7152*px[k+1]+.0722*px[k+2]))
+                px[k]=.035+.58*l;px[k+1]=.018+.32*l;px[k+2]=.008+.16*l
+            cp.pixels.foreach_set(px);cp.update();cp.pack();source.image=cp
+    else:bc.default_value=(.21,.10,.045,1)
+bpy.context.view_layer.update()
+
 bpy.ops.file.pack_all()
-bpy.ops.wm.save_as_mainfile(filepath=str(out/'N4_donor_B.blend'))
-bpy.ops.export_scene.gltf(filepath=str(out/'N4_donor_B.glb'),export_format='GLB',export_apply=False)
+bpy.ops.wm.save_as_mainfile(filepath=str(out/'N4_donor_C.blend'))
+bpy.ops.export_scene.gltf(filepath=str(out/'N4_donor_C.glb'),export_format='GLB',export_apply=False)
 meshes=[o for o in bpy.data.objects if o.type=='MESH']
 report={'blender':bpy.app.version_string,'source_commit':'8867f677a9c2ce86ec1cc290766f0706b14fab15','mesh_objects':len(meshes),'triangles':sum(sum(len(p.vertices)-2 for p in o.data.polygons) for o in meshes),'armatures':sum(o.type=='ARMATURE' for o in bpy.data.objects),'hair_materials':sorted(seen),'removed_weapon_meshes':removed,'reference_fit':'not measured','status':'candidate, not approved'}
 (out/'report.json').write_text(json.dumps(report,indent=2))
