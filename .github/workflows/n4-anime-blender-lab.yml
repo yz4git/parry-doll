@@ -1,0 +1,34 @@
+name: N4 isolated Blender donor lab
+on:
+  push:
+    branches: [n4-anime-blender-lab]
+    paths: ['.github/workflows/n4-anime-blender-lab.yml','tools/n4-donor-lab.py']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install proven Blender 4.3.2
+        run: |
+          curl -L --fail --retry 3 -o /tmp/blender.tar.xz https://download.blender.org/release/Blender4.3/blender-4.3.2-linux-x64.tar.xz
+          tar -xf /tmp/blender.tar.xz -C /tmp
+          /tmp/blender-4.3.2-linux-x64/blender --version
+      - name: Build and render separate candidate
+        run: |
+          mkdir -p /tmp/n4-candidate
+          /tmp/blender-4.3.2-linux-x64/blender -b -t 4 --python-exit-code 1 --python tools/n4-donor-lab.py -- /tmp/n4-candidate
+      - name: Record source and attribution
+        if: always()
+        run: |
+          mkdir -p /tmp/n4-candidate
+          printf '%s\n' 'Head: David Onizaki, Genshin Style Anime Female Base Mesh for Blender, CC BY (as recorded by pinned source).' 'https://sketchfab.com/3d-models/genshin-style-anime-female-base-mesh-for-blender-c2d6727e8c9742feb9a4a3bccac6e0e0' 'Hair: Dawn to Dusk Games, Anime Female Adventurer v1.2, CC0 per previous build.' 'https://dawn-to-dusk-games.itch.io/3d-anime-female-adventurer' 'Modified from Parry Doll v18.5 r2, not an approved N4 likeness.' > /tmp/n4-candidate/ATTRIBUTION.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: n4-blender-donor-A
+          path: /tmp/n4-candidate/
+          retention-days: 14
