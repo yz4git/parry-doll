@@ -1,0 +1,41 @@
+name: N4 VRoid production mesh comparison
+on:
+  push:
+    branches: [n4-anime-blender-lab]
+    paths: ['.github/workflows/n4-vroid-comparison.yml','tools/n4-vroid-review.py','tools/n4-vroid-recolor.py']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        asset: [HairSample_Female, Victoria_Rubin]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch exact public CC0 beta asset
+        run: |
+          mkdir -p /tmp/n4-vroid
+          curl -L --fail --retry 3 'https://raw.githubusercontent.com/madjin/vrm-samples/e16eb187100149a315ad92c3c9968f1d5baa6c7d/vroid/beta/${{ matrix.asset }}.vrm' -o /tmp/${{ matrix.asset }}.vrm
+          git hash-object /tmp/${{ matrix.asset }}.vrm
+          python3 -m pip install Pillow
+      - name: Preserve VRM rig, recolor original texture atlas
+        run: |
+          python3 tools/n4-vroid-recolor.py /tmp/${{ matrix.asset }}.vrm /tmp/n4-vroid/N4_${{ matrix.asset }}.vrm
+          cp /tmp/n4-vroid/N4_${{ matrix.asset }}.vrm /tmp/preview.glb
+      - name: Install Blender
+        run: |
+          curl -L --fail --retry 3 -o /tmp/blender.tar.xz https://download.blender.org/release/Blender4.3/blender-4.3.2-linux-x64.tar.xz
+          tar -xf /tmp/blender.tar.xz -C /tmp
+      - name: Render and audit
+        run: |
+          /tmp/blender-4.3.2-linux-x64/blender -b -t 4 --python-exit-code 1 --python tools/n4-vroid-review.py -- /tmp/preview.glb /tmp/n4-vroid
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: n4-vroid-${{ matrix.asset }}
+          path: /tmp/n4-vroid/
+          retention-days: 14
