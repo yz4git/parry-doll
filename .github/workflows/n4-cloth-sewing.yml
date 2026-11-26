@@ -10,6 +10,12 @@ jobs:
   sewing:
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [free, guided]
+    env:
+      N4_SEW_VARIANT: ${{ matrix.variant }}
     steps:
       - uses: actions/checkout@v4
       - name: Install Blender 4.3.2
@@ -23,7 +29,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: n4-cloth-sewing-proof
+          name: n4-cloth-sewing-proof-${{ matrix.variant }}
           path: /tmp/cloth-proof
           retention-days: 14
   mcp-smoke:
@@ -68,6 +74,12 @@ jobs:
                       tools=await session.list_tools()
                       names=[t.name for t in tools.tools]
                       result={'tool_count':len(names),'cloth_tools':[n for n in names if 'cloth' in n.lower()],'tools':names}
+                      result['read_only_calls']={}
+                      for n in ['describe_capabilities','list_skills','dcc_diagnostics__get_instance_info','dcc_diagnostics__process_status']:
+                          tool=next((t for t in tools.tools if t.name==n),None)
+                          if tool and not tool.inputSchema.get('required'):
+                              x=await session.call_tool(n,{})
+                              result['read_only_calls'][n]={'is_error':x.isError,'result':x.model_dump(mode='json')}
                       scene=next((n for n in names if n.endswith('get_scene_info')),None)
                       if scene:
                           x=await session.call_tool(scene,{})

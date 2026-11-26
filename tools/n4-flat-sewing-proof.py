@@ -1,7 +1,8 @@
 """N4 flat-pattern sewing proof. Collision surrogate uses measured AF2 torso section bounds.
 No character asset or reference photograph is committed. NOT the finished N4 outfit.
 """
-import bpy, math, json, sys
+import bpy, math, json, sys, os
+variant=os.environ.get('N4_SEW_VARIANT','guided')
 from pathlib import Path
 from mathutils import Vector
 out=Path(sys.argv[sys.argv.index('--')+1]);out.mkdir(parents=True,exist_ok=True)
@@ -33,13 +34,27 @@ def interp(table,z):
   if z<=d+1e-8:
    t=(z-a)/(d-a);return b+(e-b)*t,c+(f-c)*t
  return table[-1][1:]
+# Draft width from quarter-ellipse arc length of each measured section.
+def section(z):
+ for a,b in zip(profile,profile[1:]):
+  if z<=b[0]:
+   t=max(0,min(1,(z-a[0])/(b[0]-a[0])))
+   return tuple(a[i]+(b[i]-a[i])*t for i in (1,2,3))
+ return profile[-1][1:]
+def arc(z):
+ w,fr,rr=section(z);d=(fr+rr)/2
+ return sum(math.hypot(w*math.sin((i+.5)*math.pi/128),d*math.cos((i+.5)*math.pi/128)) for i in range(64))*math.pi/128
+def drafted(table,z):
+ a,b=interp(table,z)
+ t=max(0,min(1,(1.325-z)/.04))
+ return a,b*(1-t)+(arc(z)+.012)*t
 R,C=27,13;v=[];faces=[];seams=[];panels={};uvs=[];rows=[]
 for front in (True,False):
  for side in (-1,1):
   key=('front' if front else 'back')+('_L' if side<0 else '_R')
   ids=[];coords=[];table=draftF if front else draftB
   for j in range(R):
-   z=1.055+.390*j/(R-1);a,b=interp(table,z);row=[]
+   z=1.055+.390*j/(R-1);a,b=drafted(table,z);row=[]
    for i in range(C):
     x=side*(a+(b-a)*i/(C-1));row.append(len(v));v.append((x,.172 if front else -.103,z));coords.append([x,z]);uvs.append((i/(C-1),j/(R-1)))
    ids.append(row)
@@ -50,21 +65,22 @@ for front in (True,False):
     if (side==1)==front:q=q[::-1]
     faces.append(q)
   rows.append((start,len(faces),front));panels[key]={'ids':ids,'flat_xz_m':coords}
-def sew(a,b):
- assert a!=b;seams.append((a,b))
+seam_groups={}
+def sew(a,b,group):
+ assert a!=b;seams.append((a,b));seam_groups.setdefault(group,[]).append((a,b))
 for side in ('L','R'):
  a=panels['front_'+side]['ids'];b=panels['back_'+side]['ids']
  for j in range(R):
   z=1.055+.390*j/(R-1)
-  if z<=1.285:sew(a[j][-1],b[j][-1])
- for i in range(C):sew(a[-1][i],b[-1][i])
+  if z<=1.285:sew(a[j][-1],b[j][-1],'side_'+side)
+ for i in range(C):sew(a[-1][i],b[-1][i],'shoulder_'+side)
 for where in ('front','back'):
  a=panels[where+'_L']['ids'];b=panels[where+'_R']['ids']
  # back center and closed lower front center. Coincident endpoints deliberately separated by 1 mm.
  for j in range(R):
   z=1.055+.390*j/(R-1)
   if (where=='front' and z<=1.25) or (where=='back' and z<=1.32):
-   ia,ib=a[j][0],b[j][0];pa=list(v[ia]);pb=list(v[ib]);pa[0]-=.0005;pb[0]+=.0005;v[ia]=tuple(pa);v[ib]=tuple(pb);sew(ia,ib)
+   ia,ib=a[j][0],b[j][0];pa=list(v[ia]);pb=list(v[ib]);pa[0]-=.0005;pb[0]+=.0005;v[ia]=tuple(pa);v[ib]=tuple(pb);sew(ia,ib,where+'_center')
 cloth=mesh('Four planar panels with loose sewing springs',v,seams,faces)
 cloth.data.materials.append(blue);cloth.data.materials.append(back)
 for a,b,fr in rows:
@@ -80,18 +96,29 @@ target=cloth.shape_key_add(name='Shoulder seam placement')
 for where in ('front','back'):
  for side in ('L','R'):
   row=panels[where+'_'+side]['ids'][-1]
-  for i in range(C-5,C):
+  for i in range(0,C,2):
    idx=row[i];pin.add([idx],1.0,'REPLACE')
-   target.data[idx].co.y=.007 if where=='front' else -.007
+   target.data[idx].co.y=.003 if where=='front' else -.003
+   target.data[idx].co.z=1.45
+# Sparse side-seam guides are an explicit fitting constraint, not free simulation.
+if variant=='guided':
+ for side in ('L','R'):
+  sign=-1 if side=='L' else 1
+  for j in (0,5,10,15):
+   z=1.055+.390*j/(R-1);w,fr,rr=section(z)
+   for where in ('front','back'):
+    idx=panels[where+'_'+side]['ids'][j][-1]
+    pin.add([idx],1.0,'REPLACE')
+    target.data[idx].co=(sign*(w+.009),(fr-rr)/2+(.002 if where=='front' else -.002),z)
 target.value=0;target.keyframe_insert(data_path='value',frame=1)
-target.value=1;target.keyframe_insert(data_path='value',frame=30)
+target.value=1;target.keyframe_insert(data_path='value',frame=45)
 target.value=0
 scene.frame_set(1)
 
-mod=cloth.modifiers.new('Actual Blender Cloth sewing','CLOTH');s=mod.settings;s.quality=14;s.mass=.22;s.tension_stiffness=35;s.compression_stiffness=35;s.shear_stiffness=20;s.bending_stiffness=.6;s.use_sewing_springs=True;s.sewing_force_max=9;s.effector_weights.gravity=.15;s.vertex_group_mass=pin.name;s.pin_stiffness=1.0
+mod=cloth.modifiers.new('Actual Blender Cloth sewing','CLOTH');s=mod.settings;s.quality=14;s.mass=.22;s.tension_stiffness=35;s.compression_stiffness=35;s.shear_stiffness=20;s.bending_stiffness=1.2;s.use_sewing_springs=True;s.sewing_force_max=14;s.effector_weights.gravity=.18;s.vertex_group_mass=pin.name;s.pin_stiffness=1.0
 col=mod.collision_settings;col.use_collision=True;col.distance_min=.004;col.use_self_collision=True;col.self_distance_min=.002;col.collision_quality=8
 mod.point_cache.frame_start=1;mod.point_cache.frame_end=100
-(out/'patterns.json').write_text(json.dumps({'units':'m','panels':panels,'seam_pairs':seams,'profile':profile,'note':'elliptical surrogate not original body mesh'},indent=2))
+(out/'patterns.json').write_text(json.dumps({'units':'m','panels':panels,'seam_pairs':seams,'seam_groups':seam_groups,'variant':variant,'profile':profile,'note':'elliptical surrogate not original body mesh'},indent=2))
 # layout actual flat pattern polygons, not projection of 3D cloth
 colors=['#7088b0','#526b99','#8697af','#63768f'];svg=['<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="560" viewBox="0 0 1000 560"><rect width="1000" height="560" fill="#f5f5f5"/>']
 for k,(name,p) in enumerate(panels.items()):
@@ -131,7 +158,11 @@ for frame in range(2,101):
  if frame in (10,25,50,75,100):
   q=positions();history[str(frame)]={**gap(q),**inside(q)};print('CLOTH_FRAME',frame,history[str(frame)],flush=True)
 p=positions();assert all(math.isfinite(k) for q in p for k in q)
-report={'blender':bpy.app.version_string,'flat_panels':len(panels),'vertices':len(v),'faces':len(faces),'loose_sewing_edges':len(seams),'history':history,'max_vertex_motion_mm':1000*max((a-b).length for a,b in zip(initial,p)),'proxy_only':True,'solver':'Blender Cloth','finished_garment':False,'shoulder_pin_count':20,'animated_shoulder_targets':True}
+group_report={}
+for k,pairs in seam_groups.items():
+ ds=sorted((p[a]-p[b]).length*1000 for a,b in pairs)
+ group_report[k]={'count':len(ds),'median_mm':ds[len(ds)//2],'max_mm':max(ds),'over_10mm':sum(d>10 for d in ds)}
+report={'variant':variant,'seam_groups_final':group_report,'blender':bpy.app.version_string,'flat_panels':len(panels),'vertices':len(v),'faces':len(faces),'loose_sewing_edges':len(seams),'history':history,'max_vertex_motion_mm':1000*max((a-b).length for a,b in zip(initial,p)),'proxy_only':True,'solver':'Blender Cloth','finished_garment':False,'shoulder_pin_count':28,'side_guide_count':16 if variant=='guided' else 0,'animated_shoulder_targets':True}
 (out/'report.json').write_text(json.dumps(report,indent=2));print('CLOTH_RESULT',json.dumps(report),flush=True)
 # freeze evaluated simulation into editable separate mesh for inspection/export
 final=mesh('Simulated cloth frame 100',p,[],faces);final.data.materials.append(navy)
