@@ -1,6 +1,9 @@
 name: N4 See Hiong MCP bridge smoke
 on:
   push:
+    branches: [n4-mcp-bridge-proof]
+    paths: ['.github/workflows/n4-seehiong-mcp.yml']
+  pull_request:
     branches: [n4-cloth-sewing-lab]
     paths: ['.github/workflows/n4-seehiong-mcp.yml']
   workflow_dispatch:
@@ -11,6 +14,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Install Blender and pinned upstream bridge
         run: |
           sudo apt-get update -qq
@@ -76,16 +82,30 @@ jobs:
           bridge_pid=$!
           trap 'kill "$blender_pid" "$bridge_pid" 2>/dev/null || true' EXIT
           for i in $(seq 1 120); do
-            if grep -q BLENDER_READY out/blender.log && curl -s --max-time 1 http://127.0.0.1:8008/mcp >/dev/null; then break; fi
+            if grep -q BLENDER_READY out/blender.log && curl -s --max-time 1 http://127.0.0.1:8008/mcp/ >/dev/null; then break; fi
             sleep 1
           done
           grep BLENDER_READY out/blender.log
           ./venv/bin/python - <<'PY'
-          import asyncio,json
+          import asyncio,json,os,zlib,base64,struct
+          from pathlib import Path
+          d=json.loads((Path(os.environ['GITHUB_WORKSPACE'])/'tools/n4-b12-pattern-data.json').read_text())
+          R,C=21,56
+          a=struct.unpack('<'+'h'*(R*C*2),zlib.decompress(base64.b64decode(d['flat8'])))
+          grid=[[[0,0] for i in range(C)] for j in range(R)]
+          for j in range(R):
+              for i in range(C):
+                  for k in range(2):
+                      grid[j][i][k]=a[(j*C+i)*2+k]+(grid[j-1][i][k] if j else 0)+(grid[j][i-1][k] if i else 0)-(grid[j-1][i-1][k] if j and i else 0)
+          ids=[(0,i) for i in range(7)]+[(j,6) for j in range(1,R)]+[(R-1,i) for i in range(5,-1,-1)]+[(j,0) for j in range(R-2,0,-1)]
+          points=[grid[j][i] for j,i in ids]
+          xmin=min(p[0] for p in points); xmax=max(p[0] for p in points); ymin=min(p[1] for p in points)
+          outline=[[(p[0]-(xmin+xmax)/2)*.00025,(p[1]-ymin)*.00025] for p in points]
+          assert len(outline)==52
           from mcp import ClientSession
           from mcp.client.streamable_http import streamablehttp_client
           async def main():
-              async with streamablehttp_client('http://127.0.0.1:8008/mcp') as (r,w,_):
+              async with streamablehttp_client('http://127.0.0.1:8008/mcp/') as (r,w,_):
                   async with ClientSession(r,w) as s:
                       await s.initialize()
                       p=await s.list_tools()
@@ -110,8 +130,10 @@ jobs:
                                   if isinstance(d,dict): assert d.get('success') is not False and d.get('status')!='error',d
                           return result
                       await call('get_scene_info',{})
-                      await call('create_polygon',{'name':'N4_Test_Panel','vertices':[[0,0,0],[.16,0,0],[.12,0,.30],[0,0,.24]],'location':[0,0,0],'extrude':.003})
-                      await call('set_object_dimensions',{'object_name':'N4_Test_Panel','x':.16,'y':.003,'z':.30})
+                      await call('create_polygon',{'name':'N4_Test_Panel','vertices':outline,'location':[0,0,0],'rotation':[90,0,0],'extrude':.003})
+                      report['source']='B12 flat8 panel 0, boundary only'
+                      report['outline_m']=outline
+                      persist()
                       await call('create_material',{'name':'N4_Test_Cloth','object_names':['N4_Test_Panel']})
                       await call('get_object_info',{'name':'N4_Test_Panel'})
                       await call('get_scene_info',{})
