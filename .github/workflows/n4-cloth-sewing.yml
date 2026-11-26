@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        variant: [free, guided]
+        variant: [strong, tailored]
     env:
       N4_SEW_VARIANT: ${{ matrix.variant }}
     steps:
@@ -80,6 +80,16 @@ jobs:
                           if tool and not tool.inputSchema.get('required'):
                               x=await session.call_tool(n,{})
                               result['read_only_calls'][n]={'is_error':x.isError,'result':x.model_dump(mode='json')}
+                      load=next((t for t in tools.tools if t.name=='load_skill'),None)
+                      if load:
+                          result['load_skill_schema']=load.inputSchema
+                          props=load.inputSchema.get('properties',{})
+                          key=next((k for k in ('skill_name','name','skill') if k in props),None)
+                          if key and set(load.inputSchema.get('required',[]))<={key}:
+                              x=await session.call_tool('load_skill',{key:'blender-data-geometry'})
+                              result['mesh_skill_load']={'is_error':x.isError,'result':x.model_dump(mode='json')}
+                              tools2=await session.list_tools()
+                              result['mesh_tool_schemas']=[t.model_dump(mode='json') for t in tools2.tools if 'mesh' in t.name.lower() or 'geometry' in t.name.lower()]
                       scene=next((n for n in names if n.endswith('get_scene_info')),None)
                       if scene:
                           x=await session.call_tool(scene,{})
