@@ -1,0 +1,120 @@
+name: N4 B09 sampled fit and MCP mesh creation
+on:
+  push:
+    branches: [n4-cloth-sewing-lab]
+    paths: ['tools/n4-b09-sewing.py','tools/n4-b09-radial-sections.json','.github/workflows/n4-b09-sewing.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  sewing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [strong]
+    env:
+      N4_SEW_VARIANT: ${{ matrix.variant }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Blender 4.3.2
+        run: |
+          curl -L --fail --retry 3 -o /tmp/b.tar.xz https://download.blender.org/release/Blender4.3/blender-4.3.2-linux-x64.tar.xz
+          tar -xf /tmp/b.tar.xz -C /tmp
+      - name: Actual sewing simulation and render
+        run: |
+          mkdir -p /tmp/cloth-proof
+          /tmp/blender-4.3.2-linux-x64/blender -b -t 4 --python-exit-code 1 --python tools/n4-b09-sewing.py -- /tmp/cloth-proof
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: n4-b09-sewing-${{ matrix.variant }}
+          path: /tmp/cloth-proof
+          retention-days: 14
+  mcp-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Install CI-compatible Blender and MCP
+        run: |
+          mkdir -p /tmp/mcp-proof
+          curl -L --fail --retry 2 -o /tmp/b45.tar.xz https://download.blender.org/release/Blender4.5/blender-4.5.13-linux-x64.tar.xz
+          tar -xf /tmp/b45.tar.xz -C /tmp
+          python3 -m pip install --target /tmp/mcppkgs 'dcc-mcp-blender==0.2.30'
+          python3 -m pip install --target /tmp/mcpclient 'mcp>=1.9,<2'
+      - name: Verify local-only MCP endpoint and list tools
+        shell: bash
+        run: |
+          set -e
+          export PYTHONPATH=/tmp/mcppkgs
+          export DCC_MCP_BLENDER_DISABLE_ARBITRARY_SCRIPT=1
+          export DCC_MCP_GATEWAY_REMOTE_HOST=127.0.0.1
+          export DCC_MCP_GATEWAY_REMOTE_PORT=0
+          /tmp/blender-4.5.13-linux-x64/blender -b --python-use-system-env --python /tmp/mcppkgs/dcc_mcp_blender/blender_bootstrap.py > /tmp/mcp-proof/server.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 60); do
+            if grep -q 'MCP_URL=' /tmp/mcp-proof/server.log; then break; fi
+            if ! kill -0 "$pid" 2>/dev/null; then cat /tmp/mcp-proof/server.log; exit 1; fi
+            sleep 1
+          done
+          cat /tmp/mcp-proof/server.log
+          export MCP_URL=$(grep -oE 'MCP_URL=http[^[:space:]]+' /tmp/mcp-proof/server.log | head -1 | cut -d= -f2-)
+          PYTHONPATH=/tmp/mcpclient python3 - <<'PY'
+          import os, asyncio, json
+          from urllib.parse import urlparse
+          from mcp import ClientSession
+          from mcp.client.streamable_http import streamablehttp_client
+          u=os.environ['MCP_URL']; assert urlparse(u).hostname in ('127.0.0.1','localhost','::1'),u
+          async def main():
+              async with streamablehttp_client(u) as (r,w,_):
+                  async with ClientSession(r,w) as session:
+                      await session.initialize()
+                      tools=await session.list_tools()
+                      names=[t.name for t in tools.tools]
+                      result={'tool_count':len(names),'cloth_tools':[n for n in names if 'cloth' in n.lower()],'tools':names}
+                      result['read_only_calls']={}
+                      for n in ['describe_capabilities','list_skills','dcc_diagnostics__get_instance_info','dcc_diagnostics__process_status']:
+                          tool=next((t for t in tools.tools if t.name==n),None)
+                          if tool and not tool.inputSchema.get('required'):
+                              x=await session.call_tool(n,{})
+                              result['read_only_calls'][n]={'is_error':x.isError,'result':x.model_dump(mode='json')}
+                      load=next((t for t in tools.tools if t.name=='load_skill'),None)
+                      if load:
+                          result['load_skill_schema']=load.inputSchema
+                          props=load.inputSchema.get('properties',{})
+                          key=next((k for k in ('skill_name','name','skill') if k in props),None)
+                          if key and set(load.inputSchema.get('required',[]))<={key}:
+                              x=await session.call_tool('load_skill',{key:'blender-data-geometry'})
+                              result['mesh_skill_load']={'is_error':x.isError,'result':x.model_dump(mode='json')}
+                              tools2=await session.list_tools()
+                              result['mesh_tool_schemas']=[t.model_dump(mode='json') for t in tools2.tools if 'mesh' in t.name.lower() or 'geometry' in t.name.lower()]
+                              create=next((t for t in tools2.tools if t.name.endswith('create_mesh_from_data')),None)
+                              if create:
+                                  q=await session.call_tool(create.name,{'name':'N4_MCP_Pattern_Test','vertices':[[0,0,0],[.15,0,0],[.12,0,.2],[.04,0,.25]],'faces':[[0,1,2,3]]})
+                                  result['create_panel']=q.model_dump(mode='json')
+                                  print('MCP_PANEL',json.dumps(result['create_panel']),flush=True)
+                                  assert not q.isError
+                                  inspect=next((t for t in tools2.tools if t.name.endswith('inspect_data_geometry')),None)
+                                  if inspect:
+                                      q=await session.call_tool(inspect.name,{'name':'N4_MCP_Pattern_Test'})
+                                      result['inspect_panel']=q.model_dump(mode='json')
+                                      print('MCP_READBACK',json.dumps(result['inspect_panel']),flush=True)
+                                      assert not q.isError
+                      scene=next((n for n in names if n.endswith('get_scene_info')),None)
+                      if scene:
+                          x=await session.call_tool(scene,{})
+                          result['scene_call']=x.model_dump(mode='json')
+                          assert not x.isError
+                      open('/tmp/mcp-proof/result.json','w').write(json.dumps(result,indent=2))
+                      print(json.dumps(result))
+                      assert result['tool_count']>0
+          asyncio.run(main())
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: n4-mcp-smoke
+          path: /tmp/mcp-proof
+          retention-days: 14

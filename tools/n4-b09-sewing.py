@@ -1,0 +1,211 @@
+"""B09 section-derived sewing trial. Optional exact full-body static OBJ input. Not finished clothing."""
+import bpy, math, json, sys, os
+variant=os.environ.get('N4_SEW_VARIANT','strong')
+from pathlib import Path
+from mathutils import Vector
+out=Path(sys.argv[sys.argv.index('--')+1]);out.mkdir(parents=True,exist_ok=True)
+bpy.ops.object.select_all(action='SELECT');bpy.ops.object.delete(use_global=False)
+scene=bpy.context.scene;scene.frame_start=1;scene.frame_end=140;scene.render.fps=24
+def material(n,c):
+ m=bpy.data.materials.new(n);m.diffuse_color=(*c,1);m.use_nodes=True;m.node_tree.nodes.get('Principled BSDF').inputs['Base Color'].default_value=(*c,1);return m
+navy=material('Navy fabric',(.035,.065,.115));blue=material('Front panel',(.065,.12,.23));back=material('Back panel',(.11,.18,.28));bodymat=material('Neutral fit mannequin',(.40,.42,.43))
+# Measured B09 radial sections; upper arm region clipped for the torso-only CI surrogate.
+from mathutils.bvhtree import BVHTree
+data=json.loads(Path(__file__).with_name('n4-b09-radial-sections.json').read_text())
+rings=[]
+for h,cx,cy,*r in data['rings']:
+ rings.append([Vector(((cx+rr*math.cos(i*math.pi/8))/1000,(cy+rr*math.sin(i*math.pi/8))/1000,h/1000)) for i,rr in enumerate(r)])
+profile=[]
+for row in rings:
+ profile.append((row[0].z,max(abs(q.x) for q in row),max(q.y for q in row),-min(q.y for q in row)))
+def mesh(name,v,e,f):
+ m=bpy.data.meshes.new(name);m.from_pydata(v,e,f);m.update();o=bpy.data.objects.new(name,m);scene.collection.objects.link(o);return o
+v=[q for row in rings for q in row];f=[];n=16
+for j in range(len(rings)-1):
+ for i in range(n):
+  a=j*n+i;b=j*n+(i+1)%n;f.append((a,b,b+n,a+n))
+f += [tuple(reversed(range(n))),tuple(range((len(rings)-1)*n,len(rings)*n))]
+exact=os.environ.get('N4_B09_COLLISION_OBJ')
+if exact:
+ v=[];f=[]
+ for line in Path(exact).read_text().splitlines():
+  if line.startswith('v '):
+   x,y,z=map(float,line.split()[1:4]);v.append((x,-z,y))
+  elif line.startswith('f '):
+   f.append(tuple(int(t.split('/')[0])-1 for t in line.split()[1:]))
+ assert len(v)==3737 and len(f)==7470, 'expected B09 full collider topology'
+man=mesh('B09 full collider' if exact else 'B09 sampled torso collider',v,[],f);man.data.materials.append(bodymat)
+for p in man.data.polygons:p.use_smooth=True
+man.modifiers.new('Torso collision','COLLISION');man.collision.thickness_outer=.003
+tree=BVHTree.FromPolygons([Vector(q) for q in v],f,all_triangles=False)
+# independently drafted planar front/back halves: (height, inner, outer) in metres
+draftF=[(1.055,0,.157),(1.095,0,.155),(1.15,0,.143),(1.20,0,.15),(1.25,0,.168),(1.285,.017,.181),(1.32,.042,.157),(1.36,.055,.135),(1.40,.050,.135),(1.445,.048,.13)]
+draftB=[(1.055,0,.146),(1.095,0,.143),(1.15,0,.129),(1.20,0,.133),(1.25,0,.174),(1.285,0,.176),(1.32,0,.155),(1.36,.014,.138),(1.40,.032,.135),(1.445,.048,.13)]
+def interp(table,z):
+ for (a,b,c),(d,e,f) in zip(table,table[1:]):
+  if z<=d+1e-8:
+   t=(z-a)/(d-a);return b+(e-b)*t,c+(f-c)*t
+ return table[-1][1:]
+# Draft width from quarter-ellipse arc length of each measured section.
+def section(z):
+ for a,b in zip(profile,profile[1:]):
+  if z<=b[0]:
+   t=max(0,min(1,(z-a[0])/(b[0]-a[0])))
+   return tuple(a[i]+(b[i]-a[i])*t for i in (1,2,3))
+ return profile[-1][1:]
+def arc(z,front):
+ # Mean right/left quarter arc of actual sampled ring, then interpolate vertically.
+ def measure(row):
+  ranges=((0,4),(4,8)) if front else ((8,12),(12,16))
+  return sum(sum((row[i%16]-row[(i+1)%16]).length for i in range(a,b)) for a,b in ranges)/2
+ for lo,hi in zip(rings,rings[1:]):
+  if z<=hi[0].z:
+   t=max(0,min(1,(z-lo[0].z)/(hi[0].z-lo[0].z)))
+   return measure(lo)*(1-t)+measure(hi)*t
+ return measure(rings[-1])
+def drafted(table,z):
+ a,b=interp(table,z)
+ t=max(0,min(1,(1.325-z)/.04))
+ return a,b*(1-t)+(arc(z,table is draftF)+(.010 if variant=='tailored' else .016))*t
+R,C=27,13;v=[];faces=[];seams=[];panels={};uvs=[];rows=[]
+for front in (True,False):
+ for side in (-1,1):
+  key=('front' if front else 'back')+('_L' if side<0 else '_R')
+  ids=[];coords=[];table=draftF if front else draftB
+  for j in range(R):
+   z=1.055+.390*j/(R-1);a,b=drafted(table,z);row=[]
+   for i in range(C):
+    x=side*(a+(b-a)*i/(C-1));row.append(len(v));v.append((x,.205 if front else -.14,z));coords.append([x,z]);uvs.append((i/(C-1),j/(R-1)))
+   ids.append(row)
+  start=len(faces)
+  for j in range(R-1):
+   for i in range(C-1):
+    q=(ids[j][i],ids[j][i+1],ids[j+1][i+1],ids[j+1][i])
+    if (side==1)==front:q=q[::-1]
+    faces.append(q)
+  rows.append((start,len(faces),front));panels[key]={'ids':ids,'flat_xz_m':coords}
+seam_groups={}
+def sew(a,b,group):
+ assert a!=b;seams.append((a,b));seam_groups.setdefault(group,[]).append((a,b))
+for side in ('L','R'):
+ a=panels['front_'+side]['ids'];b=panels['back_'+side]['ids']
+ for j in range(R):
+  z=1.055+.390*j/(R-1)
+  if z<=1.285:sew(a[j][-1],b[j][-1],'side_'+side)
+ for i in range(C):sew(a[-1][i],b[-1][i],'shoulder_'+side)
+for where in ('front','back'):
+ a=panels[where+'_L']['ids'];b=panels[where+'_R']['ids']
+ # back center and closed lower front center. Coincident endpoints deliberately separated by 1 mm.
+ for j in range(R):
+  z=1.055+.390*j/(R-1)
+  if (where=='front' and z<=1.25) or (where=='back' and z<=1.32):
+   ia,ib=a[j][0],b[j][0];pa=list(v[ia]);pb=list(v[ib]);pa[0]-=.0005;pb[0]+=.0005;v[ia]=tuple(pa);v[ib]=tuple(pb);sew(ia,ib,where+'_center')
+cloth=mesh('Four planar panels with loose sewing springs',v,seams,faces)
+cloth.data.materials.append(blue);cloth.data.materials.append(back)
+for a,b,fr in rows:
+ for p in list(cloth.data.polygons)[a:b]:p.material_index=0 if fr else 1
+uv=cloth.data.uv_layers.new(name='Pattern UV')
+for p in cloth.data.polygons:
+ for l in p.loop_indices:uv.data[l].uv=uvs[cloth.data.loops[l].vertex_index]
+
+# V2: shoulder support through animated pin targets; the input pattern remains flat at frame 1.
+pin=cloth.vertex_groups.new(name='Shoulder support')
+basis=cloth.shape_key_add(name='Basis')
+target=cloth.shape_key_add(name='Shoulder seam placement')
+for where in ('front','back'):
+ for side in ('L','R'):
+  row=panels[where+'_'+side]['ids'][-1]
+  for i in range(0,C,2):
+   idx=row[i];pin.add([idx],1.0,'REPLACE')
+   target.data[idx].co.y=0.0
+   target.data[idx].co.z=1.45
+# Sparse side-seam guides are an explicit fitting constraint, not free simulation.
+if variant=='guided':
+ for side in ('L','R'):
+  sign=-1 if side=='L' else 1
+  for j in (0,5,10,15):
+   z=1.055+.390*j/(R-1);w,fr,rr=section(z)
+   for where in ('front','back'):
+    idx=panels[where+'_'+side]['ids'][j][-1]
+    pin.add([idx],1.0,'REPLACE')
+    target.data[idx].co=(sign*(w+.009),(fr-rr)/2+(.002 if where=='front' else -.002),z)
+target.value=0;target.keyframe_insert(data_path='value',frame=1)
+target.value=1;target.keyframe_insert(data_path='value',frame=45)
+target.value=0
+scene.frame_set(1)
+
+mod=cloth.modifiers.new('Actual Blender Cloth sewing','CLOTH');s=mod.settings;s.quality=18;s.mass=.22;s.tension_stiffness=35;s.compression_stiffness=35;s.shear_stiffness=20;s.bending_stiffness=2.0;s.use_sewing_springs=True;s.sewing_force_max=22;s.effector_weights.gravity=.12;s.vertex_group_mass=pin.name;s.pin_stiffness=1.0
+col=mod.collision_settings;col.use_collision=True;col.distance_min=.004;col.use_self_collision=True;col.self_distance_min=.002;col.collision_quality=8
+mod.point_cache.frame_start=1;mod.point_cache.frame_end=140
+(out/'patterns.json').write_text(json.dumps({'units':'m','panels':panels,'seam_pairs':seams,'seam_groups':seam_groups,'variant':variant,'profile':profile,'note':'B09 sampled torso; exact full static OBJ optional'},indent=2))
+# layout actual flat pattern polygons, not projection of 3D cloth
+colors=['#7088b0','#526b99','#8697af','#63768f'];svg=['<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="560" viewBox="0 0 1000 560"><rect width="1000" height="560" fill="#f5f5f5"/>']
+for k,(name,p) in enumerate(panels.items()):
+ ids=p['ids'];points=p['flat_xz_m'];boundary=[0]+[j*C+C-1 for j in range(R)]+[R*C-C]+[j*C for j in range(R-2,0,-1)];cx=120+250*k
+ coords=lambda idx:(cx+points[idx][0]*950,455-(points[idx][1]-1.055)*950)
+ poly=' '.join('%.1f,%.1f'%coords(i) for i in boundary)
+ svg.append(f'<polygon points="{poly}" fill="{colors[k]}" stroke="#29364b" stroke-width="2"/>')
+ for j in range(R):
+  x,y=coords(j*C);xx,yy=coords(j*C+C-1);svg.append(f'<line x1="{x}" y1="{y}" x2="{xx}" y2="{yy}" stroke="#ffffff" opacity=".28"/>')
+ svg.append(f'<text x="{cx}" y="495" text-anchor="middle" font-family="sans-serif" font-size="19">{name}</text>')
+svg.append('</svg>');(out/'patterns.svg').write_text(''.join(svg))
+def positions():
+ dg=bpy.context.evaluated_depsgraph_get();ob=cloth.evaluated_get(dg);me=ob.to_mesh();p=[vv.co.copy() for vv in me.vertices];ob.to_mesh_clear();return p
+def gap(p):
+ d=sorted((p[a]-p[b]).length for a,b in seams);return {'median_mm':1000*d[len(d)//2],'max_mm':1000*max(d),'mean_mm':1000*sum(d)/len(d)}
+def inside(p):
+ count=0;worst=0.
+ for q in p:
+  co,no,idx,dist=tree.find_nearest(q)
+  if co is not None:
+   signed=(q-co).dot(no)
+   if signed<-.001:count+=1;worst=max(worst,-signed)
+ return {'inside_proxy_vertices':count,'max_penetration_mm_approx':1000*worst}
+def aim(o,t):o.rotation_euler=(Vector(t)-o.location).to_track_quat('-Z','Y').to_euler()
+scene.render.engine='CYCLES';scene.cycles.device='CPU';scene.cycles.samples=12;scene.cycles.use_denoising=True;scene.render.resolution_x=700;scene.render.resolution_y=700;scene.render.resolution_percentage=100;scene.world.color=(.22,.22,.22)
+cam=bpy.data.objects.new('Review',bpy.data.cameras.new('Review'));scene.collection.objects.link(cam);scene.camera=cam;cam.data.type='ORTHO';cam.data.ortho_scale=.68
+for i,(x,y,z,p) in enumerate([(-.65,1.0,1.9,55),(.7,.7,1.4,35),(0,-.7,1.8,40)]):
+ l=bpy.data.lights.new('Area'+str(i),'AREA');l.energy=p;l.size=.7;o=bpy.data.objects.new(l.name,l);scene.collection.objects.link(o);o.location=(x,y,z);aim(o,(0,0,1.25))
+def render(name,ang):
+ a=math.radians(ang);cam.location=(math.sin(a)*1.8,math.cos(a)*1.8,1.34);aim(cam,(0,0,1.25));scene.render.filepath=str(out/(name+'.png'));bpy.ops.render.render(write_still=True)
+scene.frame_set(1);initial=positions();history={'1':{**gap(initial),**inside(initial)}};bpy.ops.wm.save_as_mainfile(filepath=str(out/'sewing_setup.blend'))
+render('before_45',45)
+for frame in range(2,141):
+ scene.frame_set(frame);bpy.context.view_layer.update()
+ if frame in (10,25,50,75,100,140):
+  q=positions();history[str(frame)]={**gap(q),**inside(q)};print('CLOTH_FRAME',frame,history[str(frame)],flush=True)
+p=positions();assert all(math.isfinite(k) for q in p for k in q)
+group_report={}
+# Quantify excess edge length and all gaps before any mesh stitching.
+for k,pairs in seam_groups.items():
+ ds=sorted((p[a]-p[b]).length*1000 for a,b in pairs)
+ group_report[k]={'count':len(ds),'median_mm':ds[len(ds)//2],'max_mm':max(ds),'over_10mm':sum(d>10 for d in ds)}
+edge_set={tuple(sorted((f[i],f[(i+1)%len(f)]))) for f in faces for i in range(len(f))}
+stretch=sorted((p[a]-p[b]).length/max((Vector(v[a])-Vector(v[b])).length,1e-8) for a,b in edge_set)
+report={'edge_stretch_p95':stretch[int(.95*len(stretch))],'edge_stretch_median':stretch[len(stretch)//2],'variant':variant,'seam_groups_final':group_report,'blender':bpy.app.version_string,'flat_panels':len(panels),'vertices':len(v),'faces':len(faces),'loose_sewing_edges':len(seams),'history':history,'max_vertex_motion_mm':1000*max((a-b).length for a,b in zip(initial,p)),'proxy_only':not bool(exact),'collision_source':'B09 exact static OBJ' if exact else 'B09 21 radial sections, shoulder clipped','collision_test':'nearest surface normal sign; vertex samples only','solver':'Blender Cloth','finished_garment':False,'shoulder_pin_count':28,'side_guide_count':16 if variant=='guided' else 0,'animated_shoulder_targets':True}
+(out/'report.json').write_text(json.dumps(report,indent=2));print('CLOTH_RESULT',json.dumps(report),flush=True)
+# freeze evaluated simulation into editable separate mesh for inspection/export
+final=mesh('Simulated cloth frame 140',p,[],faces);final.data.materials.append(navy)
+uv=final.data.uv_layers.new(name='Pattern UV')
+for poly in final.data.polygons:
+ poly.use_smooth=True
+ for l in poly.loop_indices:uv.data[l].uv=uvs[final.data.loops[l].vertex_index]
+cloth.hide_render=True;cloth.hide_set(True)
+bpy.ops.wm.save_as_mainfile(filepath=str(out/'sewing_result.blend'))
+for name,ang in [('after_front',0),('after_45',45),('after_side',90),('after_back',180)]:render(name,ang)
+bpy.ops.object.select_all(action='DESELECT');final.select_set(True);bpy.context.view_layer.objects.active=final
+bpy.ops.export_scene.gltf(filepath=str(out/'cloth_proof.glb'),export_format='GLB',use_selection=True)
+# Only weld close pairs in a separate preview; original simulated geometry and metrics remain unchanged.
+import bmesh
+bm=bmesh.new();bm.from_mesh(final.data);bm.verts.ensure_lookup_table()
+eligible=[(a,b) for a,b in seams if (p[a]-p[b]).length<=.005]
+mapping={}
+for a,b in eligible:
+ if a not in mapping and b not in mapping and a not in mapping.values() and b not in mapping.values():mapping[b]=a
+for b,a in mapping.items():bm.verts[a].co=(p[a]+p[b])/2
+bmesh.ops.weld_verts(bm,targetmap={bm.verts[b]:bm.verts[a] for b,a in mapping.items()})
+me=bpy.data.meshes.new('Close-seam welded preview');bm.to_mesh(me);bm.free()
+ob=bpy.data.objects.new('Close-seam welded preview',me);scene.collection.objects.link(ob);ob.data.materials.append(navy)
+final.hide_render=True
+(out/'weld_report.json').write_text(json.dumps({'eligible_pairs_le_5mm':len(eligible),'actually_welded_pairs':len(mapping),'remaining_original_pairs':len(seams)-len(mapping),'not_final':True},indent=2))
+render('weld_preview_45',45)
