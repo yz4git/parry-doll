@@ -1,0 +1,140 @@
+name: N4 See Hiong MCP bridge smoke
+on:
+  push:
+    branches: [n4-cloth-sewing-lab]
+    paths: ['.github/workflows/n4-seehiong-mcp.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  bridge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Install Blender and pinned upstream bridge
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y xvfb libgl1-mesa-dri libxkbcommon0 libxi6 libxrender1 libxxf86vm1 libsm6 libice6 libxfixes3
+          mkdir -p /tmp/n4-bridge/out
+          curl -fL --retry 2 https://download.blender.org/release/Blender5.0/blender-5.0.1-linux-x64.tar.xz -o /tmp/blender.tar.xz
+          tar -xf /tmp/blender.tar.xz -C /tmp/n4-bridge
+          git clone https://github.com/seehiong/blender-mcp-bridge.git /tmp/n4-bridge/upstream
+          git -C /tmp/n4-bridge/upstream checkout e1cdb2c9380449eaf4cf04381381899286bd76ee
+          python3 -m venv /tmp/n4-bridge/venv
+          /tmp/n4-bridge/venv/bin/pip install /tmp/n4-bridge/upstream
+      - name: Exercise actual MCP protocol against Blender GUI on Xvfb
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/n4-bridge
+          cat > boot.py <<'PY'
+          import bpy, sys, os
+          from mathutils import Vector
+          sys.path.insert(0,'/tmp/n4-bridge/upstream')
+          from blender_mcp_addon.server import BlenderMCPServer
+          bpy.ops.object.select_all(action='SELECT')
+          bpy.ops.object.delete(use_global=False)
+          scene=bpy.context.scene
+          scene.render.engine='CYCLES'
+          scene.cycles.device='CPU'
+          scene.cycles.samples=8
+          scene.render.resolution_x=640
+          scene.render.resolution_y=640
+          scene.render.resolution_percentage=100
+          bpy.ops.object.camera_add(location=(0.7,-1.6,1.3))
+          cam=bpy.context.object
+          cam.rotation_euler=(Vector((0,0,0.18))-cam.location).to_track_quat('-Z','Y').to_euler()
+          scene.camera=cam
+          cam.data.type='ORTHO'
+          cam.data.ortho_scale=0.9
+          for loc,power,size in [((1,-1,2),120,2),((-1,0.4,1),65,1)]:
+              bpy.ops.object.light_add(type='AREA',location=loc)
+              l=bpy.context.object
+              l.data.energy=power
+              l.data.shape='DISK'
+              l.data.size=size
+              l.rotation_euler=(Vector((0,0,.18))-l.location).to_track_quat('-Z','Y').to_euler()
+          server=BlenderMCPServer()
+          server.start_server(host='127.0.0.1',port=8888)
+          assert server.running
+          def save_when_requested():
+              if not os.path.exists('/tmp/n4-bridge/save.request'): return 0.25
+              bpy.ops.wm.save_as_mainfile(filepath='/tmp/n4-bridge/out/panel.blend')
+              bpy.ops.export_scene.gltf(filepath='/tmp/n4-bridge/out/panel.glb')
+              scene.render.filepath='/tmp/n4-bridge/out/panel.png'
+              bpy.ops.render.render(write_still=True)
+              open('/tmp/n4-bridge/out/saved','w').write('ok')
+              return None
+          bpy.app.timers.register(save_when_requested)
+          print('BLENDER_READY',flush=True)
+          PY
+          export LIBGL_ALWAYS_SOFTWARE=1
+          export MCP_BRIDGE_HOST=127.0.0.1 MCP_BRIDGE_PORT=8008 BLENDER_ADDON_HOST=127.0.0.1 BLENDER_ADDON_PORT=8888
+          xvfb-run -a ./blender-5.0.1-linux-x64/blender --factory-startup --python boot.py > out/blender.log 2>&1 &
+          blender_pid=$!
+          ./venv/bin/blender-mcp-bridge serve > out/bridge.log 2>&1 &
+          bridge_pid=$!
+          trap 'kill "$blender_pid" "$bridge_pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 120); do
+            if grep -q BLENDER_READY out/blender.log && curl -s --max-time 1 http://127.0.0.1:8008/mcp >/dev/null; then break; fi
+            sleep 1
+          done
+          grep BLENDER_READY out/blender.log
+          ./venv/bin/python - <<'PY'
+          import asyncio,json
+          from mcp import ClientSession
+          from mcp.client.streamable_http import streamablehttp_client
+          async def main():
+              async with streamablehttp_client('http://127.0.0.1:8008/mcp') as (r,w,_):
+                  async with ClientSession(r,w) as s:
+                      await s.initialize()
+                      p=await s.list_tools()
+                      tools=list(p.tools)
+                      while p.nextCursor:
+                          p=await s.list_tools(cursor=p.nextCursor)
+                          tools.extend(p.tools)
+                      report={'tool_count':len(tools),'tools':[t.name for t in tools],'calls':{}}
+                      def persist():
+                          open('out/report.json','w').write(json.dumps(report,indent=2))
+                      persist()
+                      async def call(name,args):
+                          result=await s.call_tool(name,args)
+                          report['calls'][name]=result.model_dump(mode='json')
+                          persist()
+                          print(name,result,flush=True)
+                          assert not result.isError,name
+                          for c in result.content:
+                              if c.type=='text':
+                                  try: d=json.loads(c.text)
+                                  except ValueError: continue
+                                  if isinstance(d,dict): assert d.get('success') is not False and d.get('status')!='error',d
+                          return result
+                      await call('get_scene_info',{})
+                      await call('create_polygon',{'name':'N4_Test_Panel','vertices':[[0,0,0],[.16,0,0],[.12,0,.30],[0,0,.24]],'location':[0,0,0],'extrude':.003})
+                      await call('set_object_dimensions',{'object_name':'N4_Test_Panel','x':.16,'y':.003,'z':.30})
+                      await call('create_material',{'name':'N4_Test_Cloth','object_names':['N4_Test_Panel']})
+                      await call('get_object_info',{'name':'N4_Test_Panel'})
+                      await call('get_scene_info',{})
+                      assert 'N4_Test_Panel' in json.dumps(report['calls']['get_object_info'])
+          asyncio.run(main())
+          PY
+          touch save.request
+          for i in $(seq 1 120); do test -f out/saved && break; sleep 1; done
+          test -s out/panel.blend
+          test -s out/panel.glb
+          test -s out/panel.png
+          ./venv/bin/python - <<'PY'
+          import struct,json
+          with open('out/panel.glb','rb') as f:
+              magic,v,n=struct.unpack('<4sII',f.read(12)); assert magic==b'glTF'
+              size,kind=struct.unpack('<I4s',f.read(8)); d=json.loads(f.read(size))
+          assert any(x.get('name')=='N4_Test_Panel' for x in d['nodes'])
+          assert any(x.get('name')=='N4_Test_Cloth' for x in d.get('materials',[]))
+          print('GLB readback confirmed panel and material')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: n4-seehiong-mcp-proof
+          path: /tmp/n4-bridge/out
+          retention-days: 14
