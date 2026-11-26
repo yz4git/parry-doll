@@ -36,6 +36,7 @@ jobs:
           curl -L --fail --retry 2 -o /tmp/b45.tar.xz https://download.blender.org/release/Blender4.5/blender-4.5.13-linux-x64.tar.xz
           tar -xf /tmp/b45.tar.xz -C /tmp
           python3 -m pip install --target /tmp/mcppkgs 'dcc-mcp-blender==0.2.30'
+          python3 -m pip install --target /tmp/mcpclient 'mcp>=1.9,<2'
       - name: Verify local-only MCP endpoint and list tools
         shell: bash
         run: |
@@ -54,7 +55,7 @@ jobs:
           done
           cat /tmp/mcp-proof/server.log
           export MCP_URL=$(grep -oE 'MCP_URL=http[^[:space:]]+' /tmp/mcp-proof/server.log | head -1 | cut -d= -f2-)
-          python3 - <<'PY'
+          PYTHONPATH=/tmp/mcpclient python3 - <<'PY'
           import os, asyncio, json
           from urllib.parse import urlparse
           from mcp import ClientSession

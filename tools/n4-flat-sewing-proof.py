@@ -27,7 +27,7 @@ for p in man.data.polygons:p.use_smooth=True
 man.modifiers.new('Torso collision','COLLISION');man.collision.thickness_outer=.002
 # independently drafted planar front/back halves: (height, inner, outer) in metres
 draftF=[(1.055,0,.157),(1.095,0,.155),(1.15,0,.143),(1.20,0,.15),(1.25,0,.168),(1.285,.017,.181),(1.32,.042,.157),(1.36,.055,.135),(1.40,.050,.135),(1.445,.048,.13)]
-draftB=[(1.055,0,.146),(1.095,0,.143),(1.15,0,.129),(1.20,0,.133),(1.25,0,.147),(1.285,0,.161),(1.32,0,.155),(1.36,.014,.138),(1.40,.032,.135),(1.445,.048,.13)]
+draftB=[(1.055,0,.146),(1.095,0,.143),(1.15,0,.129),(1.20,0,.133),(1.25,0,.174),(1.285,0,.176),(1.32,0,.155),(1.36,.014,.138),(1.40,.032,.135),(1.445,.048,.13)]
 def interp(table,z):
  for (a,b,c),(d,e,f) in zip(table,table[1:]):
   if z<=d+1e-8:
@@ -72,8 +72,24 @@ for a,b,fr in rows:
 uv=cloth.data.uv_layers.new(name='Pattern UV')
 for p in cloth.data.polygons:
  for l in p.loop_indices:uv.data[l].uv=uvs[cloth.data.loops[l].vertex_index]
-mod=cloth.modifiers.new('Actual Blender Cloth sewing','CLOTH');s=mod.settings;s.quality=8;s.mass=.22;s.tension_stiffness=35;s.compression_stiffness=35;s.shear_stiffness=20;s.bending_stiffness=.6;s.use_sewing_springs=True;s.sewing_force_max=18;s.effector_weights.gravity=.45
-col=mod.collision_settings;col.use_collision=True;col.distance_min=.003;col.use_self_collision=True;col.self_distance_min=.002
+
+# V2: shoulder support through animated pin targets; the input pattern remains flat at frame 1.
+pin=cloth.vertex_groups.new(name='Shoulder support')
+basis=cloth.shape_key_add(name='Basis')
+target=cloth.shape_key_add(name='Shoulder seam placement')
+for where in ('front','back'):
+ for side in ('L','R'):
+  row=panels[where+'_'+side]['ids'][-1]
+  for i in range(C-5,C):
+   idx=row[i];pin.add([idx],1.0,'REPLACE')
+   target.data[idx].co.y=.007 if where=='front' else -.007
+target.value=0;target.keyframe_insert(data_path='value',frame=1)
+target.value=1;target.keyframe_insert(data_path='value',frame=30)
+target.value=0
+scene.frame_set(1)
+
+mod=cloth.modifiers.new('Actual Blender Cloth sewing','CLOTH');s=mod.settings;s.quality=14;s.mass=.22;s.tension_stiffness=35;s.compression_stiffness=35;s.shear_stiffness=20;s.bending_stiffness=.6;s.use_sewing_springs=True;s.sewing_force_max=9;s.effector_weights.gravity=.15;s.vertex_group_mass=pin.name;s.pin_stiffness=1.0
+col=mod.collision_settings;col.use_collision=True;col.distance_min=.004;col.use_self_collision=True;col.self_distance_min=.002;col.collision_quality=8
 mod.point_cache.frame_start=1;mod.point_cache.frame_end=100
 (out/'patterns.json').write_text(json.dumps({'units':'m','panels':panels,'seam_pairs':seams,'profile':profile,'note':'elliptical surrogate not original body mesh'},indent=2))
 # layout actual flat pattern polygons, not projection of 3D cloth
@@ -115,7 +131,7 @@ for frame in range(2,101):
  if frame in (10,25,50,75,100):
   q=positions();history[str(frame)]={**gap(q),**inside(q)};print('CLOTH_FRAME',frame,history[str(frame)],flush=True)
 p=positions();assert all(math.isfinite(k) for q in p for k in q)
-report={'blender':bpy.app.version_string,'flat_panels':len(panels),'vertices':len(v),'faces':len(faces),'loose_sewing_edges':len(seams),'history':history,'max_vertex_motion_mm':1000*max((a-b).length for a,b in zip(initial,p)),'proxy_only':True,'solver':'Blender Cloth','finished_garment':False}
+report={'blender':bpy.app.version_string,'flat_panels':len(panels),'vertices':len(v),'faces':len(faces),'loose_sewing_edges':len(seams),'history':history,'max_vertex_motion_mm':1000*max((a-b).length for a,b in zip(initial,p)),'proxy_only':True,'solver':'Blender Cloth','finished_garment':False,'shoulder_pin_count':20,'animated_shoulder_targets':True}
 (out/'report.json').write_text(json.dumps(report,indent=2));print('CLOTH_RESULT',json.dumps(report),flush=True)
 # freeze evaluated simulation into editable separate mesh for inspection/export
 final=mesh('Simulated cloth frame 100',p,[],faces);final.data.materials.append(navy)
